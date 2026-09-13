@@ -23,3 +23,6 @@ en-US:
           - title: "Backend Developer"
             company: "enjoei"
             period: "Oct 2020 – Mar 2021"
+      jampa_ruby:
+        prompt: "cat jamparuby.txt"
+        body_html: "I'm an active member of <a href=\"https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT\">Jampa Ruby</a>, the Ruby developer community of Paraíba, Brazil — part of <a href=\"https://crudpb.org/\">CRUDPB</a>. Join the WhatsApp group and take part."

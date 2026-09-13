@@ -35,4 +35,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Light Labs Inc/
     assert_select "body", /Fluxx/
   end
+
+  test "home shows the Jampa Ruby section with logo and links" do
+    get "/pt-BR"
+    assert_select "img[src*=?]", "jamparuby"
+    assert_select "a[href=?]", "https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT"
+    assert_select "a[href=?]", "https://crudpb.org/"
+  end
 end

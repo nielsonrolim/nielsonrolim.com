@@ -9,3 +9,9 @@
     <li><%= job[:title] %> — <%= job[:company] %> (<%= job[:period] %>)</li>
   <% end %>
 </ul>
+
+<p class="terminal__prompt"><%= t(".jampa_ruby.prompt") %></p>
+<p class="terminal__output">
+  <%= image_tag "jamparuby.svg", alt: "Jampa Ruby", width: 96 %>
+  <%= t(".jampa_ruby.body_html") %>
+</p>
