@@ -1,4 +1,4 @@
-FROM ruby:4.0-slim AS build
+FROM ruby:4.0.6-slim AS build
 
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     build-essential git libsqlite3-dev pkg-config \
@@ -14,7 +14,7 @@ RUN bundle config set without 'development test' && bundle install --jobs 4
 COPY . .
 RUN bin/rails assets:precompile
 
-FROM ruby:4.0-slim
+FROM ruby:4.0.6-slim
 
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libsqlite3-0 curl \
