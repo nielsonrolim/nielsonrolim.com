@@ -1,28 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="<%= I18n.locale %>">
   <head>
-    <title>Nielson Rolim</title>
+    <title><%= t("pages.home.title") %> — <%= t("pages.home.role") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= t("pages.home.bio") %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "application" %>
   </head>
 
   <body>
-    <div class="terminal">
-      <nav class="locale-switch">
-        <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link", aria: { current: I18n.locale == :"pt-BR" } %>
-        /
-        <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link", aria: { current: I18n.locale == :"en-US" } %>
-      </nav>
+    <div class="site">
+      <header class="topbar">
+        <span class="topbar__path">~/nielsonrolim</span>
+        <nav class="locale-switch" aria-label="<%= t("pages.home.language_label") %>">
+          <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link", aria: { current: I18n.locale == :"pt-BR" } %>
+          <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link", aria: { current: I18n.locale == :"en-US" } %>
+        </nav>
+      </header>
 
       <% flash.each do |type, message| %>
         <p class="flash flash--<%= type %>"><%= message %></p>
       <% end %>
 
-      <%= yield %>
+      <main>
+        <%= yield %>
+      </main>
 
-      <span class="cursor" aria-hidden="true"></span>
+      <footer class="footer">
+        <span class="terminal__prompt" aria-hidden="true"></span>
+        <span class="cursor" aria-hidden="true"></span>
+      </footer>
     </div>
   </body>
 </html>

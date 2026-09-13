@@ -2,9 +2,16 @@ pt-BR:
   pages:
     home:
       title: "Nielson Rolim"
-      about:
-        prompt: "cat about.txt"
-        body: "Sou Nielson Rolim, Engenheiro de Software Sênior em João Pessoa, Paraíba. Trabalho principalmente com Ruby on Rails, Hotwire, React e TailwindCSS, e sou um entusiasta de Linux."
+      whoami: "whoami"
+      role: "Engenheiro de Software Sênior"
+      location: "João Pessoa, Paraíba, Brasil"
+      stack: "Ruby on Rails, Hotwire, React, TailwindCSS, Linux"
+      bio: "Construo software há mais de uma década, com foco em sistemas backend robustos e produtos web que funcionam bem. Sou de João Pessoa e sou apaixonado por Linux e pela comunidade Ruby."
+      language_label: "Idioma"
+      labels:
+        role: "cargo"
+        base: "base"
+        stack: "stack"
       experience:
         prompt: "cat experience.log"
         jobs:

@@ -1,49 +1,107 @@
-<h1><%= t(".title") %></h1>
+<section class="hero">
+  <figure class="hero__photo">
+    <%= image_tag "nielson.jpg", alt: "Nielson Rolim", width: 900, height: 900 %>
+    <figcaption>~/nielson.jpg</figcaption>
+  </figure>
 
-<p class="terminal__prompt"><%= t(".about.prompt") %></p>
-<p class="terminal__output"><%= t(".about.body") %></p>
+  <div class="hero__intro">
+    <p class="terminal__prompt"><%= t(".whoami") %></p>
+    <h1 class="hero__name"><%= t(".title") %></h1>
 
-<p class="terminal__prompt"><%= t(".experience.prompt") %></p>
-<ul class="terminal__output">
-  <% t(".experience.jobs").each do |job| %>
-    <li><%= job[:title] %> — <%= job[:company] %> (<%= job[:period] %>)</li>
-  <% end %>
-</ul>
+    <dl class="hero__meta">
+      <div>
+        <dt><%= t(".labels.role") %></dt>
+        <dd><%= t(".role") %></dd>
+      </div>
+      <div>
+        <dt><%= t(".labels.base") %></dt>
+        <dd><%= t(".location") %></dd>
+      </div>
+      <div>
+        <dt><%= t(".labels.stack") %></dt>
+        <dd><%= t(".stack") %></dd>
+      </div>
+    </dl>
 
-<p class="terminal__prompt"><%= t(".jampa_ruby.prompt") %></p>
-<p class="terminal__output">
-  <%= image_tag "jamparuby.svg", alt: "Jampa Ruby", width: 96 %>
-  <%= t(".jampa_ruby.body_html") %>
-</p>
-
-<p class="terminal__prompt"><%= t(".projects.prompt") %></p>
-<% t(".projects.items").each do |project| %>
-  <div class="terminal__output">
-    <strong><%= project[:name] %></strong><br>
-    <%= project[:description] %><br>
-    <em><%= project[:tags] %></em>
+    <p class="hero__bio"><%= t(".bio") %></p>
   </div>
-<% end %>
+</section>
 
-<p class="terminal__prompt"><%= t(".contact.prompt") %></p>
-<ul class="terminal__output">
-  <li><%= t(".contact.email_label") %>: <%= link_to "contato@nielsonrolim.com", "mailto:contato@nielsonrolim.com" %></li>
-  <li><%= t(".contact.github_label") %>: <%= link_to "github.com/nielsonrolim", "https://github.com/nielsonrolim" %></li>
-  <li><%= t(".contact.linkedin_label") %>: <%= link_to "linkedin.com/in/nielsonrolim", "https://www.linkedin.com/in/nielsonrolim/" %></li>
-</ul>
+<section class="section">
+  <p class="terminal__prompt"><%= t(".experience.prompt") %></p>
+  <div class="output">
+    <ol class="timeline">
+      <% t(".experience.jobs").each do |job| %>
+        <li class="timeline__item">
+          <div class="timeline__head">
+            <h3 class="timeline__title"><%= job[:title] %></h3>
+            <span class="timeline__period"><%= job[:period] %></span>
+          </div>
+          <p class="timeline__company"><%= job[:company] %></p>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+</section>
 
-<p class="terminal__prompt"><%= t(".newsletter.prompt") %></p>
-<div class="terminal__output">
-  <p><%= t(".newsletter.body") %></p>
-  <%= form_with url: subscribers_path, scope: :subscriber, method: :post do |form| %>
-    <%= form.label :email, t(".newsletter.email_placeholder"), style: "display:none" %>
-    <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true %>
+<section class="section">
+  <p class="terminal__prompt"><%= t(".jampa_ruby.prompt") %></p>
+  <div class="output output--split">
+    <%= image_tag "jamparuby.png", alt: "Jampa Ruby", width: 1000, height: 1000, loading: "lazy" %>
+    <p><%= t(".jampa_ruby.body_html") %></p>
+  </div>
+</section>
 
-    <span aria-hidden="true" style="position:absolute; left:-9999px;">
-      <%= form.label :nickname, t(".newsletter.nickname_label") %>
-      <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
-    </span>
+<section class="section">
+  <p class="terminal__prompt"><%= t(".projects.prompt") %></p>
+  <div class="projects">
+    <% t(".projects.items").each do |project| %>
+      <article class="project">
+        <h3 class="project__name"><%= project[:name] %></h3>
+        <p class="project__desc"><%= project[:description] %></p>
+        <ul class="tags">
+          <% project[:tags].split(",").each do |tag| %>
+            <li class="tag"><%= tag.strip %></li>
+          <% end %>
+        </ul>
+      </article>
+    <% end %>
+  </div>
+</section>
 
-    <%= form.submit t(".newsletter.submit") %>
-  <% end %>
-</div>
+<section class="section">
+  <p class="terminal__prompt"><%= t(".contact.prompt") %></p>
+  <ul class="contact">
+    <li>
+      <span class="contact__label"><%= t(".contact.email_label") %></span>
+      <%= link_to "contato@nielsonrolim.com", "mailto:contato@nielsonrolim.com" %>
+    </li>
+    <li>
+      <span class="contact__label"><%= t(".contact.github_label") %></span>
+      <%= link_to "github.com/nielsonrolim", "https://github.com/nielsonrolim" %>
+    </li>
+    <li>
+      <span class="contact__label"><%= t(".contact.linkedin_label") %></span>
+      <%= link_to "linkedin.com/in/nielsonrolim", "https://www.linkedin.com/in/nielsonrolim/" %>
+    </li>
+  </ul>
+</section>
+
+<section class="section">
+  <p class="terminal__prompt"><%= t(".newsletter.prompt") %></p>
+  <div class="newsletter">
+    <p class="newsletter__body"><%= t(".newsletter.body") %></p>
+    <%= form_with url: subscribers_path, scope: :subscriber, method: :post do |form| %>
+      <div class="newsletter__row">
+        <%= form.label :email, t(".newsletter.email_placeholder"), class: "visually-hidden" %>
+        <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true, autocomplete: "email", class: "newsletter__input" %>
+        <%= form.submit t(".newsletter.submit"), class: "newsletter__button" %>
+      </div>
+
+      <div class="honeypot" aria-hidden="true">
+        <%= form.label :nickname, t(".newsletter.nickname_label") %>
+        <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
+      </div>
+    <% end %>
+  </div>
+</section>

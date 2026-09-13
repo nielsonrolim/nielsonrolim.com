@@ -2,9 +2,16 @@ en-US:
   pages:
     home:
       title: "Nielson Rolim"
-      about:
-        prompt: "cat about.txt"
-        body: "I'm Nielson Rolim, a Senior Software Engineer based in João Pessoa, Paraíba, Brazil. I mainly work with Ruby on Rails, Hotwire, React, and TailwindCSS, and I'm a Linux enthusiast."
+      whoami: "whoami"
+      role: "Senior Software Engineer"
+      location: "João Pessoa, Paraíba, Brazil"
+      stack: "Ruby on Rails, Hotwire, React, TailwindCSS, Linux"
+      bio: "I've been building software for over a decade, focused on robust backend systems and web products that work well. I'm based in João Pessoa and I'm passionate about Linux and the Ruby community."
+      language_label: "Language"
+      labels:
+        role: "role"
+        base: "base"
+        stack: "stack"
       experience:
         prompt: "cat experience.log"
         jobs:
