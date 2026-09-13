@@ -11,8 +11,9 @@ Single scrolling page (per locale) with these sections, in order:
 1. **Header / prompt bar** — simulated terminal prompt, language switcher (`PT-BR` / `EN-US`)
 2. **About** — short personal intro, role (Senior Software Engineer), stack (Ruby, Rails, Hotwire, React, TailwindCSS)
 3. **Experience** — chronological list pulled from LinkedIn: Light Labs Inc, Fluxx, Shift, RD Station, enjoei (title, company, dates, short blurb)
-4. **Jampa Ruby** — active member of Jampa Ruby, the Ruby developer community in Paraíba, Brazil; short blurb + link to the community
+4. **Jampa Ruby** — active member of Jampa Ruby, the Ruby developer community in Paraíba, Brazil; short blurb + link to the community; displays the Jampa Ruby logo (SVG) next to the text
 5. **Projects** — project cards, initially:
+   - **Lavanderia 60 Minutos**: designed the software architecture for a fully automated self-service laundry chain with 400+ stores across Brazil. Built the management system and API communicating with in-store attendant terminals, plus the first version of the attendant terminal itself, running on a Raspberry Pi with a touchscreen (Ruby on Rails/PostgreSQL), kept in sync with the central system while able to operate offline. Tags: Ruby on Rails, Node.js, PostgreSQL, Sidekiq, Redis, Raspberry Pi.
    - **IBAPE-PB — Sistema de Distribuição de Trabalhos**: fair-distribution system for professional engineering assessments (perícias/avaliações) for IBAPE-PB, via lottery (sorteio) and direct nomination (indicação), covering the full work lifecycle (creation → publication → draw → acceptance → completion) with reporting and email notifications. Tags: Ruby on Rails, PostgreSQL, Redis.
 6. **Newsletter** — email capture form for a monthly tech newsletter
 7. **Contact** — email / LinkedIn / GitHub links
@@ -29,6 +30,7 @@ Single Ruby on Rails application serves everything — pages and newsletter sign
 - **Server**: Puma (Rails default), no bundled Nginx — the existing Nginx reverse proxy on the VPS routes to the container's exposed port
 - **Assets**: Rails asset pipeline (Propshaft/Sprockets default for Rails 8) for CSS; minimal or no custom JS (blinking cursor can be pure CSS)
 - **Fonts**: FiraCode Nerd Font shipped as a static asset (`app/assets/fonts` or `public/fonts`), loaded via `@font-face` — no external font CDN
+- **Jampa Ruby logo**: `jamparuby.svg` (sourced from `~/pCloudDrive/JampaRuby/Artes/jamparuby.svg`) copied into `app/assets/images/`, rendered via `image_tag` in the Jampa Ruby section
 
 ## Routing & i18n
 
