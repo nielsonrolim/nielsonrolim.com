@@ -15,3 +15,19 @@
   <%= image_tag "jamparuby.svg", alt: "Jampa Ruby", width: 96 %>
   <%= t(".jampa_ruby.body_html") %>
 </p>
+
+<p class="terminal__prompt"><%= t(".projects.prompt") %></p>
+<% t(".projects.items").each do |project| %>
+  <div class="terminal__output">
+    <strong><%= project[:name] %></strong><br>
+    <%= project[:description] %><br>
+    <em><%= project[:tags] %></em>
+  </div>
+<% end %>
+
+<p class="terminal__prompt"><%= t(".contact.prompt") %></p>
+<ul class="terminal__output">
+  <li><%= t(".contact.email_label") %>: <%= link_to "contato@nielsonrolim.com", "mailto:contato@nielsonrolim.com" %></li>
+  <li><%= t(".contact.github_label") %>: <%= link_to "github.com/nielsonrolim", "https://github.com/nielsonrolim" %></li>
+  <li><%= t(".contact.linkedin_label") %>: <%= link_to "linkedin.com/in/nielsonrolim", "https://www.linkedin.com/in/nielsonrolim/" %></li>
+</ul>

@@ -26,3 +26,17 @@ pt-BR:
       jampa_ruby:
         prompt: "cat jamparuby.txt"
         body_html: "Sou membro ativo da <a href=\"https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT\">Jampa Ruby</a>, a comunidade de desenvolvedores Ruby da Paraíba, Brasil — parte da <a href=\"https://crudpb.org/\">CRUDPB</a>. Entre no grupo do WhatsApp e participe."
+      projects:
+        prompt: "cat projects.md"
+        items:
+          - name: "Lavanderia 60 Minutos"
+            description: "Projetei a arquitetura de software de uma rede de lavanderias self-service 100% automatizadas, com mais de 400 lojas no Brasil. Desenvolvi o sistema de gestão e a API que comunica com os terminais das lojas, além da primeira versão do terminal do atendente, rodando em um Raspberry Pi com touchscreen, sincronizado com o sistema central e capaz de operar offline."
+            tags: "Ruby on Rails, Node.js, PostgreSQL, Sidekiq, Redis, Raspberry Pi"
+          - name: "IBAPE-PB — Sistema de Distribuição de Trabalhos"
+            description: "Sistema de distribuição justa de trabalhos (perícias e avaliações) para associados do IBAPE-PB, via sorteio e indicação, cobrindo todo o ciclo de vida do trabalho (criação, publicação, sorteio, aceite, conclusão) com relatórios e notificações por e-mail."
+            tags: "Ruby on Rails, PostgreSQL, Redis"
+      contact:
+        prompt: "cat contact.txt"
+        email_label: "E-mail"
+        github_label: "GitHub"
+        linkedin_label: "LinkedIn"

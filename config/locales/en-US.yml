@@ -26,3 +26,17 @@ en-US:
       jampa_ruby:
         prompt: "cat jamparuby.txt"
         body_html: "I'm an active member of <a href=\"https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT\">Jampa Ruby</a>, the Ruby developer community of Paraíba, Brazil — part of <a href=\"https://crudpb.org/\">CRUDPB</a>. Join the WhatsApp group and take part."
+      projects:
+        prompt: "cat projects.md"
+        items:
+          - name: "Lavanderia 60 Minutos"
+            description: "Designed the software architecture for a fully automated self-service laundry chain with 400+ stores across Brazil. Built the management system and the API communicating with in-store attendant terminals, plus the first version of the attendant terminal itself, running on a Raspberry Pi with a touchscreen, kept in sync with the central system while able to operate offline."
+            tags: "Ruby on Rails, Node.js, PostgreSQL, Sidekiq, Redis, Raspberry Pi"
+          - name: "IBAPE-PB — Work Distribution System"
+            description: "Fair-distribution system for professional engineering assessments for IBAPE-PB, via lottery and direct nomination, covering the full work lifecycle (creation, publication, draw, acceptance, completion) with reporting and email notifications."
+            tags: "Ruby on Rails, PostgreSQL, Redis"
+      contact:
+        prompt: "cat contact.txt"
+        email_label: "Email"
+        github_label: "GitHub"
+        linkedin_label: "LinkedIn"

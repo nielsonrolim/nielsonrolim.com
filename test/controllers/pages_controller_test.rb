@@ -42,4 +42,13 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", "https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT"
     assert_select "a[href=?]", "https://crudpb.org/"
   end
+
+  test "home lists projects and contact links" do
+    get "/pt-BR"
+    assert_select "body", /Lavanderia 60 Minutos/
+    assert_select "body", /IBAPE-PB/
+    assert_select "a[href=?]", "mailto:contato@nielsonrolim.com"
+    assert_select "a[href=?]", "https://github.com/nielsonrolim"
+    assert_select "a[href=?]", "https://www.linkedin.com/in/nielsonrolim/"
+  end
 end
