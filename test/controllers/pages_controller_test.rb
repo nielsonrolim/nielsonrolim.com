@@ -17,4 +17,10 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Nielson Rolim"
   end
+
+  test "home renders the terminal prompt and locale switcher" do
+    get "/pt-BR"
+    assert_select ".terminal__prompt", minimum: 1
+    assert_select "a.locale-switch__link[href=?]", "/en-US"
+  end
 end

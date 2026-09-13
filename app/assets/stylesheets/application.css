@@ -1,10 +1,102 @@
-/*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
- */
+@font-face {
+  font-family: "FiraCode Nerd Font";
+  src: url("FiraCodeNerdFont-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "FiraCode Nerd Font";
+  src: url("FiraCodeNerdFont-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+:root {
+  --bg: #0a0f0a;
+  --fg: #39ff14;
+  --fg-dim: #1f8a13;
+  --accent: #f5c451;
+  --error: #ff6b6b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 1.5rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+.terminal {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.locale-switch {
+  margin-bottom: 2rem;
+  color: var(--fg-dim);
+}
+
+.locale-switch__link {
+  text-decoration: none;
+}
+
+.locale-switch__link[aria-current="true"] {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+.terminal__prompt {
+  color: var(--fg-dim);
+  margin: 2rem 0 0.5rem;
+}
+
+.terminal__prompt::before {
+  content: "nielson@nielsonrolim:~$ ";
+}
+
+.terminal__output {
+  margin: 0 0 1rem;
+  white-space: pre-wrap;
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  background: var(--fg);
+  animation: blink 1s steps(1) infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+    padding: 1rem;
+  }
+}
+
+.flash {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid currentColor;
+  margin-bottom: 1rem;
+}
+
+.flash--alert {
+  color: var(--error);
+}
