@@ -36,6 +36,12 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Fluxx/
   end
 
+  test "home lists education" do
+    get "/pt-BR"
+    assert_select "body", /IFPB/
+    assert_select "body", /Kapi'olani/
+  end
+
   test "home shows the Jampa Ruby section with logo and links" do
     get "/pt-BR"
     assert_select "img[src*=?]", "jamparuby"

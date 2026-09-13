@@ -6,16 +6,16 @@
     <meta name="description" content="<%= t("pages.home.bio") %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <%= stylesheet_link_tag "application" %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
   </head>
 
-  <body>
-    <div class="site">
-      <header class="topbar">
+  <body class="max-tiny:text-[15px]">
+    <div class="mx-auto max-w-site px-6 pb-16 max-tiny:px-[1.1rem] max-tiny:pb-12">
+      <header class="mb-12 flex items-center justify-between gap-4 border-b border-line py-[1.1rem] text-chrome text-muted">
         <span class="topbar__path">~/nielsonrolim</span>
-        <nav class="locale-switch" aria-label="<%= t("pages.home.language_label") %>">
-          <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link", aria: { current: I18n.locale == :"pt-BR" } %>
-          <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link", aria: { current: I18n.locale == :"en-US" } %>
+        <nav class="inline-flex items-center gap-2" aria-label="<%= t("pages.home.language_label") %>">
+          <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"pt-BR" } %>
+          <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"en-US" } %>
         </nav>
       </header>
 
@@ -27,9 +27,9 @@
         <%= yield %>
       </main>
 
-      <footer class="footer">
-        <span class="terminal__prompt" aria-hidden="true"></span>
-        <span class="cursor" aria-hidden="true"></span>
+      <footer class="mt-14 flex items-center gap-2 border-t border-line pt-6 text-chrome text-muted">
+        <span class="terminal__prompt m-0" aria-hidden="true"></span>
+        <span class="cursor inline-block h-[1.1em] w-[0.55em] animate-blink bg-ruby align-text-bottom motion-reduce:animate-none" aria-hidden="true"></span>
       </footer>
     </div>
   </body>

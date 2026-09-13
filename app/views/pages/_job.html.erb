@@ -1,0 +1,10 @@
+<li class="timeline__item<%= " timeline__item--current" if current %> relative pb-6 last:pb-0">
+  <div class="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-3">
+    <h3 class="m-0 text-base font-bold text-ink"><%= job[:title] %></h3>
+    <span class="whitespace-nowrap text-meta text-muted"><%= job[:period] %></span>
+  </div>
+  <p class="m-0 text-prompt text-muted"><%= job[:company] %></p>
+  <% if job[:summary] %>
+    <p class="mt-[0.4rem] mb-0 max-w-measure text-prompt text-ink-soft"><%= job[:summary] %></p>
+  <% end %>
+</li>
