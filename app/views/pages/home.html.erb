@@ -1,2 +1,11 @@
 <h1><%= t(".title") %></h1>
-<p class="terminal__prompt">cat about.txt</p>
+
+<p class="terminal__prompt"><%= t(".about.prompt") %></p>
+<p class="terminal__output"><%= t(".about.body") %></p>
+
+<p class="terminal__prompt"><%= t(".experience.prompt") %></p>
+<ul class="terminal__output">
+  <% t(".experience.jobs").each do |job| %>
+    <li><%= job[:title] %> — <%= job[:company] %> (<%= job[:period] %>)</li>
+  <% end %>
+</ul>

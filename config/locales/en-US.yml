@@ -2,3 +2,24 @@ en-US:
   pages:
     home:
       title: "Nielson Rolim"
+      about:
+        prompt: "cat about.txt"
+        body: "I'm Nielson Rolim, a Senior Software Engineer based in João Pessoa, Paraíba, Brazil. I mainly work with Ruby on Rails, Hotwire, React, and TailwindCSS, and I'm a Linux enthusiast."
+      experience:
+        prompt: "cat experience.log"
+        jobs:
+          - title: "Senior Software Engineer"
+            company: "Light Labs Inc"
+            period: "Mar 2025 – present"
+          - title: "Software Engineer"
+            company: "Fluxx"
+            period: "Oct 2023 – Feb 2025"
+          - title: "Senior Software Engineer"
+            company: "Shift"
+            period: "Aug 2021 – Oct 2023"
+          - title: "Software Engineer"
+            company: "RD Station"
+            period: "Apr 2021 – Aug 2021"
+          - title: "Backend Developer"
+            company: "enjoei"
+            period: "Oct 2020 – Mar 2021"

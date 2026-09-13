@@ -23,4 +23,16 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".terminal__prompt", minimum: 1
     assert_select "a.locale-switch__link[href=?]", "/en-US"
   end
+
+  test "home lists work experience in pt-BR" do
+    get "/pt-BR"
+    assert_select "body", /Light Labs Inc/
+    assert_select "body", /Fluxx/
+  end
+
+  test "home lists work experience in en-US" do
+    get "/en-US"
+    assert_select "body", /Light Labs Inc/
+    assert_select "body", /Fluxx/
+  end
 end

@@ -2,3 +2,24 @@ pt-BR:
   pages:
     home:
       title: "Nielson Rolim"
+      about:
+        prompt: "cat about.txt"
+        body: "Sou Nielson Rolim, Engenheiro de Software Sênior em João Pessoa, Paraíba. Trabalho principalmente com Ruby on Rails, Hotwire, React e TailwindCSS, e sou um entusiasta de Linux."
+      experience:
+        prompt: "cat experience.log"
+        jobs:
+          - title: "Senior Software Engineer"
+            company: "Light Labs Inc"
+            period: "Mar 2025 – atual"
+          - title: "Software Engineer"
+            company: "Fluxx"
+            period: "Out 2023 – Fev 2025"
+          - title: "Senior Software Engineer"
+            company: "Shift"
+            period: "Ago 2021 – Out 2023"
+          - title: "Software Engineer"
+            company: "RD Station"
+            period: "Abr 2021 – Ago 2021"
+          - title: "Backend Developer"
+            company: "enjoei"
+            period: "Out 2020 – Mar 2021"
