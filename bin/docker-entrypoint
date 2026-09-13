@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+
+# Prepare the database (create + migrate) before booting the server.
+if [ "${1}" == "bin/rails" ] && [ "${2}" == "server" ]; then
+  ./bin/rails db:prepare
+fi
+
+exec "$@"
