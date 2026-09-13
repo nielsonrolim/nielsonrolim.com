@@ -40,3 +40,13 @@ pt-BR:
         email_label: "E-mail"
         github_label: "GitHub"
         linkedin_label: "LinkedIn"
+      newsletter:
+        prompt: "./subscribe.sh"
+        body: "Receba uma newsletter mensal sobre tecnologia."
+        email_placeholder: "seu@email.com"
+        submit: "Inscrever-se"
+        nickname_label: "Deixe em branco"
+  subscribers:
+    create:
+      success: "Inscrição confirmada! Obrigado por assinar."
+      invalid: "Não foi possível concluir a inscrição. Verifique o e-mail informado."

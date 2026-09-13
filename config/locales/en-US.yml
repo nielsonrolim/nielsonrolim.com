@@ -40,3 +40,13 @@ en-US:
         email_label: "Email"
         github_label: "GitHub"
         linkedin_label: "LinkedIn"
+      newsletter:
+        prompt: "./subscribe.sh"
+        body: "Get a monthly newsletter about tech."
+        email_placeholder: "you@email.com"
+        submit: "Subscribe"
+        nickname_label: "Leave blank"
+  subscribers:
+    create:
+      success: "You're subscribed! Thanks for joining."
+      invalid: "We couldn't complete your signup. Please check the email address."

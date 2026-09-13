@@ -31,3 +31,19 @@
   <li><%= t(".contact.github_label") %>: <%= link_to "github.com/nielsonrolim", "https://github.com/nielsonrolim" %></li>
   <li><%= t(".contact.linkedin_label") %>: <%= link_to "linkedin.com/in/nielsonrolim", "https://www.linkedin.com/in/nielsonrolim/" %></li>
 </ul>
+
+<p class="terminal__prompt"><%= t(".newsletter.prompt") %></p>
+<div class="terminal__output">
+  <p><%= t(".newsletter.body") %></p>
+  <%= form_with url: subscribers_path, scope: :subscriber, method: :post do |form| %>
+    <%= form.label :email, t(".newsletter.email_placeholder"), style: "display:none" %>
+    <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true %>
+
+    <span aria-hidden="true" style="position:absolute; left:-9999px;">
+      <%= form.label :nickname, t(".newsletter.nickname_label") %>
+      <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
+    </span>
+
+    <%= form.submit t(".newsletter.submit") %>
+  <% end %>
+</div>
