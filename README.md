@@ -69,6 +69,7 @@ environment variables are read:
 | ------------------ | ----------------------------------------------------------------------- |
 | `RAILS_MASTER_KEY` | Decrypts `config/credentials.yml.enc` (required).                       |
 | `RAILS_HOSTS`      | Comma-separated allowed hosts (default `nielsonrolim.com,www.nielsonrolim.com`). |
+| `WEB_PORT`         | Host port published by Docker Compose (default `3000`).                 |
 | `RAILS_LOG_LEVEL`  | Optional; defaults to `info`.                                           |
 
 ## Internationalization
@@ -87,8 +88,10 @@ cp .env.example .env   # set RAILS_MASTER_KEY (and RAILS_HOSTS if needed)
 docker compose up -d --build
 ```
 
-- The container listens on `127.0.0.1:3000`; put a TLS-terminating reverse proxy
-  (e.g. Nginx) in front of it and forward `Host` and `X-Forwarded-Proto`.
+- The service is published on `127.0.0.1:${WEB_PORT}` (container port `3000`).
+  `WEB_PORT` defaults to `3000`; set it in `.env` if the host port is taken. Put
+  a TLS-terminating reverse proxy (e.g. Nginx) in front and forward `Host` and
+  `X-Forwarded-Proto`.
 - SQLite is persisted in the `sqlite_data` volume mounted at `/app/storage`.
 - `bin/docker-entrypoint` runs `db:prepare` before booting the server.
 - A `healthcheck` polls `/up`.
