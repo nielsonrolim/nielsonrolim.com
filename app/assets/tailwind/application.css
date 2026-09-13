@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Drive dark mode from the data-theme attribute set by the inline script. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ---------------------------------------------------------------------------
    Design tokens — light terminal theme
    --------------------------------------------------------------------------- */
@@ -18,6 +21,8 @@
   --color-amber: #f3e4a8;
   --color-ok: #1c6b3f;
   --color-err: #b01e2d;
+  --color-ok-bg: #f2f8f4;
+  --color-err-bg: #fbf1f2;
 
   /* Type — exact sizes from the original design */
   --font-mono: "FiraCode Nerd Font", ui-monospace, "SFMono-Regular", Menlo,
@@ -60,6 +65,33 @@
   50% {
     opacity: 0;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme — light by default, dark via [data-theme="dark"]
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-paper: #12110f;
+  --color-surface: #1b1a17;
+  --color-ink: #f2efe8;
+  --color-ink-soft: #cfc9bf;
+  --color-muted: #948d83;
+  --color-line: #2b2925;
+  --color-line-strong: #423f39;
+  --color-ruby: #e05666;
+  --color-ruby-ink: #f08a95;
+  --color-amber: #f3e4a8;
+  --color-ok: #6cc794;
+  --color-err: #e0707d;
+  --color-ok-bg: #16241c;
+  --color-err-bg: #2a171a;
 }
 
 /* ---------------------------------------------------------------------------
@@ -142,10 +174,10 @@
   }
 
   .flash--notice {
-    @apply bg-[#f2f8f4] text-ok;
+    @apply bg-ok-bg text-ok;
   }
 
   .flash--alert {
-    @apply bg-[#fbf1f2] text-err;
+    @apply bg-err-bg text-err;
   }
 }

@@ -8,6 +8,7 @@ pt-BR:
       stack: "Ruby on Rails, Hotwire, React, TailwindCSS, Linux"
       bio: "Construo software há mais de uma década, com foco em sistemas backend robustos e produtos web que funcionam bem. Sou de João Pessoa e sou apaixonado por Linux e pela comunidade Ruby."
       language_label: "Idioma"
+      theme_toggle: "Alternar tema claro/escuro"
       labels:
         role: "cargo"
         base: "base"
@@ -125,7 +126,7 @@ pt-BR:
         linkedin_label: "LinkedIn"
       newsletter:
         prompt: "./subscribe.sh"
-        body: "Receba uma newsletter mensal sobre tecnologia."
+        body: "Receba uma newsletter sobre tecnologia."
         email_placeholder: "seu@email.com"
         submit: "Inscrever-se"
         nickname_label: "Deixe em branco"

@@ -4,6 +4,29 @@
     <title><%= t("pages.home.title") %> — <%= t("pages.home.role") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= t("pages.home.bio") %>">
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const stored = () => {
+          try { return localStorage.getItem("theme"); } catch (e) { return null; }
+        };
+        const prefersDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const apply = (theme) => { root.dataset.theme = theme; };
+
+        apply(stored() || (prefersDark() ? "dark" : "light"));
+
+        document.addEventListener("click", (event) => {
+          if (!event.target.closest("[data-theme-toggle]")) return;
+          const next = root.dataset.theme === "dark" ? "light" : "dark";
+          try { localStorage.setItem("theme", next); } catch (e) {}
+          apply(next);
+        });
+
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
+          if (!stored()) apply(event.matches ? "dark" : "light");
+        });
+      })();
+    </script>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
@@ -13,10 +36,16 @@
     <div class="mx-auto max-w-site px-6 pb-16 max-tiny:px-[1.1rem] max-tiny:pb-12">
       <header class="mb-12 flex items-center justify-between gap-4 border-b border-line py-[1.1rem] text-chrome text-muted">
         <span class="topbar__path">~/nielsonrolim</span>
-        <nav class="inline-flex items-center gap-2" aria-label="<%= t("pages.home.language_label") %>">
-          <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"pt-BR" } %>
-          <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"en-US" } %>
-        </nav>
+        <div class="inline-flex items-center gap-3">
+          <button type="button" data-theme-toggle class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-frame border border-transparent text-muted hover:border-line-strong hover:text-ink" aria-label="<%= t("pages.home.theme_toggle") %>">
+            <svg class="block h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <nav class="inline-flex items-center gap-2" aria-label="<%= t("pages.home.language_label") %>">
+            <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"pt-BR" } %>
+            <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"en-US" } %>
+          </nav>
+        </div>
       </header>
 
       <% flash.each do |type, message| %>

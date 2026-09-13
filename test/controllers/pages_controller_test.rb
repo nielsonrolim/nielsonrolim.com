@@ -24,6 +24,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a.locale-switch__link[href=?]", "/en-US"
   end
 
+  test "home shows the theme toggle" do
+    get "/pt-BR"
+    assert_select "button[data-theme-toggle]"
+  end
+
   test "home lists work experience in pt-BR" do
     get "/pt-BR"
     assert_select "body", /Light Labs Inc/

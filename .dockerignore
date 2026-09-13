@@ -6,3 +6,7 @@ db/*.sqlite3-*
 storage/*.sqlite3
 storage/*.sqlite3-*
 docs/
+public/assets
+node_modules
+config/master.key
+.env*
