@@ -152,6 +152,7 @@ en-US:
       clippings: "[clippings]"
       feeds: "[feeds]"
       newsletters: "[archive]"
+      jobs: "[jobs]"
       back_to_site: "← back to site"
     entries:
       prompt: "cat entries.log"

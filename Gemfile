@@ -23,6 +23,10 @@ gem "rails-i18n", "~> 8.0"
 # Database-backed Active Job queue with recurring tasks [https://github.com/rails/solid_queue]
 gem "solid_queue"
 
+# Dashboard for inspecting queues and retrying/discarding jobs
+# [https://github.com/rails/mission_control-jobs]
+gem "mission_control-jobs"
+
 # SMTP delivery for Action Mailer [https://github.com/ruby/net-smtp]
 gem "net-smtp"
 

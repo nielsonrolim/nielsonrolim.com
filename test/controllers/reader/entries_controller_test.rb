@@ -69,6 +69,14 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /na próxima edição/
   end
 
+  test "links to the job dashboard from the reader navigation" do
+    get reader_entries_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "nav a[href=?]", reader_mission_control_jobs_path
+    assert_select "nav", /\[jobs\]/
+  end
+
   test "clipping an entry queues it and asks for a summary" do
     entry = entries(:front_page)
 

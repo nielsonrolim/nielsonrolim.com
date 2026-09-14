@@ -1,7 +1,7 @@
 require "test_helper"
 
 class Reader::AuthenticationTest < ActionDispatch::IntegrationTest
-  READER_PATHS = %w[/reader /reader/feeds /reader/clippings /reader/newsletters].freeze
+  READER_PATHS = %w[/reader /reader/feeds /reader/clippings /reader/newsletters /reader/jobs].freeze
 
   test "asks for credentials when none are sent" do
     with_reader_credentials do

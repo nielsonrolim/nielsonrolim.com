@@ -26,11 +26,13 @@
                [ t("reader.nav.entries"), reader_entries_path, reader_entries_path ],
                [ t("reader.nav.clippings"), reader_clippings_path, reader_clippings_path ],
                [ t("reader.nav.feeds"), reader_feeds_path, reader_feeds_path ],
-               [ t("reader.nav.newsletters"), reader_newsletters_path, reader_newsletters_path ]
+               [ t("reader.nav.newsletters"), reader_newsletters_path, reader_newsletters_path ],
+               [ t("reader.nav.jobs"), reader_mission_control_jobs_path, reader_mission_control_jobs_path ]
              ].each do |label, path, active_path| %>
+            <% active = request.path == active_path || request.path.start_with?("#{active_path}/") %>
             <%= link_to label, path,
-                  class: "no-underline text-muted hover:text-ink #{'text-ink font-bold' if request.path == active_path}",
-                  aria: { current: request.path == active_path ? "page" : nil } %>
+                  class: "no-underline text-muted hover:text-ink #{'text-ink font-bold' if active}",
+                  aria: { current: active ? "page" : nil } %>
           <% end %>
           <%= link_to t("reader.nav.back_to_site"), home_path(locale: I18n.locale), class: "ml-auto text-chrome text-muted no-underline hover:text-ink" %>
         </nav>

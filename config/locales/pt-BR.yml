@@ -152,6 +152,7 @@ pt-BR:
       clippings: "[recortes]"
       feeds: "[fontes]"
       newsletters: "[arquivo]"
+      jobs: "[jobs]"
       back_to_site: "← voltar ao site"
     entries:
       prompt: "cat entries.log"

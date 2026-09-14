@@ -26,6 +26,10 @@ Rails.application.routes.draw do
   namespace :reader do
     root to: "entries#index"
 
+    # Job dashboard. Mission Control's controllers inherit Reader::BaseController
+    # (see config/application.rb), so this is behind the same credentials.
+    mount MissionControl::Jobs::Engine, at: "/jobs"
+
     resources :feeds, only: [ :index, :create, :destroy ] do
       member { post :refresh }
       collection { post :refresh_all }

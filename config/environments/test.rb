@@ -34,6 +34,11 @@ Rails.application.configure do
   # Run jobs inline-ish through the test adapter so nothing touches Solid Queue.
   config.active_job.queue_adapter = :test
 
+  # The test adapter only captures enqueues and is not a real backend, so Mission
+  # Control cannot read from it. Point the dashboard at Solid Queue — the same
+  # backend production uses — so its views are actually exercised here.
+  config.mission_control.jobs.adapters = [ :solid_queue ]
+
   # Raises error for missing translations.
   config.i18n.raise_on_missing_translations = true
 

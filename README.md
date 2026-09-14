@@ -18,7 +18,11 @@ articles into a weekly clipping newsletter with AI-written summaries.
 - **Weekly clipping newsletter**: every clipped article is summarized by a free
   LLM through the `opencode` CLI, then all clippings of the week go out as one
   HTML + plain-text email to every subscriber, Mondays at 09:00.
-- No JavaScript framework; a tiny inline script handles the theme.
+- **Job dashboard** (`/reader/jobs`): Mission Control for Solid Queue — inspect
+  queues, retry or discard failed jobs, watch workers and recurring tasks.
+- No JavaScript framework in the app's own pages; a tiny inline script handles
+  the theme. (The dashboard is a vendored engine shipping its own Turbo/Stimulus
+  assets, behind the same auth.)
 - Tailwind CSS v4 through `tailwindcss-rails` — no Node.js required.
 
 ## Tech stack
@@ -90,6 +94,37 @@ returns 403** rather than becoming public.
 | `/reader/feeds`    | Add/remove feeds, refresh one or all, see per-feed poll errors     |
 | `/reader/clippings`| The queue for the next issue, with each summary's status           |
 | `/reader/newsletters` | Issue archive, live stats, and a manual "send now"             |
+| `/reader/jobs`     | Mission Control dashboard: queues, pending/failed/scheduled jobs, workers, recurring tasks; retry or discard |
+
+### Inspecting jobs
+
+`/reader/jobs` is the [Mission Control](https://github.com/rails/mission_control-jobs)
+dashboard (Solid Queue's official UI). It mounts inside the engine and its
+controllers inherit `Reader::BaseController` — the gem's own HTTP Basic Auth is
+switched off in favour of the one credential set — so **the dashboard exposes job
+arguments, which include clipping prompts and subscriber addresses.** It is
+therefore never public: without credentials it answers 401, and if `READER_*` is
+unset it 403s like the rest of the reader.
+
+There you can browse queues and pending/failed/scheduled/finished jobs, inspect
+arguments and backtraces, and retry or discard failures. Workers and recurring
+tasks appear under the application-scoped routes
+(`/reader/jobs/applications/default/...`).
+
+Without the dashboard, from a shell:
+
+```sh
+bin/jobs check                        # validate the queue configuration
+docker compose logs -f jobs           # what the worker is doing
+
+bin/rails runner 'puts SolidQueue::Job.count'
+bin/rails runner 'SolidQueue::Process.find_each { |p| puts "#{p.kind} #{p.hostname} #{p.last_heartbeat_at}" }'
+bin/rails runner 'SolidQueue::FailedExecution.find_each { |f| puts "#{f.job.class_name}: #{f.error&.dig("message")}" }'
+```
+
+Note that a worker started with `bin/jobs start` registers itself in the database
+of the environment it runs in, so `SolidQueue::Process` in development only lists
+local workers — the Docker `jobs` container writes to the production queue.
 
 ### How a clipping flows
 
