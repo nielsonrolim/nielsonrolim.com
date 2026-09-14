@@ -12,7 +12,10 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle config set without 'development test' && bundle install --jobs 4
 
 COPY . .
-RUN bin/rails assets:precompile
+# SECRET_KEY_BASE_DUMMY lets Rails boot for precompile without the production
+# master key, which is intentionally not available at build time (it is injected
+# at runtime via env_file). Precompiling assets needs no real credentials.
+RUN SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile
 
 FROM ruby:4.0.6-slim
 
