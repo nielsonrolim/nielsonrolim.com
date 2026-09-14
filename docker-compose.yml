@@ -5,6 +5,7 @@ services:
     env_file: .env
     volumes:
       - sqlite_data:/app/storage
+      - opencode_data:/home/rails/.local/share/opencode
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
     healthcheck:
@@ -14,5 +15,22 @@ services:
       retries: 3
       start_period: 20s
 
+  # Solid Queue worker + scheduler: polls the feeds and sends the weekly
+  # clipping (see config/recurring.yml). Shares the SQLite volume with web.
+  jobs:
+    build: .
+    restart: unless-stopped
+    command: ["bin/jobs", "start"]
+    env_file: .env
+    volumes:
+      - sqlite_data:/app/storage
+      - opencode_data:/home/rails/.local/share/opencode
+    depends_on:
+      web:
+        # web runs db:prepare in its entrypoint; wait until it serves /up so the
+        # worker never starts against an unprepared database.
+        condition: service_healthy
+
 volumes:
   sqlite_data:
+  opencode_data:

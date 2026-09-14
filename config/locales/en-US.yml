@@ -134,3 +134,151 @@ en-US:
     create:
       success: "You're subscribed! Thanks for joining."
       invalid: "We couldn't complete your signup. Please check the email address."
+  date:
+    formats:
+      long: "%Y-%m-%d"
+      short: "%m-%d"
+  time:
+    formats:
+      long: "%Y-%m-%d %H:%M"
+      short: "%H:%M"
+  reader:
+    realm: "RSS Reader"
+    title: "RSS Reader"
+    theme_toggle: "Toggle light/dark theme"
+    nav:
+      label: "Reader navigation"
+      entries: "[entries]"
+      clippings: "[clippings]"
+      feeds: "[feeds]"
+      newsletters: "[archive]"
+      back_to_site: "← back to site"
+    entries:
+      prompt: "cat entries.log"
+      clip: "clip for newsletter"
+      clipped: "[in the next issue]"
+      empty: "No entries yet. Add some feeds or run a refresh."
+      by_author: "by %{author}"
+      count:
+        one: "%{count} entry"
+        other: "%{count} entries"
+      filters:
+        feed: "feed"
+        all_feeds: "all"
+        since: "range"
+        week: "7d"
+        month: "30d"
+        all_time: "all"
+      clip_success: "Clipped: %{title}"
+      clip_failure: "Could not clip: %{error}"
+      pagination:
+        label: "Pagination"
+        previous: "← previous"
+        next: "next →"
+        status: "page %{page} of %{pages}"
+    feeds:
+      prompt: "cat sources.conf"
+      refresh_all: "refresh all"
+      empty: "No feeds yet."
+      never_fetched: "never fetched"
+      error: "error"
+      total:
+        one: "%{count} feed"
+        other: "%{count} feeds"
+      entry_count:
+        one: "%{count} entry"
+        other: "%{count} entries"
+      last_fetched: "last fetched: %{time}"
+      form:
+        url: "Feed URL"
+        category: "category"
+        category_placeholder: "optional"
+        submit: "add"
+      actions:
+        refresh: "refresh"
+        remove: "remove"
+        confirm_remove: "Remove the feed '%{title}' and all of its entries?"
+      create:
+        success: "Feed added: %{title}"
+        duplicate: "That feed is already subscribed."
+        invalid: "Could not read the feed: %{error}"
+      destroy:
+        success: "Feed removed: %{title}"
+      refresh:
+        success:
+          one: "'%{title}' refreshed — %{count} new entry"
+          other: "'%{title}' refreshed — %{count} new entries"
+        failure: "Failed to refresh '%{title}': %{error}"
+      refresh_all:
+        queued: "Refresh of all feeds queued."
+    clippings:
+      prompt: "cat clipping-queue.md"
+      view_issues: "view sent issues"
+      empty: "Nothing in the queue. Clip entries from the reader."
+      marked_at: "clipped %{time}"
+      hint:
+        one: "%{count} clipping waiting for the next weekly issue."
+        other: "%{count} clippings waiting for the next weekly issue."
+      summary_status:
+        pending: "summary pending"
+        summarizing: "summarizing"
+        summarized: "summary ready"
+        failed: "summary failed"
+      actions:
+        retry_summary: "retry summary"
+        remove: "remove"
+        confirm_remove: "Remove '%{title}' from the next issue?"
+      destroy:
+        success: "Removed from the queue: %{title}"
+      retry_summary:
+        queued: "Summary queued again: %{title}"
+    newsletters:
+      prompt: "ls issues/"
+      send_now: "send issue now"
+      back: "← back to archive"
+      empty: "No issues sent yet."
+      stats:
+        queued: "queued: %{count}"
+        subscribers: "subscribers: %{count}"
+        schedule: "auto-send: Mondays, 09:00"
+      confirm_send_now:
+        one: "Send an issue now with %{count} clipping to every subscriber?"
+        other: "Send an issue now with %{count} clippings to every subscriber?"
+      clippings_count:
+        one: "%{count} clipping"
+        other: "%{count} clippings"
+      recipients:
+        one: "%{count} recipient"
+        other: "%{count} recipients"
+      status:
+        draft: "draft"
+        sending: "sending"
+        sent: "sent"
+        failed: "failed"
+      create:
+        queued: "Issue queued for delivery."
+  newsletters:
+    subject: "Tech clipping — %{date}"
+    email:
+      intro:
+        one: "Worth reading this week (%{date}): %{count} link, summarized."
+        other: "Worth reading this week (%{date}): %{count} links, summarized."
+      empty: "Nothing was selected for this issue."
+      source: "source: %{feed}"
+      footer: "picked and summarized by Nielson Rolim."
+      sent_to: "Sent to %{email}."
+      unsubscribe: "unsubscribe"
+  unsubscribes:
+    show:
+      prompt: "./unsubscribe.sh"
+      title: "Unsubscribe"
+      body: "%{email} will stop receiving the weekly clipping."
+      confirm: "confirm unsubscribe"
+      cancel: "← keep my subscription"
+    gone:
+      prompt: "./unsubscribe.sh"
+      title: "Nothing to unsubscribe"
+      body: "This link does not match an active subscription — it was already removed or the link is invalid."
+      back: "← back to the site"
+    destroy:
+      success: "Unsubscribed. You will not receive the clipping anymore."

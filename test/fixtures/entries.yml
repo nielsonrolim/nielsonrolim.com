@@ -1,0 +1,23 @@
+rails_eight:
+  feed: ruby_blog
+  guid: "https://rubyweekly.com/issues/1/post-1"
+  title: "Rails 8.1 ships with a new queue UI"
+  url: "https://example.com/rails-8-1"
+  author: "Ruby Weekly"
+  summary: "A look at what changed in the new release, including the queue dashboard."
+  published_at: <%= 3.days.ago.to_fs(:db) %>
+
+solid_queue:
+  feed: ruby_blog
+  guid: "https://rubyweekly.com/issues/1/post-2"
+  title: "Understanding Solid Queue internals"
+  url: "https://example.com/solid-queue"
+  summary: "How the database-backed adapter schedules and claims jobs."
+  published_at: <%= 20.hours.ago.to_fs(:db) %>
+
+front_page:
+  feed: hacker_news
+  guid: "hn-12345"
+  title: "Show HN: I built an RSS reader in Rails"
+  url: "https://example.com/show-hn"
+  published_at: <%= 3.hours.ago.to_fs(:db) %>

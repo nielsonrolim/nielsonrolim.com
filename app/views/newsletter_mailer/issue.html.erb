@@ -1,0 +1,16 @@
+<%= raw @newsletter.body %>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f6f2;padding:0 12px 24px;font-family:'FiraCode Nerd Font', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
+        <tr>
+          <td style="padding:0 4px;color:#6b6560;font-size:11px;line-height:1.6;">
+            <%= t("newsletters.email.sent_to", email: @subscriber.email) %>
+            &nbsp;&middot;&nbsp;
+            <a href="<%= @unsubscribe_url %>" style="color:#6b6560;text-decoration:underline;"><%= t("newsletters.email.unsubscribe") %></a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

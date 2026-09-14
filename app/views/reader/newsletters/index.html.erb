@@ -1,0 +1,42 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.newsletters.prompt") %></p>
+
+  <div class="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-line py-3 text-chrome">
+    <span class="text-muted"><%= t("reader.newsletters.stats.queued", count: @queued_count) %></span>
+    <span class="text-muted"><%= t("reader.newsletters.stats.subscribers", count: @subscriber_count) %></span>
+    <span class="text-muted"><%= t("reader.newsletters.stats.schedule") %></span>
+
+    <%= button_to t("reader.newsletters.send_now"), reader_newsletters_path, method: :post,
+          data: { confirm: t("reader.newsletters.confirm_send_now", count: @queued_count) },
+          class: "ml-auto cursor-pointer rounded-frame border border-line-strong bg-surface px-[0.6rem] py-[0.2rem] text-ruby hover:border-ruby",
+          form: { class: "m-0 inline" } %>
+  </div>
+
+  <% if @newsletters.empty? %>
+    <p class="text-prompt text-muted"><%= t("reader.newsletters.empty") %></p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @newsletters.each do |newsletter| %>
+        <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line py-[1.1rem] last:border-b">
+          <h3 class="m-0 text-base font-bold text-ink">
+            <%= link_to newsletter.subject, reader_newsletter_path(newsletter), class: "text-ink no-underline hover:text-ruby" %>
+          </h3>
+
+          <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta <%= newsletter.sent? ? 'text-ok' : 'text-muted' %>">
+            <%= t("reader.newsletters.status.#{newsletter.status}") %>
+          </span>
+
+          <span class="text-meta text-muted">
+            <%= t("reader.newsletters.clippings_count", count: newsletter.clippings.size) %>
+          </span>
+          <span class="text-meta text-muted">
+            <%= t("reader.newsletters.recipients", count: newsletter.recipient_count) %>
+          </span>
+          <% if newsletter.sent_at %>
+            <span class="ml-auto text-meta text-muted"><%= l(newsletter.sent_at, format: :long) %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>

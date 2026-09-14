@@ -1,0 +1,18 @@
+<section>
+  <div class="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-2 border-b border-line pb-4">
+    <h1 class="m-0 text-lead font-bold text-ink"><%= @newsletter.subject %></h1>
+    <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted">
+      <%= t("reader.newsletters.status.#{@newsletter.status}") %>
+    </span>
+    <% if @newsletter.sent_at %>
+      <span class="text-meta text-muted"><%= l(@newsletter.sent_at, format: :long) %></span>
+    <% end %>
+    <span class="text-meta text-muted"><%= t("reader.newsletters.recipients", count: @newsletter.recipient_count) %></span>
+    <%= link_to t("reader.newsletters.back"), reader_newsletters_path, class: "ml-auto text-chrome text-ruby no-underline" %>
+  </div>
+
+  <%# Rendered in an iframe so the archived email keeps the exact inline styles
+      it was delivered with, isolated from the reader's own stylesheet. %>
+  <iframe title="<%= @newsletter.subject %>" srcdoc="<%= @newsletter.body %>"
+          class="h-[70vh] w-full rounded-frame border border-line bg-paper"></iframe>
+</section>

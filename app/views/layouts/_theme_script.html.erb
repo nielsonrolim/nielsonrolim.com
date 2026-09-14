@@ -1,0 +1,23 @@
+<script>
+  (() => {
+    const root = document.documentElement;
+    const stored = () => {
+      try { return localStorage.getItem("theme"); } catch (e) { return null; }
+    };
+    const prefersDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const apply = (theme) => { root.dataset.theme = theme; };
+
+    apply(stored() || (prefersDark() ? "dark" : "light"));
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-theme-toggle]")) return;
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem("theme", next); } catch (e) {}
+      apply(next);
+    });
+
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
+      if (!stored()) apply(event.matches ? "dark" : "light");
+    });
+  })();
+</script>

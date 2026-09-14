@@ -1,0 +1,18 @@
+<%= NewsletterComposer.subject_for(@issue_date) %>
+<%= "=" * 60 %>
+
+<%= t("newsletters.email.intro", count: @clippings.size, date: l(@issue_date.to_date, format: :long)) %>
+
+<% if @clippings.empty? %>
+<%= t("newsletters.email.empty") %>
+<% else %>
+<% @clippings.each_with_index do |clipping, index| %>
+<%= format("%02d", index + 1) %>. <%= clipping.title %>
+<%= "    #{t('newsletters.email.source', feed: clipping.entry.feed.title)}" if clipping.entry&.feed %>
+<%= "    #{clipping.summary}" if clipping.summary.present? %>
+    <%= clipping.url %>
+
+<% end %>
+<% end %>
+--
+nielson@nielsonrolim:~$ <%= t("newsletters.email.footer") %>

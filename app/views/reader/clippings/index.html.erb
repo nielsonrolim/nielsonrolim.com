@@ -1,0 +1,50 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.clippings.prompt") %></p>
+
+  <p class="mb-6 max-w-measure border-y border-line py-3 text-chrome text-muted">
+    <%= t("reader.clippings.hint", count: @clippings.size) %>
+    <%= link_to t("reader.clippings.view_issues"), reader_newsletters_path, class: "text-ruby" %>
+  </p>
+
+  <% if @clippings.empty? %>
+    <p class="text-prompt text-muted"><%= t("reader.clippings.empty") %></p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @clippings.each_with_index do |clipping, index| %>
+        <li class="border-t border-line py-[1.1rem] last:border-b">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
+            <span class="text-ruby"><%= format("%02d", index + 1) %></span>
+            <% if clipping.entry&.feed %>
+              <span><%= clipping.entry.feed.title %></span>
+            <% end %>
+            <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
+            <%= render "reader/clippings/summary_status", clipping: clipping %>
+          </div>
+
+          <h3 class="mt-[0.3rem] mb-[0.35rem] text-lead font-bold text-ink">
+            <%= link_to clipping.title, clipping.url, target: "_blank", rel: "noopener noreferrer",
+                  class: "text-ink no-underline hover:text-ruby" %>
+          </h3>
+
+          <% if clipping.summary.present? %>
+            <p class="mt-0 mb-[0.6rem] max-w-measure text-prompt text-ink-soft"><%= clipping.summary %></p>
+          <% elsif clipping.summary_error.present? %>
+            <p class="mt-0 mb-[0.6rem] max-w-measure text-meta text-err"><%= clipping.summary_error %></p>
+          <% end %>
+
+          <div class="flex flex-wrap items-center gap-3 text-chrome">
+            <% if clipping.failed? %>
+              <%= button_to t("reader.clippings.actions.retry_summary"), retry_summary_reader_clipping_path(clipping), method: :post,
+                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
+                    form: { class: "m-0 inline" } %>
+            <% end %>
+            <%= button_to t("reader.clippings.actions.remove"), reader_clipping_path(clipping), method: :delete,
+                  data: { confirm: t("reader.clippings.actions.confirm_remove", title: clipping.title) },
+                  class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                  form: { class: "m-0 inline" } %>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>

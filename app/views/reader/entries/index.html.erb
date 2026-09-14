@@ -1,0 +1,89 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.entries.prompt") %></p>
+
+  <div class="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3 text-chrome">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-ruby"><%= t("reader.entries.filters.feed") %>:</span>
+      <%= link_to t("reader.entries.filters.all_feeds"), reader_entries_path(since: params[:since]),
+            class: "no-underline #{@feed ? 'text-muted hover:text-ink' : 'font-bold text-ink'}" %>
+      <% @feeds.each do |feed| %>
+        <%= link_to feed.title, reader_entries_path(feed_id: feed.id, since: params[:since]),
+              class: "no-underline #{@feed&.id == feed.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+      <% end %>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-ruby"><%= t("reader.entries.filters.since") %>:</span>
+      <% { 7 => "reader.entries.filters.week", 30 => "reader.entries.filters.month" }.each do |days, key| %>
+        <%= link_to t(key), reader_entries_path(feed_id: @feed&.id, since: days),
+              class: "no-underline #{params[:since].to_s == days.to_s ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+      <% end %>
+      <%= link_to t("reader.entries.filters.all_time"), reader_entries_path(feed_id: @feed&.id),
+            class: "no-underline #{params[:since].blank? ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+    </div>
+
+    <span class="ml-auto text-muted"><%= t("reader.entries.count", count: @total) %></span>
+  </div>
+
+  <% if @entries.empty? %>
+    <p class="text-prompt text-muted"><%= t("reader.entries.empty") %></p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @entries.each do |entry| %>
+        <% clipped = entry.clipped? %>
+        <li class="border-t border-line py-[1.1rem] last:border-b">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
+            <span class="text-ruby"><%= entry.feed.title %></span>
+            <% if entry.published_at %>
+              <span><%= l(entry.published_at.to_date, format: :long) %></span>
+            <% end %>
+            <% if entry.author.present? %>
+              <span><%= t("reader.entries.by_author", author: entry.author) %></span>
+            <% end %>
+          </div>
+
+          <h3 class="mt-[0.3rem] mb-[0.35rem] text-lead font-bold text-ink">
+            <%= link_to entry.title, entry.url, target: "_blank", rel: "noopener noreferrer",
+                  class: "text-ink no-underline hover:text-ruby" %>
+          </h3>
+
+          <% if entry.summary.present? %>
+            <p class="mt-0 mb-[0.6rem] max-w-measure text-prompt text-ink-soft">
+              <%= truncate(entry.summary, length: 260, separator: " ") %>
+            </p>
+          <% end %>
+
+          <div class="flex flex-wrap items-center gap-3 text-chrome">
+            <% if clipped %>
+              <span class="rounded-frame border border-line-strong px-[0.45rem] py-[0.15rem] text-ok">
+                <%= t("reader.entries.clipped") %>
+              </span>
+            <% else %>
+              <%= button_to t("reader.entries.clip"), clip_reader_entry_path(entry), method: :post,
+                    class: "cursor-pointer rounded-frame border border-line-strong bg-surface px-[0.6rem] py-[0.2rem] text-ruby hover:border-ruby",
+                    form: { class: "m-0 inline" } %>
+            <% end %>
+            <%= link_to entry.url, entry.url, target: "_blank", rel: "noopener noreferrer",
+                  class: "text-muted no-underline hover:text-ink" %>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if @pages > 1 %>
+      <nav class="mt-6 flex items-center gap-3 text-chrome" aria-label="<%= t("reader.entries.pagination.label") %>">
+        <% if @page > 1 %>
+          <%= link_to t("reader.entries.pagination.previous"),
+                reader_entries_path(feed_id: @feed&.id, since: params[:since], page: @page - 1),
+                class: "text-ruby no-underline" %>
+        <% end %>
+        <span class="text-muted"><%= t("reader.entries.pagination.status", page: @page, pages: @pages) %></span>
+        <% if @page < @pages %>
+          <%= link_to t("reader.entries.pagination.next"),
+                reader_entries_path(feed_id: @feed&.id, since: params[:since], page: @page + 1),
+                class: "text-ruby no-underline" %>
+        <% end %>
+      </nav>
+    <% end %>
+  <% end %>
+</section>

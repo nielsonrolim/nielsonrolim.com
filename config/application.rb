@@ -3,11 +3,11 @@ require_relative "boot"
 require "rails"
 # Pick the frameworks you want:
 require "active_model/railtie"
-# require "active_job/railtie"
+require "active_job/railtie"
 require "active_record/railtie"
 # require "active_storage/engine"
 require "action_controller/railtie"
-# require "action_mailer/railtie"
+require "action_mailer/railtie"
 # require "action_mailbox/engine"
 # require "action_text/engine"
 require "action_view/railtie"
@@ -38,6 +38,13 @@ module NielsonrolimCom
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    config.time_zone = ENV.fetch("APP_TIME_ZONE", "Brasilia")
+
+    config.active_job.queue_adapter = :solid_queue
+    # Point Solid Queue's models at the `queue` database from config/database.yml
+    # instead of the primary one.
+    config.solid_queue.connects_to = { database: { writing: :queue } }
 
     config.i18n.default_locale = :"pt-BR"
     config.i18n.available_locales = [ :"pt-BR", :"en-US" ]

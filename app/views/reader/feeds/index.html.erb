@@ -1,0 +1,69 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.feeds.prompt") %></p>
+
+  <div class="mb-8 border border-line bg-surface p-4">
+    <%= form_with model: @feed, url: reader_feeds_path, class: "flex flex-wrap items-end gap-3" do |form| %>
+      <div class="min-w-[16rem] flex-1">
+        <%= form.label :url, t("reader.feeds.form.url"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.url_field :url, required: true, placeholder: "https://example.com/feed",
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= form.label :category, t("reader.feeds.form.category"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.text_field :category, placeholder: t("reader.feeds.form.category_placeholder"),
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <%= form.submit t("reader.feeds.form.submit"),
+            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+    <% end %>
+
+    <div class="mt-3 flex items-center gap-3 text-chrome">
+      <%= button_to t("reader.feeds.refresh_all"), refresh_all_reader_feeds_path, method: :post,
+            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-3 py-[0.2rem] text-muted hover:border-ruby hover:text-ruby",
+            form: { class: "m-0 inline" } %>
+      <span class="text-muted"><%= t("reader.feeds.total", count: @feeds.size) %></span>
+    </div>
+  </div>
+
+  <% if @feeds.empty? %>
+    <p class="text-prompt text-muted"><%= t("reader.feeds.empty") %></p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @feeds.each do |feed| %>
+        <li class="border-t border-line py-[1.1rem] last:border-b">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h3 class="m-0 text-base font-bold text-ink"><%= feed.title %></h3>
+            <% if feed.category.present? %>
+              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted"><%= feed.category %></span>
+            <% end %>
+            <span class="text-meta text-muted"><%= t("reader.feeds.entry_count", count: @entry_counts[feed.id].to_i) %></span>
+          </div>
+
+          <p class="mt-[0.2rem] mb-[0.4rem] text-meta">
+            <%= link_to feed.url, feed.url, target: "_blank", rel: "noopener noreferrer", class: "text-muted no-underline hover:text-ruby" %>
+          </p>
+
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-chrome text-muted">
+            <span>
+              <%= feed.fetched? ? t("reader.feeds.last_fetched", time: l(feed.last_fetched_at, format: :long)) : t("reader.feeds.never_fetched") %>
+            </span>
+
+            <% unless feed.healthy? %>
+              <span class="text-err" title="<%= feed.last_error %>"><%= t("reader.feeds.error") %>: <%= truncate(feed.last_error.to_s, length: 90) %></span>
+            <% end %>
+
+            <span class="ml-auto flex items-center gap-3">
+              <%= button_to t("reader.feeds.actions.refresh"), refresh_reader_feed_path(feed), method: :post,
+                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
+                    form: { class: "m-0 inline" } %>
+              <%= button_to t("reader.feeds.actions.remove"), reader_feed_path(feed), method: :delete,
+                    data: { confirm: t("reader.feeds.actions.confirm_remove", title: feed.title) },
+                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                    form: { class: "m-0 inline" } %>
+            </span>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>
