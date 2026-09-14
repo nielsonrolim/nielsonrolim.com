@@ -31,6 +31,12 @@ class Subscriber < ApplicationRecord
     where("email LIKE ?", "%#{sanitize_sql_like(term.downcase)}%")
   end
 
+  # Case-insensitive exact match, the same rule the unique index on lower(email)
+  # enforces. Used to treat a repeat signup as a success instead of an error.
+  def self.with_email(email)
+    where("lower(email) = ?", email.to_s.downcase)
+  end
+
   # CSV for the admin export. The header stays language-neutral on purpose: it is
   # a file to open in a spreadsheet, not copy in the UI.
   def self.to_csv(subscribers)

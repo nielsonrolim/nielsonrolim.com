@@ -11,7 +11,10 @@ class SubscribersController < ApplicationController
       return
     end
 
-    if @subscriber.save
+    # Signing up again is not an error: the visitor gets the same confirmation as
+    # a fresh signup, which also avoids revealing who is already on the list. Only
+    # a genuinely unusable address is reported.
+    if already_subscribed?(@subscriber.email) || @subscriber.save
       redirect_to home_path, notice: t("subscribers.create.success")
     else
       redirect_to home_path, alert: t("subscribers.create.invalid")
@@ -19,6 +22,10 @@ class SubscribersController < ApplicationController
   end
 
   private
+
+  def already_subscribed?(email)
+    email.present? && Subscriber.with_email(email).exists?
+  end
 
   def subscriber_params
     params.require(:subscriber).permit(:email, :nickname)

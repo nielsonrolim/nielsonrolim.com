@@ -10,13 +10,45 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     assert_select ".flash--notice"
   end
 
-  test "duplicate email does not create a second subscriber" do
+  test "an email that is already subscribed gets the success message" do
     Subscriber.create!(email: "reader@example.com")
 
     assert_no_difference("Subscriber.count") do
       post "/subscribers", params: { subscriber: { email: "reader@example.com", nickname: "" } }
     end
+
     assert_redirected_to "/pt-BR"
+    follow_redirect!
+    assert_select ".flash--notice"
+    assert_select ".flash--alert", count: 0
+  end
+
+  test "a repeat signup is recognised regardless of case" do
+    Subscriber.create!(email: "reader@example.com")
+
+    assert_no_difference("Subscriber.count") do
+      post "/subscribers", params: { subscriber: { email: "READER@example.com", nickname: "" } }
+    end
+
+    follow_redirect!
+    assert_select ".flash--notice"
+  end
+
+  test "a malformed email is still reported" do
+    assert_no_difference("Subscriber.count") do
+      post "/subscribers", params: { subscriber: { email: "not-an-email", nickname: "" } }
+    end
+
+    assert_redirected_to "/pt-BR"
+    follow_redirect!
+    assert_select ".flash--alert"
+  end
+
+  test "an empty email is still reported" do
+    assert_no_difference("Subscriber.count") do
+      post "/subscribers", params: { subscriber: { email: "", nickname: "" } }
+    end
+
     follow_redirect!
     assert_select ".flash--alert"
   end
