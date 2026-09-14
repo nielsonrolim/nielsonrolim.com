@@ -20,7 +20,8 @@ articles into a weekly clipping newsletter with AI-written summaries.
     queues, retry or discard failed jobs, watch workers and recurring tasks.
 - **Weekly clipping newsletter**: every clipped article is summarized by a free
   LLM through the `opencode` CLI, then all clippings of the week go out as one
-  HTML + plain-text email to every subscriber, Mondays at 09:00.
+  HTML + plain-text email to every subscriber in their own language, Mondays at
+  09:00.
 - No JavaScript framework in the app's own pages; a tiny inline script handles
   the theme. (The dashboard is a vendored engine shipping its own Turbo/Stimulus
   assets, behind the same auth.)
@@ -98,11 +99,32 @@ than becoming public. The reader and the job dashboard live underneath it.
 | `/admin/reader/feeds/:id/edit` | Edit a feed: display title and categories                |
 | `/admin/reader/clippings` | The queue for the next issue, with each summary's status      |
 | `/admin/reader/newsletters` | Issue archive, live stats, and a manual "send now"          |
+| `/admin/subscribers`   | Newsletter list: search, add, remove (single or bulk), export CSV, copy an unsubscribe link, resend an issue |
 | `/admin/jobs`          | Mission Control dashboard: queues, pending/failed/scheduled jobs, workers, recurring tasks; retry or discard |
 
 The layout has two navigation levels: the admin sections (`[painel] [leitor]
-[jobs]`) and, inside the reader, its own sub-navigation (`[entradas] [recortes]
-[fontes] [arquivo]`).
+[inscritos] [jobs]`) and, inside the reader, its own sub-navigation (`[entradas]
+[recortes] [fontes] [arquivo]`).
+
+### Subscribers and languages
+
+Each subscriber carries the `language` they signed up in, taken from the URL they
+were reading (`pt-BR` or `en-US`) rather than from the form, so it cannot be
+spoofed. It is editable on `/admin/subscribers`, where the list can be searched by
+email, paginated 30 at a time, extended by hand, exported to CSV (the export
+follows the current search), and pruned one by one or in bulk.
+
+Removal is a **real delete**, not a soft unsubscribe: the subscriber asked to be
+forgotten, so nothing about them is kept (LGPD). The older approach — the public
+unsubscribe link — works the same way, deleting the row.
+
+Because subscribers read different languages, an issue is rendered **once per
+language it has to go out in** and stored on `newsletter_bodies` (one per locale,
+with its own subject). `SendNewsletterJob` composes a body per subscribed
+language and hands each subscriber the matching one; the mailer falls back to the
+app's default language when the issue lacks theirs, and localises the transport
+footer too. The archive at `/admin/reader/newsletters` shows the language tabs,
+using an `issue_locale` param so it does not collide with the admin's own locale.
 
 ### Feeds, categories and titles
 
@@ -161,9 +183,10 @@ local workers — the Docker `jobs` container writes to the production queue.
    and stores the resulting paragraph. Up to 3 attempts; a clipping whose summary
    keeps failing is marked `failed` and still ships, just without a summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
-   unsent clippings, stores the rendered HTML *and* plain text on the `Newsletter`
-   row (so the archive is exactly what went out), emails every subscriber, and
-   stamps the clippings with that issue.
+   unsent clippings, storing one rendered body (HTML *and* plain text, with its
+   own subject) per subscribed language on `newsletter_bodies` — so the archive is
+   exactly what went out — emails every subscriber the body for their language,
+   and stamps the clippings with that issue.
 
 If some summaries are still in flight the job postpones itself by 10 minutes, up
 to 6 times, so a slow model delays the issue instead of truncating it. An empty
@@ -373,12 +396,12 @@ app/
   controllers/                      PagesController, SubscribersController,
                                     UnsubscribesController,
                                     Admin::BaseController (auth) + Admin::Dashboard,
-                                    Reader::* (nested under /admin)
+                                    Admin::Subscribers, Reader::* (nested under /admin)
   jobs/                             RefreshFeedsJob, GenerateSummaryJob,
                                     SendNewsletterJob
   mailers/newsletter_mailer.rb      One issue → one subscriber
   models/                           Subscriber, Feed, Category, FeedCategory,
-                                    Entry, Clipping, Newsletter
+                                    Entry, Clipping, Newsletter, NewsletterBody
   services/
     feed_fetcher.rb                 HTTP transport + Feedjira parsing + ingest
     opencode_cli.rb                 Locked-down `opencode` process wrapper

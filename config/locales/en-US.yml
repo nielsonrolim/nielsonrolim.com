@@ -150,6 +150,7 @@ en-US:
       label: "Admin navigation"
       dashboard: "[dashboard]"
       reader: "[reader]"
+      subscribers: "[subscribers]"
       jobs: "[jobs]"
       back_to_site: "← back to site"
     dashboard:
@@ -163,11 +164,58 @@ en-US:
       links:
         reader: "reader"
         reader_hint: "read, filter and clip entries"
+        subscribers: "subscribers"
+        subscribers_hint: "%{count} on the list"
         jobs: "jobs"
         jobs_hint: "%{count} failed"
       latest_newsletter: "Latest issue: %{subject}"
       not_sent: "not sent yet"
       no_newsletter: "No issue sent yet."
+    subscribers:
+      prompt: "cat subscribers.csv"
+      search:
+        label: "search"
+        placeholder: "email"
+        submit: "search"
+        clear: "clear"
+      form:
+        email: "email"
+        language: "language"
+        submit: "add"
+      total:
+        one: "%{count} subscriber"
+        other: "%{count} subscribers"
+      export: "export CSV"
+      bulk:
+        remove: "remove selected"
+        confirm: "Permanently remove the selected subscribers? This cannot be undone."
+        select: "Select %{email}"
+      unsubscribe_link: "unsubscribe"
+      resend:
+        submit: "resend"
+        success: "Issue resent to %{email}."
+      actions:
+        remove: "remove"
+        confirm_remove: "Permanently remove %{email}? This cannot be undone."
+      empty: "No subscribers yet."
+      empty_search: "No subscribers match \"%{query}\"."
+      create:
+        success: "Subscriber added: %{email}"
+        invalid: "Could not add: %{error}"
+      update:
+        success: "%{email}'s language updated."
+        invalid: "Could not update: %{error}"
+      destroy:
+        success: "Subscriber removed: %{email}"
+      bulk_destroy:
+        success:
+          one: "%{count} subscriber removed."
+          other: "%{count} subscribers removed."
+      pagination:
+        label: "Pagination"
+        previous: "← previous"
+        next: "next →"
+        status: "page %{page} of %{pages}"
   reader:
     nav:
       label: "Reader navigation"
@@ -282,6 +330,8 @@ en-US:
       prompt: "ls issues/"
       send_now: "send issue now"
       back: "← back to archive"
+      language_label: "language"
+      languages: "languages: %{list}"
       empty: "No issues sent yet."
       stats:
         queued: "queued: %{count}"

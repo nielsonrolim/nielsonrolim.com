@@ -1,7 +1,4 @@
 last_week:
-  subject: "Clipping de tecnologia — 2026-09-07"
-  body: "<table><tr><td>Archived issue body</td></tr></table>"
-  body_text: "Archived issue body"
   status: "sent"
   sent_at: <%= 7.days.ago.to_fs(:db) %>
   recipient_count: 2

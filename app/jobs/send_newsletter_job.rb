@@ -37,22 +37,31 @@ class SendNewsletterJob < ApplicationJob
       return
     end
 
-    issue = build_issue(clippings)
+    issue = build_issue(clippings, locales_for(subscribers))
     deliver(issue, subscribers)
   end
 
   private
 
-  def build_issue(clippings)
-    composer = NewsletterComposer.new(clippings, date: Time.current)
+  # One rendered version per language the issue has to go out in, so a body is
+  # only composed for languages that are actually subscribed.
+  def locales_for(subscribers)
+    subscribers.map(&:language).uniq
+  end
 
+  def build_issue(clippings, locales)
     Newsletter.transaction do
-      issue = Newsletter.create!(
-        subject: composer.subject,
-        body: composer.to_html,
-        body_text: composer.to_text,
-        status: :sending
-      )
+      issue = Newsletter.create!(status: :sending)
+
+      locales.each do |locale|
+        composer = NewsletterComposer.new(clippings, date: Time.current, locale: locale)
+        issue.bodies.create!(
+          locale: locale,
+          subject: composer.subject,
+          body: composer.to_html,
+          body_text: composer.to_text
+        )
+      end
 
       # Claim the clippings for this issue so the next run cannot re-send them.
       Clipping.where(id: clippings.map(&:id)).update_all(newsletter_id: issue.id) # rubocop:disable Rails/SkipsModelValidations
@@ -62,15 +71,16 @@ class SendNewsletterJob < ApplicationJob
   end
 
   def deliver(issue, subscribers)
-    subscribers.each do |subscriber|
-      mailer.issue(newsletter: issue, subscriber: subscriber).deliver_later
+    subscribers.group_by(&:language).each do |locale, group|
+      body = issue.body_for(locale)
+      group.each { |subscriber| mailer.issue(newsletter: issue, subscriber: subscriber, body: body).deliver_later }
     end
 
     issue.update!(status: :sent, sent_at: Time.current, recipient_count: subscribers.size)
 
     Rails.logger.info(
       "[SendNewsletterJob] sent issue ##{issue.id} (#{issue.clippings.count} clippings) " \
-      "to #{subscribers.size} subscribers"
+      "to #{subscribers.size} subscribers in #{issue.locales.join(", ")}"
     )
   rescue StandardError
     issue.update(status: :failed)

@@ -32,9 +32,11 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav a[href=?]", admin_root_path
     assert_select "nav a[href=?]", reader_root_path
+    assert_select "nav a[href=?]", admin_subscribers_path
     assert_select "nav a[href=?]", admin_mission_control_jobs_path
     assert_select "nav", /\[painel\]/
     assert_select "nav", /\[leitor\]/
+    assert_select "nav", /\[inscritos\]/
     assert_select "nav", /\[jobs\]/
   end
 

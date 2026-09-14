@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <%= render "layouts/theme_script" %>
+    <script>
+      // The admin layout ships no JS framework, so `data-confirm` (used by the
+      // destructive actions, like removing subscribers) needs a handler to work.
+      document.addEventListener("submit", (event) => {
+        const message = event.submitter?.dataset?.confirm;
+        if (message && !window.confirm(message)) event.preventDefault();
+      });
+    </script>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
@@ -27,6 +35,7 @@
           <% [
                [ t("admin.nav.dashboard"), admin_root_path, request.path == admin_root_path ],
                [ t("admin.nav.reader"), reader_root_path, request.path.start_with?(reader_root_path) ],
+               [ t("admin.nav.subscribers"), admin_subscribers_path, request.path.start_with?(admin_subscribers_path) ],
                [ t("admin.nav.jobs"), admin_mission_control_jobs_path, request.path.start_with?(admin_mission_control_jobs_path) ]
              ].each do |label, path, active| %>
             <%= link_to label, path,

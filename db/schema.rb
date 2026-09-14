@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_130100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_140100) do
   create_table "categories", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -78,14 +78,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_130100) do
     t.index ["url"], name: "index_feeds_on_url", unique: true
   end
 
-  create_table "newsletters", force: :cascade do |t|
+  create_table "newsletter_bodies", force: :cascade do |t|
     t.text "body", null: false
     t.text "body_text"
+    t.datetime "created_at", null: false
+    t.string "locale", null: false
+    t.integer "newsletter_id", null: false
+    t.string "subject", null: false
+    t.datetime "updated_at", null: false
+    t.index ["newsletter_id", "locale"], name: "index_newsletter_bodies_on_newsletter_id_and_locale", unique: true
+    t.index ["newsletter_id"], name: "index_newsletter_bodies_on_newsletter_id"
+  end
+
+  create_table "newsletters", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "recipient_count", default: 0, null: false
     t.datetime "sent_at"
     t.string "status", default: "draft", null: false
-    t.string "subject", null: false
     t.datetime "updated_at", null: false
     t.index ["sent_at"], name: "index_newsletters_on_sent_at"
     t.index ["status"], name: "index_newsletters_on_status"
@@ -94,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_130100) do
   create_table "subscribers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.string "language", default: "pt-BR", null: false
     t.string "unsubscribe_token"
     t.datetime "updated_at", null: false
     t.index "lower(email)", name: "index_subscribers_on_lower_email", unique: true
@@ -105,4 +115,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_130100) do
   add_foreign_key "entries", "feeds"
   add_foreign_key "feed_categories", "categories"
   add_foreign_key "feed_categories", "feeds"
+  add_foreign_key "newsletter_bodies", "newsletters"
 end

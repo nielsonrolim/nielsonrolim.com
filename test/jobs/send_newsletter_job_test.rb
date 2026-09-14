@@ -11,7 +11,7 @@ class SendNewsletterJobTest < ActiveJob::TestCase
       end
     end
 
-    def issue(newsletter:, subscriber:)
+    def issue(newsletter:, subscriber:, body: nil)
       Delivery.new
     end
   end
@@ -109,8 +109,47 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     Clipping.unsent.destroy_all
 
     assert_no_difference -> { Newsletter.count } do
-      SendNewsletterJob.new(SendNewsletterJob::MAX_DEFERRALS).perform_now
+      SendNewsletterJob.perform_now(SendNewsletterJob::MAX_DEFERRALS)
     end
+  end
+
+  test "composes one body per language the subscribers read" do
+    make_all_summaries_ready
+
+    SendNewsletterJob.perform_now
+
+    issue = Newsletter.last
+    assert_equal %w[en-US pt-BR], issue.locales.sort
+    # Each body is rendered in its own language.
+    assert_includes issue.body_for("pt-BR").body, "valeu a leitura"
+    assert_includes issue.body_for("en-US").body, "Worth reading this week"
+  end
+
+  test "only composes the languages that are actually subscribed" do
+    Subscriber.where(language: "en-US").destroy_all
+    make_all_summaries_ready
+
+    SendNewsletterJob.perform_now
+
+    assert_equal [ "pt-BR" ], Newsletter.last.locales
+  end
+
+  test "sends each subscriber the body in their language" do
+    make_all_summaries_ready
+    ActionMailer::Base.deliveries.clear
+
+    perform_enqueued_jobs(only: ActionMailer::MailDeliveryJob) do
+      SendNewsletterJob.perform_now
+    end
+
+    by_recipient = ActionMailer::Base.deliveries.index_by { |email| email.to.first }
+
+    portuguese = by_recipient.fetch(subscribers(:first).email)
+    english = by_recipient.fetch(subscribers(:second).email)
+
+    assert_includes portuguese.html_part.body.to_s, "valeu a leitura"
+    assert_includes english.html_part.body.to_s, "Worth reading this week"
+    assert_not_includes english.html_part.body.to_s, "valeu a leitura"
   end
 
   private

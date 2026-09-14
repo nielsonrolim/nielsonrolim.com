@@ -22,6 +22,10 @@
       <span class="text-muted">— <%= t("admin.dashboard.links.reader_hint") %></span>
     </p>
     <p class="m-0">
+      <%= link_to t("admin.dashboard.links.subscribers"), admin_subscribers_path %>
+      <span class="text-muted">— <%= t("admin.dashboard.links.subscribers_hint", count: @subscriber_count) %></span>
+    </p>
+    <p class="m-0">
       <%= link_to t("admin.dashboard.links.jobs"), admin_mission_control_jobs_path %>
       <span class="text-muted">— <%= t("admin.dashboard.links.jobs_hint", count: @failed_jobs) %></span>
     </p>

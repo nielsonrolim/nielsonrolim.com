@@ -30,6 +30,15 @@ Rails.application.routes.draw do
     # Job dashboard. Mission Control's controllers inherit Admin::BaseController
     # (see config/application.rb), so this is behind the same credentials.
     mount MissionControl::Jobs::Engine, at: "/jobs"
+
+    # Newsletter list. Removal is a hard delete (see the controller).
+    resources :subscribers, only: [ :index, :create, :update, :destroy ] do
+      collection do
+        delete :bulk_destroy
+        get :export
+      end
+      member { post :resend }
+    end
   end
 
   # The reader keeps its own Reader:: module, its own views and its reader_*

@@ -35,4 +35,35 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     assert_select "form input[name=?]", "subscriber[email]"
     assert_select "form input[name=?]", "subscriber[nickname]"
   end
+
+  test "the signup form posts to the language the visitor is reading" do
+    get "/en-US"
+
+    assert_select "form[action=?]", "/subscribers?locale=en-US"
+  end
+
+  test "signing up in en-US records the language" do
+    post "/subscribers?locale=en-US", params: { subscriber: { email: "english@example.com", nickname: "" } }
+
+    assert_equal "en-US", Subscriber.find_by(email: "english@example.com").language
+  end
+
+  test "signing up in pt-BR records the language" do
+    post "/subscribers?locale=pt-BR", params: { subscriber: { email: "portuguese@example.com", nickname: "" } }
+
+    assert_equal "pt-BR", Subscriber.find_by(email: "portuguese@example.com").language
+  end
+
+  test "signing up without a locale records the default language" do
+    post "/subscribers", params: { subscriber: { email: "plain@example.com", nickname: "" } }
+
+    assert_equal "pt-BR", Subscriber.find_by(email: "plain@example.com").language
+  end
+
+  test "a crafted language field cannot override the site language" do
+    post "/subscribers?locale=en-US",
+         params: { subscriber: { email: "crafty@example.com", nickname: "", language: "pt-BR" } }
+
+    assert_equal "en-US", Subscriber.find_by(email: "crafty@example.com").language
+  end
 end

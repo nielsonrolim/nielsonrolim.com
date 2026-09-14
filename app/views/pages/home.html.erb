@@ -126,7 +126,7 @@
   <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".newsletter.prompt") %></p>
   <div class="max-w-measure">
     <p class="mt-0 mb-4"><%= t(".newsletter.body") %></p>
-    <%= form_with url: subscribers_path, scope: :subscriber, method: :post do |form| %>
+    <%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
       <div class="flex flex-wrap gap-[0.6rem]">
         <%= form.label :email, t(".newsletter.email_placeholder"), class: "sr-only" %>
         <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true, autocomplete: "email", class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby" %>

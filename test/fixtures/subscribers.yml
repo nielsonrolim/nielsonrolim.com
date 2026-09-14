@@ -1,9 +1,14 @@
 # Emails deliberately avoid reader@example.com and bot@example.com, which the
 # existing subscriber tests create themselves.
+#
+# `first` reads in Portuguese and `second` in English, so the newsletter
+# language split has something to work with.
 first:
   email: "clipping-fan@example.org"
+  language: "pt-BR"
   unsubscribe_token: "token-first-subscriber"
 
 second:
   email: "clipping-reader@example.org"
+  language: "en-US"
   unsubscribe_token: "token-second-subscriber"

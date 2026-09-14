@@ -29,6 +29,9 @@
           <span class="text-meta text-muted">
             <%= t("reader.newsletters.clippings_count", count: newsletter.clippings.size) %>
           </span>
+          <% if newsletter.locales.any? %>
+            <span class="text-meta text-muted"><%= t("reader.newsletters.languages", list: newsletter.locales.join(" · ")) %></span>
+          <% end %>
           <span class="text-meta text-muted">
             <%= t("reader.newsletters.recipients", count: newsletter.recipient_count) %>
           </span>

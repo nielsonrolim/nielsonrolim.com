@@ -150,6 +150,7 @@ pt-BR:
       label: "Navegação do admin"
       dashboard: "[painel]"
       reader: "[leitor]"
+      subscribers: "[inscritos]"
       jobs: "[jobs]"
       back_to_site: "← voltar ao site"
     dashboard:
@@ -163,11 +164,58 @@ pt-BR:
       links:
         reader: "leitor"
         reader_hint: "ler, filtrar e marcar entradas"
+        subscribers: "inscritos"
+        subscribers_hint: "%{count} na lista"
         jobs: "jobs"
         jobs_hint: "%{count} com falha"
       latest_newsletter: "Última edição: %{subject}"
       not_sent: "ainda não enviada"
       no_newsletter: "Nenhuma edição enviada ainda."
+    subscribers:
+      prompt: "cat subscribers.csv"
+      search:
+        label: "buscar"
+        placeholder: "e-mail"
+        submit: "buscar"
+        clear: "limpar"
+      form:
+        email: "e-mail"
+        language: "idioma"
+        submit: "adicionar"
+      total:
+        one: "%{count} inscrito"
+        other: "%{count} inscritos"
+      export: "exportar CSV"
+      bulk:
+        remove: "remover selecionados"
+        confirm: "Remover em definitivo os inscritos selecionados? Não dá para desfazer."
+        select: "Selecionar %{email}"
+      unsubscribe_link: "descadastro"
+      resend:
+        submit: "reenviar"
+        success: "Edição reenviada para %{email}."
+      actions:
+        remove: "remover"
+        confirm_remove: "Remover %{email} em definitivo? Não dá para desfazer."
+      empty: "Nenhum inscrito ainda."
+      empty_search: "Nenhum inscrito para \"%{query}\"."
+      create:
+        success: "Inscrito adicionado: %{email}"
+        invalid: "Não foi possível adicionar: %{error}"
+      update:
+        success: "Idioma de %{email} atualizado."
+        invalid: "Não foi possível atualizar: %{error}"
+      destroy:
+        success: "Inscrito removido: %{email}"
+      bulk_destroy:
+        success:
+          one: "%{count} inscrito removido."
+          other: "%{count} inscritos removidos."
+      pagination:
+        label: "Paginação"
+        previous: "← anterior"
+        next: "próxima →"
+        status: "página %{page} de %{pages}"
   reader:
     nav:
       label: "Navegação do leitor"
@@ -282,6 +330,8 @@ pt-BR:
       prompt: "ls issues/"
       send_now: "enviar edição agora"
       back: "← voltar ao arquivo"
+      language_label: "idioma"
+      languages: "idiomas: %{list}"
       empty: "Nenhuma edição enviada ainda."
       stats:
         queued: "na fila: %{count}"

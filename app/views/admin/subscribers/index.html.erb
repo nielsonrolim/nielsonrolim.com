@@ -1,0 +1,121 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("admin.subscribers.prompt") %></p>
+
+  <div class="mb-8 grid gap-4 border border-line bg-surface p-4">
+    <div class="flex flex-wrap items-end gap-3">
+      <%= form_with url: admin_subscribers_path, method: :get, class: "flex flex-wrap items-end gap-3" do |form| %>
+        <div class="min-w-[16rem] flex-1">
+          <%= form.label :q, t("admin.subscribers.search.label"), class: "mb-1 block text-chrome text-muted" %>
+          <%= form.search_field :q, value: @query, placeholder: t("admin.subscribers.search.placeholder"),
+                class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+        </div>
+        <%= form.submit t("admin.subscribers.search.submit"),
+              class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-3 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+        <% if @query.present? %>
+          <%= link_to t("admin.subscribers.search.clear"), admin_subscribers_path,
+                class: "text-chrome text-muted no-underline hover:text-ink" %>
+        <% end %>
+      <% end %>
+
+      <%= link_to t("admin.subscribers.export"), export_admin_subscribers_path(q: @query.presence),
+            class: "ml-auto rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] text-chrome text-muted no-underline hover:border-ruby hover:text-ruby" %>
+    </div>
+
+    <%= form_with model: @subscriber, url: admin_subscribers_path, class: "flex flex-wrap items-end gap-3 border-t border-line pt-4" do |form| %>
+      <div class="min-w-[15rem] flex-1">
+        <%= form.label :email, t("admin.subscribers.form.email"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.email_field :email, required: true, placeholder: "pessoa@exemplo.com",
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <div>
+        <%= form.label :language, t("admin.subscribers.form.language"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.select :language, Subscriber::LANGUAGES, {},
+              class: "rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <%= form.submit t("admin.subscribers.form.submit"),
+            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+    <% end %>
+  </div>
+
+  <div class="mb-3 flex flex-wrap items-center gap-3 text-chrome">
+    <%# Lives outside the rows so each row can keep its own forms without
+        nesting. The checkboxes below point at it with form="bulk-actions". %>
+    <%= form_with url: bulk_destroy_admin_subscribers_path, method: :delete, html: { id: "bulk-actions" }, class: "m-0 inline" do |form| %>
+      <%= form.submit t("admin.subscribers.bulk.remove"),
+            data: { confirm: t("admin.subscribers.bulk.confirm") },
+            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.6rem] py-[0.2rem] text-muted hover:border-err hover:text-err" %>
+    <% end %>
+
+    <span class="ml-auto text-muted"><%= t("admin.subscribers.total", count: @total) %></span>
+  </div>
+
+  <% if @subscribers.empty? %>
+    <p class="text-prompt text-muted">
+      <%= @query.present? ? t("admin.subscribers.empty_search", query: @query) : t("admin.subscribers.empty") %>
+    </p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @subscribers.each do |subscriber| %>
+        <li class="border-t border-line py-4 last:border-b">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <%= check_box_tag "subscriber_ids[]", subscriber.id, false,
+                  form: "bulk-actions", class: "accent-ruby",
+                  aria: { label: t("admin.subscribers.bulk.select", email: subscriber.email) } %>
+
+            <span class="text-prompt text-ink"><%= subscriber.email %></span>
+            <span class="text-meta text-muted"><%= l(subscriber.created_at, format: :long) %></span>
+          </div>
+
+          <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-chrome text-muted">
+            <%# Saving on change keeps the row to one control instead of a select
+                plus a button. The flash confirms the change. %>
+            <%= form_with model: subscriber, url: admin_subscriber_path(subscriber), method: :patch,
+                  class: "flex items-center gap-2" do |form| %>
+              <%= form.label :language, t("admin.subscribers.form.language"), class: "whitespace-nowrap text-meta" %>
+              <%= form.select :language, Subscriber::LANGUAGES, {},
+                    onchange: "this.form.requestSubmit()",
+                    class: "rounded-frame border border-line-strong bg-paper px-2 py-[0.15rem] font-mono text-meta text-ink focus:border-ruby focus:outline-none" %>
+            <% end %>
+
+            <label class="flex min-w-[18rem] flex-1 items-center gap-2">
+              <span class="whitespace-nowrap text-meta"><%= t("admin.subscribers.unsubscribe_link") %></span>
+              <input type="text" readonly value="<%= unsubscribe_link_for(subscriber) %>"
+                     class="w-full rounded-frame border border-line bg-surface px-2 py-[0.15rem] font-mono text-meta text-muted">
+            </label>
+
+            <% if @recent_newsletters.any? %>
+              <%= form_with url: resend_admin_subscriber_path(subscriber), method: :post, class: "flex items-center gap-2" do |form| %>
+                <%= select_tag :newsletter_id,
+                      options_from_collection_for_select(@recent_newsletters, :id, :subject),
+                      class: "max-w-[16rem] rounded-frame border border-line-strong bg-paper px-2 py-[0.15rem] font-mono text-meta text-ink" %>
+                <%= form.submit t("admin.subscribers.resend.submit"),
+                      class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby" %>
+              <% end %>
+            <% end %>
+
+            <%= button_to t("admin.subscribers.actions.remove"), admin_subscriber_path(subscriber), method: :delete,
+                  data: { confirm: t("admin.subscribers.actions.confirm_remove", email: subscriber.email) },
+                  class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                  form: { class: "m-0 inline" } %>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if @pages > 1 %>
+      <nav class="mt-6 flex items-center gap-3 text-chrome" aria-label="<%= t("admin.subscribers.pagination.label") %>">
+        <% if @page > 1 %>
+          <%= link_to t("admin.subscribers.pagination.previous"),
+                admin_subscribers_path(q: @query.presence, page: @page - 1),
+                class: "text-ruby no-underline" %>
+        <% end %>
+        <span class="text-muted"><%= t("admin.subscribers.pagination.status", page: @page, pages: @pages) %></span>
+        <% if @page < @pages %>
+          <%= link_to t("admin.subscribers.pagination.next"),
+                admin_subscribers_path(q: @query.presence, page: @page + 1),
+                class: "text-ruby no-underline" %>
+        <% end %>
+      </nav>
+    <% end %>
+  <% end %>
+</section>

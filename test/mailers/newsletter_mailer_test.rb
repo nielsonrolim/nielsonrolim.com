@@ -57,7 +57,54 @@ class NewsletterMailerTest < ActionMailer::TestCase
     assert_not_equal @email["List-Unsubscribe"].to_s, other["List-Unsubscribe"].to_s
   end
 
+  test "sends the body in the subscriber's language" do
+    add_english_body
+
+    email = NewsletterMailer.issue(newsletter: @newsletter, subscriber: subscribers(:second))
+
+    assert_equal "Tech clipping — 2026-09-07", email.subject
+    assert_includes email.html_part.body.to_s, "Archived issue body (EN)"
+  end
+
+  test "writes the transport footer in the subscriber's language too" do
+    add_english_body
+
+    email = NewsletterMailer.issue(newsletter: @newsletter, subscriber: subscribers(:second))
+
+    assert_includes email.html_part.body.to_s, "unsubscribe"
+    assert_not_includes email.html_part.body.to_s, "cancelar inscrição"
+  end
+
+  test "falls back to the default language when the issue lacks the subscriber's" do
+    # Only the pt-BR body exists.
+    email = NewsletterMailer.issue(newsletter: @newsletter, subscriber: subscribers(:second))
+
+    assert_equal "Clipping de tecnologia — 2026-09-07", email.subject
+    assert_includes email.html_part.body.to_s, "Archived issue body"
+  end
+
+  test "uses the body it is handed, instead of looking one up" do
+    add_english_body
+    body = @newsletter.body_for("en-US")
+
+    # The subscriber reads pt-BR, but the job handed over the English body.
+    email = NewsletterMailer.issue(newsletter: @newsletter, subscriber: subscribers(:first), body: body)
+
+    assert_equal "Tech clipping — 2026-09-07", email.subject
+    assert_includes email.html_part.body.to_s, "Archived issue body (EN)"
+  end
+
   private
+
+  def add_english_body
+    @newsletter.bodies.create!(
+      locale: "en-US",
+      subject: "Tech clipping — 2026-09-07",
+      body: "<table><tr><td>Archived issue body (EN)</td></tr></table>",
+      body_text: "Archived issue body (EN)"
+    )
+    @newsletter.bodies.reload
+  end
 
   # Built by hand from the mailer's default_url_options so the expectation does
   # not depend on the same helper the mailer uses.

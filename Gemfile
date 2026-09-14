@@ -35,6 +35,10 @@ gem "mission_control-jobs"
 # SMTP delivery for Action Mailer [https://github.com/ruby/net-smtp]
 gem "net-smtp"
 
+# CSV export of the subscriber list. Not a default gem since Ruby 3.4.
+# [https://github.com/ruby/csv]
+gem "csv"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

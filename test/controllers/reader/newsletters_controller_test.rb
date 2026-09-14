@@ -44,4 +44,54 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "offers a language tab per body when the issue went out in more than one" do
+    newsletter = newsletters(:last_week)
+    add_english_body(newsletter)
+
+    get reader_newsletter_path(newsletter), headers: reader_headers
+
+    assert_response :success
+    assert_select "a[href*=?]", "issue_locale=pt-BR"
+    assert_select "a[href*=?]", "issue_locale=en-US"
+  end
+
+  test "lists the languages each issue went out in" do
+    add_english_body(newsletters(:last_week))
+
+    get reader_newsletters_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /idiomas: (en-US · pt-BR|pt-BR · en-US)/
+  end
+
+  test "shows the body for the requested language" do
+    newsletter = newsletters(:last_week)
+    add_english_body(newsletter)
+
+    get reader_newsletter_path(newsletter, issue_locale: "en-US"), headers: reader_headers
+
+    assert_response :success
+    assert_select "iframe[srcdoc*=?]", "English body"
+    assert_select "h1", "Tech clipping"
+  end
+
+  test "hides the language tabs for a single-language issue" do
+    get reader_newsletter_path(newsletters(:last_week)), headers: reader_headers
+
+    assert_response :success
+    assert_select "a[href*=?]", "issue_locale=", count: 0
+  end
+
+  private
+
+  def add_english_body(newsletter)
+    newsletter.bodies.create!(
+      locale: "en-US",
+      subject: "Tech clipping",
+      body: "<table><tr><td>English body</td></tr></table>",
+      body_text: "English body"
+    )
+    newsletter.bodies.reload
+  end
 end

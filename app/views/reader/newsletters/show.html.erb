@@ -1,6 +1,10 @@
 <section>
+  <% locales = @newsletter.locales %>
+  <% selected = params[:issue_locale].presence_in(locales) || locales.first %>
+  <% issue_body = @newsletter.body_for(selected) %>
+
   <div class="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-2 border-b border-line pb-4">
-    <h1 class="m-0 text-lead font-bold text-ink"><%= @newsletter.subject %></h1>
+    <h1 class="m-0 text-lead font-bold text-ink"><%= issue_body&.subject %></h1>
     <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted">
       <%= t("reader.newsletters.status.#{@newsletter.status}") %>
     </span>
@@ -11,8 +15,20 @@
     <%= link_to t("reader.newsletters.back"), reader_newsletters_path, class: "ml-auto text-chrome text-ruby no-underline" %>
   </div>
 
+  <% if locales.size > 1 %>
+    <%# The archived issue kept one body per language it went out in. `issue_locale`
+        is deliberately not `locale`: that param drives the admin's own i18n. %>
+    <nav class="mb-4 flex flex-wrap items-center gap-2 text-chrome" aria-label="<%= t("reader.newsletters.language_label") %>">
+      <span class="text-ruby"><%= t("reader.newsletters.language_label") %>:</span>
+      <% locales.each do |locale| %>
+        <%= link_to locale, reader_newsletter_path(@newsletter, issue_locale: locale),
+              class: "rounded-frame border border-line-strong px-[0.45rem] py-[0.1rem] no-underline #{selected == locale ? 'bg-surface font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+      <% end %>
+    </nav>
+  <% end %>
+
   <%# Rendered in an iframe so the archived email keeps the exact inline styles
       it was delivered with, isolated from the reader's own stylesheet. %>
-  <iframe title="<%= @newsletter.subject %>" srcdoc="<%= @newsletter.body %>"
+  <iframe title="<%= issue_body&.subject %>" srcdoc="<%= issue_body&.body %>"
           class="h-[70vh] w-full rounded-frame border border-line bg-paper"></iframe>
 </section>
