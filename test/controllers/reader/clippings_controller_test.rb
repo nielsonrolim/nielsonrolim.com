@@ -134,9 +134,25 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert clipping.manual?
     assert_nil clipping.entry_id
     assert_equal "Rails ships a new queue UI", clipping.title
+    assert_equal "example.com", clipping.source_name
     assert_includes clipping.source_text, "Solid Queue replaces Redis"
     assert clipping.pending?
     assert_redirected_to reader_clippings_path
+  end
+
+  test "a YouTube URL takes the channel name as the source" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo")
+    HttpTransport.default = transport_returning(http_response(200, oembed), http_response(200, @html))
+
+    post reader_clippings_path,
+         params: { clipping: { url: "https://www.youtube.com/watch?v=abc123" } },
+         headers: reader_headers
+
+    clipping = Clipping.order(:id).last
+    assert_equal "Canal Exemplo", clipping.source_name
+
+    get reader_clippings_path, headers: reader_headers
+    assert_select "body", /Canal Exemplo/
   end
 
   test "a title typed by hand wins over the fetched one" do
@@ -162,6 +178,8 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert clipping.failed?
     assert_match(/404/, clipping.summary_error)
     assert_equal "example.com", clipping.title
+    # The source does not depend on the fetch, so it is stored anyway.
+    assert_equal "example.com", clipping.source_name
     # Sent to the edit page so the text can be pasted in.
     assert_redirected_to edit_reader_clipping_path(clipping)
   end
@@ -188,8 +206,16 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to reader_clippings_path
   end
 
-  test "marks a manual clipping as such in the list" do
+  test "shows the source of a manual clipping in the list" do
     post reader_clippings_path, params: { clipping: { url: "https://example.com/post" } }, headers: reader_headers
+
+    get reader_clippings_path, headers: reader_headers
+
+    assert_select "body", /example\.com/
+  end
+
+  test "a manual clipping without a source is still marked as manual" do
+    Clipping.create!(title: "Sem fonte", url: "https://example.org/sem-fonte", summary_status: "summarized")
 
     get reader_clippings_path, headers: reader_headers
 

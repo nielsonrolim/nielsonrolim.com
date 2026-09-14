@@ -42,6 +42,12 @@ class Clipping < ApplicationRecord
     entry_id.blank?
   end
 
+  # Where the clipping came from: the feed for RSS clippings, the publication
+  # or channel stored at creation for manual ones.
+  def display_source
+    entry&.feed&.display_title || source_name
+  end
+
   # `title`/`summary` hold the original, in `language`; the translated columns
   # hold the other language.
   def other_locale

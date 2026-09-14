@@ -34,6 +34,17 @@ class NewsletterComposerTest < ActiveSupport::TestCase
     assert_not_includes text, "<table"
   end
 
+  test "renders the stored source of a manual clipping" do
+    clipping = Clipping.create!(title: "Adicionado à mão", url: "https://example.org/post",
+                                source_name: "example.org", summary: "Resumo.",
+                                summary_status: "summarized")
+
+    composer = NewsletterComposer.new([ clipping ], date: @date)
+
+    assert_includes composer.to_html, ". example.org"
+    assert_includes composer.to_text, "fonte: example.org"
+  end
+
   test "the plain-text header uses the composer's language" do
     assert_includes NewsletterComposer.new(@clippings, date: @date, locale: :"en-US").to_text,
                     "Tech clipping — 2026-09-14"

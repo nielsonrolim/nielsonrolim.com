@@ -8,7 +8,7 @@
 <% else %>
 <% @clippings.each_with_index do |clipping, index| %>
 <%= format("%02d", index + 1) %>. <%= clipping.title_for(@locale) %>
-<%= "    #{t('newsletters.email.source', feed: clipping.entry.feed.display_title)}" if clipping.entry&.feed %>
+<%= "    #{t('newsletters.email.source', feed: clipping.display_source)}" if clipping.display_source.present? %>
 <%= "    #{t('newsletters.email.language', language: clipping.language)}" if clipping.language.present? %>
 <% localized_summary = clipping.summary_for(@locale) %><%= "    #{localized_summary}" if localized_summary.present? %>
     <%= clipping.url %>

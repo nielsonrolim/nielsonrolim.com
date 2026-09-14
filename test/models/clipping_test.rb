@@ -131,6 +131,22 @@ class ClippingTest < ActiveSupport::TestCase
     assert_not clippings(:queued).manual?
   end
 
+  test "display_source is the feed title for a feed clipping" do
+    assert_equal clippings(:queued).entry.feed.display_title, clippings(:queued).display_source
+  end
+
+  test "display_source is the stored source name for a manual clipping" do
+    clipping = Clipping.new(title: "t", url: "https://example.com/x", source_name: "example.com")
+
+    assert_equal "example.com", clipping.display_source
+  end
+
+  test "display_source is nil for a manual clipping without a source" do
+    clipping = Clipping.new(title: "t", url: "https://example.com/x")
+
+    assert_nil clipping.display_source
+  end
+
   test "summary_source is the entry summary when there is one" do
     assert_equal entries(:rails_eight).summary, clippings(:queued).summary_source
   end

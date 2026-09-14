@@ -36,8 +36,8 @@
         <li class="border-t border-line py-[1.1rem] last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
             <span class="text-ruby"><%= format("%02d", index + 1) %></span>
-            <% if clipping.entry&.feed %>
-              <span><%= clipping.entry.feed.display_title %></span>
+            <% if clipping.display_source.present? %>
+              <span><%= clipping.display_source %></span>
             <% else %>
               <span><%= t("reader.clippings.manual") %></span>
             <% end %>

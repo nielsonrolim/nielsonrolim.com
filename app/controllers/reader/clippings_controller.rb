@@ -21,7 +21,9 @@ module Reader
         return
       end
 
-      @clipping = Clipping.new(url: url)
+      # The source (site domain or YouTube channel) is resolved before the
+      # fetch so it is stored even when the page itself cannot be fetched.
+      @clipping = Clipping.new(url: url, source_name: SourceNameResolver.new.call(url))
       fetch_article(@clipping, url, provided_title: create_params[:title].to_s.strip.presence)
 
       if @clipping.save
