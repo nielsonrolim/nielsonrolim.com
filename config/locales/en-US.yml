@@ -400,13 +400,33 @@ en-US:
       language: "language: %{language}"
       footer: "picked and summarized by Nielson Rolim."
       sent_to: "Sent to %{email}."
+      manage: "manage subscription"
       unsubscribe: "unsubscribe"
+  preferences:
+    show:
+      prompt: "./preferences.sh"
+      title: "Subscription preferences"
+      body: "%{email} receives the weekly clipping."
+      language_label: "newsletter language"
+      language_hint: "The next clipping already comes in this language."
+      save: "save"
+      unsubscribe: "cancel my subscription"
+      back: "← back to the site"
+    gone:
+      prompt: "./preferences.sh"
+      title: "Nothing to manage"
+      body: "This link does not match an active subscription — it was already removed or the link is invalid."
+      back: "← back to the site"
+    update:
+      success: "Language updated to %{language}. The next clipping already comes that way."
+      invalid: "Could not save: %{error}"
   unsubscribes:
     show:
       prompt: "./unsubscribe.sh"
       title: "Unsubscribe"
       body: "%{email} will stop receiving the weekly clipping."
       confirm: "confirm unsubscribe"
+      manage: "manage subscription"
       cancel: "← keep my subscription"
     gone:
       prompt: "./unsubscribe.sh"

@@ -400,13 +400,33 @@ pt-BR:
       language: "idioma: %{language}"
       footer: "selecionado e resumido por Nielson Rolim."
       sent_to: "Enviado para %{email}."
+      manage: "gerenciar inscrição"
       unsubscribe: "cancelar inscrição"
+  preferences:
+    show:
+      prompt: "./preferences.sh"
+      title: "Preferências da inscrição"
+      body: "O e-mail %{email} recebe o clipping semanal."
+      language_label: "idioma da newsletter"
+      language_hint: "O próximo clipping já vem nesse idioma."
+      save: "salvar"
+      unsubscribe: "cancelar minha inscrição"
+      back: "← voltar ao site"
+    gone:
+      prompt: "./preferences.sh"
+      title: "Nada para gerenciar"
+      body: "Este link não corresponde a nenhuma inscrição ativa — ela já foi cancelada ou o link é inválido."
+      back: "← voltar ao site"
+    update:
+      success: "Idioma atualizado para %{language}. O próximo clipping já vem assim."
+      invalid: "Não foi possível salvar: %{error}"
   unsubscribes:
     show:
       prompt: "./unsubscribe.sh"
       title: "Cancelar inscrição"
       body: "O e-mail %{email} vai parar de receber o clipping semanal."
       confirm: "confirmar cancelamento"
+      manage: "gerenciar inscrição"
       cancel: "← manter minha inscrição"
     gone:
       prompt: "./unsubscribe.sh"

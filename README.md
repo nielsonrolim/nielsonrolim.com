@@ -114,6 +114,16 @@ spoofed. It is editable on `/admin/subscribers`, where the list can be searched 
 email, paginated 30 at a time, extended by hand, exported to CSV (the export
 follows the current search), and pruned one by one or in bulk.
 
+Subscribers can also change it themselves: every email carries a **"gerenciar
+inscrição"** link to `/newsletter/preferences?token=…`, where they pick the
+language and it applies from the next issue. The token is the same capability the
+unsubscribe link uses, so no login is involved, and the page — like the
+unsubscribe page — is rendered in the subscriber's own language. Changing an
+address is deliberately not offered: that is an identity change and would need
+confirmation; the page only touches the language. `List-Unsubscribe` keeps
+pointing at the unsubscribe endpoint, since that is the one-click contract mail
+clients rely on.
+
 Removal is a **real delete**, not a soft unsubscribe: the subscriber asked to be
 forgotten, so nothing about them is kept (LGPD). The older approach — the public
 unsubscribe link — works the same way, deleting the row.

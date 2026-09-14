@@ -9,7 +9,8 @@
   <%= button_to t("unsubscribes.show.confirm"), unsubscribe_path(token: @subscriber.unsubscribe_token), method: :post,
         class: "cursor-pointer rounded-frame border border-line-strong bg-surface px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
 
-  <p class="mt-6 text-chrome">
-    <%= link_to t("unsubscribes.show.cancel"), home_path(locale: I18n.locale), class: "text-muted" %>
+  <p class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-chrome">
+    <%= link_to t("unsubscribes.show.manage"), preferences_path(token: @subscriber.unsubscribe_token), class: "text-muted" %>
+    <%= link_to t("unsubscribes.show.cancel"), home_path(locale: I18n.locale), class: "ml-auto text-muted" %>
   </p>
 </section>

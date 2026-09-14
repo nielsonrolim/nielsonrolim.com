@@ -22,6 +22,12 @@ Rails.application.routes.draw do
   get "newsletter/unsubscribe", to: "unsubscribes#show", as: :unsubscribe
   post "newsletter/unsubscribe", to: "unsubscribes#destroy"
 
+  # Manage the subscription, from the link every email carries. Deliberately a
+  # separate route from the one above: the List-Unsubscribe contract points at
+  # the unsubscribe endpoint, and this one is a page a person opens.
+  get "newsletter/preferences", to: "preferences#show", as: :preferences
+  patch "newsletter/preferences", to: "preferences#update"
+
   # Private admin area (HTTP Basic Auth). The RSS reader and the job dashboard
   # both live underneath it.
   namespace :admin do

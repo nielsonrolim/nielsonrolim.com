@@ -44,6 +44,14 @@ class NewsletterMailerTest < ActionMailer::TestCase
     assert_includes @email.text_part.body.to_s, "clipping-fan@example.org"
   end
 
+  test "carries a link to the subscription preferences" do
+    expected = preferences_url_for(@subscriber)
+
+    assert_includes @email.html_part.body.to_s, expected
+    assert_includes @email.text_part.body.to_s, expected
+    assert_includes @email.html_part.body.to_s, "gerenciar inscrição"
+  end
+
   test "advertises one-click unsubscribe for bulk-mail filters" do
     assert_equal "<#{unsubscribe_url_for(@subscriber)}>", @email["List-Unsubscribe"].to_s
     assert_equal "List-Unsubscribe=One-Click", @email["List-Unsubscribe-Post"].to_s
@@ -111,5 +119,10 @@ class NewsletterMailerTest < ActionMailer::TestCase
   def unsubscribe_url_for(subscriber)
     options = ActionMailer::Base.default_url_options
     "http://#{options.fetch(:host)}/newsletter/unsubscribe?token=#{subscriber.unsubscribe_token}"
+  end
+
+  def preferences_url_for(subscriber)
+    options = ActionMailer::Base.default_url_options
+    "http://#{options.fetch(:host)}/newsletter/preferences?token=#{subscriber.unsubscribe_token}"
   end
 end
