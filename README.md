@@ -13,13 +13,14 @@ articles into a weekly clipping newsletter with AI-written summaries.
 - Light/dark theme that follows the operating system by default and remembers the
   visitor's choice (`localStorage`).
 - Small newsletter capture with honeypot spam protection and one-click unsubscribe.
-- **Private RSS reader** (`/reader`) behind HTTP Basic Auth: subscribe to feeds,
-  browse entries by feed and time window, and clip the ones worth sharing.
+- **Private admin area** (`/admin`) behind HTTP Basic Auth. Underneath it:
+  - **RSS reader** (`/admin/reader`): subscribe to feeds, browse entries by feed
+    and time window, and clip the ones worth sharing.
+  - **Job dashboard** (`/admin/jobs`): Mission Control for Solid Queue — inspect
+    queues, retry or discard failed jobs, watch workers and recurring tasks.
 - **Weekly clipping newsletter**: every clipped article is summarized by a free
   LLM through the `opencode` CLI, then all clippings of the week go out as one
   HTML + plain-text email to every subscriber, Mondays at 09:00.
-- **Job dashboard** (`/reader/jobs`): Mission Control for Solid Queue — inspect
-  queues, retry or discard failed jobs, watch workers and recurring tasks.
 - No JavaScript framework in the app's own pages; a tiny inline script handles
   the theme. (The dashboard is a vendored engine shipping its own Turbo/Stimulus
   assets, behind the same auth.)
@@ -54,15 +55,16 @@ articles into a weekly clipping newsletter with AI-written summaries.
 ```sh
 mise install          # or install Ruby 4.0.6 another way
 bundle install
-cp .env.example .env  # fill in READER_USERNAME / READER_PASSWORD, or /reader 403s
+cp .env.example .env  # fill in READER_USERNAME / READER_PASSWORD, or /admin 403s
 bin/rails db:prepare
 bin/rails db:seed     # optional: the starter feeds
 bin/dev               # starts Puma; Tailwind rebuilds automatically in dev
 ```
 
-Open http://localhost:3000 — `/` redirects to `/pt-BR`. The reader lives at
-http://localhost:3000/reader and asks for the `READER_*` credentials from `.env`
-(loaded by `dotenv-rails`; restart after editing it).
+Open http://localhost:3000 — `/` redirects to `/pt-BR`. The admin area lives at
+http://localhost:3000/admin (the reader at `/admin/reader`) and asks for the
+`READER_*` credentials from `.env` (loaded by `dotenv-rails`; restart after
+editing it).
 
 Feed polling, summary generation and the weekly send all run through Solid Queue,
 so start a worker in a second terminal:
@@ -74,7 +76,7 @@ bin/jobs start        # workers + the recurring scheduler
 Without a worker, clippings stay in `pending` and feeds are never refreshed.
 
 To send an issue by hand while developing, use the "send now" button on
-`/reader/newsletters` — the email opens in a browser tab via `letter_opener`.
+`/admin/reader/newsletters` — the email opens in a browser tab via `letter_opener`.
 
 To work on styles in a separate process instead:
 
@@ -82,34 +84,39 @@ To work on styles in a separate process instead:
 bin/rails tailwindcss:watch
 ```
 
-## RSS reader and weekly clipping
+## Admin area, RSS reader and weekly clipping
 
-Everything below lives under `/reader` and requires HTTP Basic Auth. Set
-`READER_USERNAME` and `READER_PASSWORD`; **if either is missing the whole area
-returns 403** rather than becoming public.
+`/admin` is the authenticated area (HTTP Basic Auth). Set `READER_USERNAME` and
+`READER_PASSWORD`; **if either is missing the whole area returns 403** rather
+than becoming public. The reader and the job dashboard live underneath it.
 
-| Path               | What it does                                                      |
-| ------------------ | ----------------------------------------------------------------- |
-| `/reader`          | Entry stream: filter by feed and time window, paginate, clip       |
-| `/reader/feeds`    | Add/remove feeds, refresh one or all, see per-feed poll errors     |
-| `/reader/clippings`| The queue for the next issue, with each summary's status           |
-| `/reader/newsletters` | Issue archive, live stats, and a manual "send now"             |
-| `/reader/jobs`     | Mission Control dashboard: queues, pending/failed/scheduled jobs, workers, recurring tasks; retry or discard |
+| Path                   | What it does                                                    |
+| ---------------------- | --------------------------------------------------------------- |
+| `/admin`               | Dashboard: totals and links into the sections                    |
+| `/admin/reader`        | Entry stream: filter by feed and time window, paginate, clip     |
+| `/admin/reader/feeds`  | Add/remove feeds, refresh one or all, see per-feed poll errors   |
+| `/admin/reader/clippings` | The queue for the next issue, with each summary's status      |
+| `/admin/reader/newsletters` | Issue archive, live stats, and a manual "send now"          |
+| `/admin/jobs`          | Mission Control dashboard: queues, pending/failed/scheduled jobs, workers, recurring tasks; retry or discard |
+
+The layout has two navigation levels: the admin sections (`[painel] [leitor]
+[jobs]`) and, inside the reader, its own sub-navigation (`[entradas] [recortes]
+[fontes] [arquivo]`).
 
 ### Inspecting jobs
 
-`/reader/jobs` is the [Mission Control](https://github.com/rails/mission_control-jobs)
+`/admin/jobs` is the [Mission Control](https://github.com/rails/mission_control-jobs)
 dashboard (Solid Queue's official UI). It mounts inside the engine and its
-controllers inherit `Reader::BaseController` — the gem's own HTTP Basic Auth is
+controllers inherit `Admin::BaseController` — the gem's own HTTP Basic Auth is
 switched off in favour of the one credential set — so **the dashboard exposes job
 arguments, which include clipping prompts and subscriber addresses.** It is
 therefore never public: without credentials it answers 401, and if `READER_*` is
-unset it 403s like the rest of the reader.
+unset it 403s like the rest of the admin area.
 
 There you can browse queues and pending/failed/scheduled/finished jobs, inspect
 arguments and backtraces, and retry or discard failures. Workers and recurring
 tasks appear under the application-scoped routes
-(`/reader/jobs/applications/default/...`).
+(`/admin/jobs/applications/default/...`).
 
 Without the dashboard, from a shell:
 
@@ -204,8 +211,8 @@ environment variables are read:
 | `RAILS_HOSTS`             | Comma-separated allowed hosts (default `nielsonrolim.com,www.nielsonrolim.com`). |
 | `WEB_PORT`                | Host port published by Docker Compose (default `3000`).                 |
 | `RAILS_LOG_LEVEL`         | Optional; defaults to `info`.                                           |
-| `READER_USERNAME`         | HTTP Basic user for `/reader`. Required, or the area 403s.              |
-| `READER_PASSWORD`         | HTTP Basic password for `/reader`. Required.                            |
+| `READER_USERNAME`         | HTTP Basic user for `/admin`. Required, or the area 403s.               |
+| `READER_PASSWORD`         | HTTP Basic password for `/admin`. Required.                             |
 | `APP_HOST`, `APP_PROTOCOL`| Base URL used to build links inside emails.                             |
 | `NEWSLETTER_FROM`         | `From:` header of the weekly clipping.                                  |
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
@@ -222,7 +229,7 @@ environment variables are read:
 
 All copy lives in `config/locales/pt-BR.yml` and `config/locales/en-US.yml`.
 There are no hardcoded strings in the views. The locale is taken from the URL
-segment; `/` redirects to `/pt-BR`. The reader itself is not locale-scoped and
+segment; `/` redirects to `/pt-BR`. The admin area itself is not locale-scoped and
 always renders in the default locale. `rails-i18n` supplies the pt-BR
 ActiveRecord error messages and date formats.
 
@@ -258,12 +265,12 @@ docker compose up -d --build
 `config.hosts` is set from `RAILS_HOSTS` (default `nielsonrolim.com,www.nielsonrolim.com`)
 to block DNS-rebinding attacks, so **`http://localhost:3001` returns 403 for every
 path except `/up`** — including the public site. That is the host filter, not the
-reader's auth. Send the expected Host header instead:
+admin area's auth. Send the expected Host header instead:
 
 ```sh
 curl -H "Host: nielsonrolim.com" http://127.0.0.1:3001/pt-BR      # 200
 curl -H "Host: nielsonrolim.com" -u "$READER_USERNAME:$READER_PASSWORD" \
-     http://127.0.0.1:3001/reader                                  # 200
+     http://127.0.0.1:3001/admin                                   # 200
 ```
 
 Or add `localhost,127.0.0.1` to `RAILS_HOSTS` — convenient, but it does weaken
@@ -300,7 +307,9 @@ app/
   assets/images/                    Photo and Jampa Ruby logo
   assets/fonts/                     FiraCode Nerd Font
   controllers/                      PagesController, SubscribersController,
-                                    UnsubscribesController, Reader::* (auth area)
+                                    UnsubscribesController,
+                                    Admin::BaseController (auth) + Admin::Dashboard,
+                                    Reader::* (nested under /admin)
   jobs/                             RefreshFeedsJob, GenerateSummaryJob,
                                     SendNewsletterJob
   mailers/newsletter_mailer.rb      One issue → one subscriber
@@ -310,7 +319,9 @@ app/
     opencode_cli.rb                 Locked-down `opencode` process wrapper
     summary_generator.rb            Prompt building and response extraction
     newsletter_composer.rb          Issue HTML/text rendering
-  views/reader/                     Reader screens
+  views/layouts/admin.html.erb      Admin chrome + two-level navigation
+  views/admin/dashboard/            Admin landing page
+  views/reader/                     Reader screens (sub-navigation partial too)
   views/newsletters/email_body.*    Archived issue body (html + text)
   views/newsletter_mailer/issue.*   Per-recipient wrapper + unsubscribe footer
 config/

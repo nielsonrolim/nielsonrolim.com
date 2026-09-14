@@ -22,27 +22,37 @@ Rails.application.routes.draw do
   get "newsletter/unsubscribe", to: "unsubscribes#show", as: :unsubscribe
   post "newsletter/unsubscribe", to: "unsubscribes#destroy"
 
-  # Private RSS reader + newsletter clipping area (HTTP Basic Auth).
-  namespace :reader do
-    root to: "entries#index"
+  # Private admin area (HTTP Basic Auth). The RSS reader and the job dashboard
+  # both live underneath it.
+  namespace :admin do
+    root to: "dashboard#index"
 
-    # Job dashboard. Mission Control's controllers inherit Reader::BaseController
+    # Job dashboard. Mission Control's controllers inherit Admin::BaseController
     # (see config/application.rb), so this is behind the same credentials.
     mount MissionControl::Jobs::Engine, at: "/jobs"
+  end
 
-    resources :feeds, only: [ :index, :create, :destroy ] do
-      member { post :refresh }
-      collection { post :refresh_all }
+  # The reader keeps its own Reader:: module, its own views and its reader_*
+  # route helpers — only the path is nested under /admin, so the URLs become
+  # /admin/reader/... without a mass rename of controllers and helpers.
+  scope path: "admin" do
+    namespace :reader do
+      root to: "entries#index"
+
+      resources :feeds, only: [ :index, :create, :destroy ] do
+        member { post :refresh }
+        collection { post :refresh_all }
+      end
+
+      resources :entries, only: [ :index ] do
+        member { post :clip }
+      end
+
+      resources :clippings, only: [ :index, :destroy ] do
+        member { post :retry_summary }
+      end
+
+      resources :newsletters, only: [ :index, :show, :create ]
     end
-
-    resources :entries, only: [ :index ] do
-      member { post :clip }
-    end
-
-    resources :clippings, only: [ :index, :destroy ] do
-      member { post :retry_summary }
-    end
-
-    resources :newsletters, only: [ :index, :show, :create ]
   end
 end

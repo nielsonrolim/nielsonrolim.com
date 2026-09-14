@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
   <head>
-    <title><%= t("reader.title") %> — nielsonrolim.com</title>
+    <title><%= t("admin.title") %> — nielsonrolim.com</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <%= render "layouts/theme_script" %>
@@ -14,28 +14,34 @@
     <div class="mx-auto max-w-site px-6 pb-16 max-tiny:px-[1.1rem] max-tiny:pb-12">
       <header class="mb-10 border-b border-line py-[1.1rem]">
         <div class="flex items-center justify-between gap-4 text-chrome text-muted">
-          <span class="topbar__path">~/reader</span>
-          <button type="button" data-theme-toggle class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-frame border border-transparent text-muted hover:border-line-strong hover:text-ink" aria-label="<%= t("reader.theme_toggle") %>">
+          <span class="topbar__path">~/admin</span>
+          <button type="button" data-theme-toggle class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-frame border border-transparent text-muted hover:border-line-strong hover:text-ink" aria-label="<%= t("admin.theme_toggle") %>">
             <svg class="block h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
         </div>
 
-        <nav class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-prompt" aria-label="<%= t("reader.nav.label") %>">
+        <%# Top level: the sections of the admin area. The dashboard is an exact
+            match so that its link is not "active" on every /admin page. %>
+        <nav class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-prompt" aria-label="<%= t("admin.nav.label") %>">
           <% [
-               [ t("reader.nav.entries"), reader_entries_path, reader_entries_path ],
-               [ t("reader.nav.clippings"), reader_clippings_path, reader_clippings_path ],
-               [ t("reader.nav.feeds"), reader_feeds_path, reader_feeds_path ],
-               [ t("reader.nav.newsletters"), reader_newsletters_path, reader_newsletters_path ],
-               [ t("reader.nav.jobs"), reader_mission_control_jobs_path, reader_mission_control_jobs_path ]
-             ].each do |label, path, active_path| %>
-            <% active = request.path == active_path || request.path.start_with?("#{active_path}/") %>
+               [ t("admin.nav.dashboard"), admin_root_path, request.path == admin_root_path ],
+               [ t("admin.nav.reader"), reader_root_path, request.path.start_with?(reader_root_path) ],
+               [ t("admin.nav.jobs"), admin_mission_control_jobs_path, request.path.start_with?(admin_mission_control_jobs_path) ]
+             ].each do |label, path, active| %>
             <%= link_to label, path,
                   class: "no-underline text-muted hover:text-ink #{'text-ink font-bold' if active}",
                   aria: { current: active ? "page" : nil } %>
           <% end %>
-          <%= link_to t("reader.nav.back_to_site"), home_path(locale: I18n.locale), class: "ml-auto text-chrome text-muted no-underline hover:text-ink" %>
+          <%= link_to t("admin.nav.back_to_site"), home_path(locale: I18n.locale), class: "ml-auto text-chrome text-muted no-underline hover:text-ink" %>
         </nav>
+
+        <%# Second level, only inside a section that has one. %>
+        <% if controller_path.start_with?("reader/") %>
+          <nav class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-3 text-small" aria-label="<%= t("reader.nav.label") %>">
+            <%= render "reader/subnav" %>
+          </nav>
+        <% end %>
       </header>
 
       <% flash.each do |type, message| %>

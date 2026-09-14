@@ -1,17 +1,17 @@
 require "test_helper"
 
-class Reader::JobsDashboardTest < ActionDispatch::IntegrationTest
+class Admin::JobsDashboardTest < ActionDispatch::IntegrationTest
   setup { set_reader_credentials! }
   teardown { restore_reader_credentials! }
 
   test "requires credentials" do
-    get reader_mission_control_jobs_path
+    get admin_mission_control_jobs_path
 
     assert_response :unauthorized
   end
 
   test "renders for an authenticated user" do
-    get reader_mission_control_jobs_path, headers: reader_headers
+    get admin_mission_control_jobs_path, headers: reader_headers
 
     assert_response :success
     assert_select "title", /Mission control/
@@ -22,14 +22,14 @@ class Reader::JobsDashboardTest < ActionDispatch::IntegrationTest
   end
 
   test "renders the queues tab" do
-    get "#{reader_mission_control_jobs_path}/queues", headers: reader_headers
+    get "#{admin_mission_control_jobs_path}/queues", headers: reader_headers
 
     assert_response :success
     assert_select "body", /Queue/
   end
 
   test "renders a job status tab" do
-    get "#{reader_mission_control_jobs_path}/finished/jobs", headers: reader_headers
+    get "#{admin_mission_control_jobs_path}/finished/jobs", headers: reader_headers
 
     assert_response :success
   end

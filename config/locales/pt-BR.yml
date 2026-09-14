@@ -142,18 +142,39 @@ pt-BR:
     formats:
       long: "%d/%m/%Y %H:%M"
       short: "%H:%M"
-  reader:
-    realm: "Leitor de RSS"
-    title: "Leitor de RSS"
+  admin:
+    realm: "Área administrativa"
+    title: "Admin"
     theme_toggle: "Alternar tema claro/escuro"
+    nav:
+      label: "Navegação do admin"
+      dashboard: "[painel]"
+      reader: "[leitor]"
+      jobs: "[jobs]"
+      back_to_site: "← voltar ao site"
+    dashboard:
+      prompt: "cat admin.md"
+      title: "Painel"
+      stats:
+        feeds: "fontes"
+        entries: "entradas"
+        queued: "na fila p/ newsletter"
+        subscribers: "assinantes"
+      links:
+        reader: "leitor"
+        reader_hint: "ler, filtrar e marcar entradas"
+        jobs: "jobs"
+        jobs_hint: "%{count} com falha"
+      latest_newsletter: "Última edição: %{subject}"
+      not_sent: "ainda não enviada"
+      no_newsletter: "Nenhuma edição enviada ainda."
+  reader:
     nav:
       label: "Navegação do leitor"
       entries: "[entradas]"
       clippings: "[recortes]"
       feeds: "[fontes]"
       newsletters: "[arquivo]"
-      jobs: "[jobs]"
-      back_to_site: "← voltar ao site"
     entries:
       prompt: "cat entries.log"
       clip: "marcar p/ newsletter"

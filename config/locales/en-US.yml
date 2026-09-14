@@ -142,18 +142,39 @@ en-US:
     formats:
       long: "%Y-%m-%d %H:%M"
       short: "%H:%M"
-  reader:
-    realm: "RSS Reader"
-    title: "RSS Reader"
+  admin:
+    realm: "Admin area"
+    title: "Admin"
     theme_toggle: "Toggle light/dark theme"
+    nav:
+      label: "Admin navigation"
+      dashboard: "[dashboard]"
+      reader: "[reader]"
+      jobs: "[jobs]"
+      back_to_site: "← back to site"
+    dashboard:
+      prompt: "cat admin.md"
+      title: "Dashboard"
+      stats:
+        feeds: "feeds"
+        entries: "entries"
+        queued: "queued for newsletter"
+        subscribers: "subscribers"
+      links:
+        reader: "reader"
+        reader_hint: "read, filter and clip entries"
+        jobs: "jobs"
+        jobs_hint: "%{count} failed"
+      latest_newsletter: "Latest issue: %{subject}"
+      not_sent: "not sent yet"
+      no_newsletter: "No issue sent yet."
+  reader:
     nav:
       label: "Reader navigation"
       entries: "[entries]"
       clippings: "[clippings]"
       feeds: "[feeds]"
       newsletters: "[archive]"
-      jobs: "[jobs]"
-      back_to_site: "← back to site"
     entries:
       prompt: "cat entries.log"
       clip: "clip for newsletter"

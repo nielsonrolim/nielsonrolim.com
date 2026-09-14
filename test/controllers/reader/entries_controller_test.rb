@@ -73,8 +73,21 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     get reader_entries_path, headers: reader_headers
 
     assert_response :success
-    assert_select "nav a[href=?]", reader_mission_control_jobs_path
+    assert_select "nav a[href=?]", admin_mission_control_jobs_path
     assert_select "nav", /\[jobs\]/
+  end
+
+  test "renders both navigation levels" do
+    get reader_entries_path, headers: reader_headers
+
+    assert_response :success
+    # Top level: the admin sections.
+    assert_select "nav", /\[painel\]/
+    assert_select "nav", /\[leitor\]/
+    # Second level: the reader's own sections.
+    assert_select "nav a[href=?]", reader_feeds_path
+    assert_select "nav", /\[entradas\]/
+    assert_select "nav", /\[recortes\]/
   end
 
   test "clipping an entry queues it and asks for a summary" do

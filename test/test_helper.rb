@@ -24,7 +24,9 @@ module ActionDispatch
     include HttpResponseHelpers
     include OpencodeEventHelpers
 
-    # The reader area is behind HTTP Basic Auth (see Reader::BaseController).
+    # The /admin area is behind HTTP Basic Auth (see Admin::BaseController). The
+    # env var names stay READER_* because that is what .env and the deployment
+    # already use; the helpers below mirror them.
     READER_CREDENTIALS = { "READER_USERNAME" => "reader", "READER_PASSWORD" => "s3cret" }.freeze
 
     def with_reader_credentials

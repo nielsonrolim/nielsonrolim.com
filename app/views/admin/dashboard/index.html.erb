@@ -1,0 +1,42 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("admin.dashboard.prompt") %></p>
+  <h1 class="mt-[0.1rem] mb-6 text-lead font-bold text-ink"><%= t("admin.dashboard.title") %></h1>
+
+  <dl class="grid grid-cols-4 gap-5 border-y border-line py-5 max-narrow:grid-cols-2 max-tiny:grid-cols-1">
+    <% [
+         [ t("admin.dashboard.stats.feeds"), @feed_count ],
+         [ t("admin.dashboard.stats.entries"), @entry_count ],
+         [ t("admin.dashboard.stats.queued"), @queued_clippings ],
+         [ t("admin.dashboard.stats.subscribers"), @subscriber_count ]
+       ].each do |label, value| %>
+      <div>
+        <dt class="text-meta text-muted"><%= label %></dt>
+        <dd class="m-0 text-display font-bold text-ink"><%= value %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <div class="mt-6 grid max-w-measure gap-2 text-prompt">
+    <p class="m-0">
+      <%= link_to t("admin.dashboard.links.reader"), reader_root_path %>
+      <span class="text-muted">— <%= t("admin.dashboard.links.reader_hint") %></span>
+    </p>
+    <p class="m-0">
+      <%= link_to t("admin.dashboard.links.jobs"), admin_mission_control_jobs_path %>
+      <span class="text-muted">— <%= t("admin.dashboard.links.jobs_hint", count: @failed_jobs) %></span>
+    </p>
+  </div>
+
+  <p class="mt-8 max-w-measure border-t border-line pt-5 text-meta text-muted">
+    <% if @latest_newsletter %>
+      <%= t("admin.dashboard.latest_newsletter", subject: @latest_newsletter.subject) %>
+      <% if @latest_newsletter.sent_at %>
+        &middot; <%= l(@latest_newsletter.sent_at.to_date, format: :long) %>
+      <% else %>
+        &middot; <%= t("admin.dashboard.not_sent") %>
+      <% end %>
+    <% else %>
+      <%= t("admin.dashboard.no_newsletter") %>
+    <% end %>
+  </p>
+</section>
