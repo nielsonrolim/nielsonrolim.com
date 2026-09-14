@@ -117,7 +117,9 @@ class FeedFetcherTest < ActiveSupport::TestCase
         assert_equal "Ruby & Rails Weekly", feed.title
         assert_equal "https://example.com", feed.site_url
         assert_equal "A weekly roundup of Ruby news.", feed.description
-        assert_equal "ruby", feed.category
+        # "ruby" resolves to the existing "Ruby" fixture category: matching is
+        # case-insensitive, so a typed name never creates a near-duplicate.
+        assert_equal [ "Ruby" ], feed.categories.map(&:name)
         assert_nil feed.last_fetched_at
       end
     end

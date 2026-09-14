@@ -1,0 +1,12 @@
+# ruby_blog deliberately has two categories, to exercise multi-category feeds.
+ruby_blog_ruby:
+  feed: ruby_blog
+  category: ruby
+
+ruby_blog_web:
+  feed: ruby_blog
+  category: web
+
+hacker_news_news:
+  feed: hacker_news
+  category: news

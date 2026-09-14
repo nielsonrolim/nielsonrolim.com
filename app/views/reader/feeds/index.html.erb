@@ -32,10 +32,17 @@
       <% @feeds.each do |feed| %>
         <li class="border-t border-line py-[1.1rem] last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 class="m-0 text-base font-bold text-ink"><%= feed.title %></h3>
-            <% if feed.category.present? %>
-              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted"><%= feed.category %></span>
+            <h3 class="m-0 text-base font-bold text-ink"><%= feed.display_title %></h3>
+
+            <%# The feed's own title, when the reader overrode it. %>
+            <% if feed.custom_title.present? %>
+              <span class="text-meta text-muted">(<%= feed.title %>)</span>
             <% end %>
+
+            <% feed.categories.sort_by { |category| category.name.downcase }.each do |category| %>
+              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted"><%= category.name %></span>
+            <% end %>
+
             <span class="text-meta text-muted"><%= t("reader.feeds.entry_count", count: @entry_counts[feed.id].to_i) %></span>
           </div>
 
@@ -53,11 +60,13 @@
             <% end %>
 
             <span class="ml-auto flex items-center gap-3">
+              <%= link_to t("reader.feeds.actions.edit"), edit_reader_feed_path(feed),
+                    class: "rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted no-underline hover:border-ruby hover:text-ruby" %>
               <%= button_to t("reader.feeds.actions.refresh"), refresh_reader_feed_path(feed), method: :post,
                     class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
                     form: { class: "m-0 inline" } %>
               <%= button_to t("reader.feeds.actions.remove"), reader_feed_path(feed), method: :delete,
-                    data: { confirm: t("reader.feeds.actions.confirm_remove", title: feed.title) },
+                    data: { confirm: t("reader.feeds.actions.confirm_remove", title: feed.display_title) },
                     class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
                     form: { class: "m-0 inline" } %>
             </span>

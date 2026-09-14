@@ -133,17 +133,21 @@ class FeedFetcher
     end
   end
 
-  # Fetches a URL and creates a Feed from the metadata it advertises.
+  # Fetches a URL and creates a Feed from the metadata it advertises. The
+  # optional category is a single name (the compact add form), turned into a
+  # Category and attached through the association.
   def self.create_from_url(url, category: nil, transport: default_transport)
     parsed = Feedjira.parse(transport.get(url))
 
-    Feed.create!(
+    feed = Feed.create!(
       url: url,
       title: plain_text(parsed.title).presence || URI.parse(url).host.to_s,
       site_url: parsed.url,
-      description: truncate_text(plain_text(parsed.description), 1_000),
-      category: category
+      description: truncate_text(plain_text(parsed.description), 1_000)
     )
+
+    feed.categories << Category.find_or_create_by_name(category) if category.present?
+    feed
   end
 
   # Refreshes every feed that is due for a poll.

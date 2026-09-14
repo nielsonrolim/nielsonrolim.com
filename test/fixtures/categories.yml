@@ -1,0 +1,8 @@
+ruby:
+  name: "Ruby"
+
+news:
+  name: "News"
+
+web:
+  name: "Web"

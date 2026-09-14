@@ -187,6 +187,10 @@ en-US:
       filters:
         feed: "feed"
         all_feeds: "all"
+        choose: "choose"
+        category: "category"
+        all_categories: "all"
+        uncategorized: "uncategorised"
         since: "range"
         week: "7d"
         month: "30d"
@@ -216,14 +220,29 @@ en-US:
         category: "category"
         category_placeholder: "optional"
         submit: "add"
+        custom_title: "display title"
+        custom_title_hint: "Blank uses the feed's own title: %{title}"
+        categories: "categories"
+        no_categories: "No categories yet — create one below."
+        new_categories: "new category"
+        new_categories_placeholder: "comma separated"
+        save: "save"
+      edit:
+        prompt: "edit source.conf"
+        url_locked: "The URL identifies the feed (entries are matched by it), so it is not editable."
+        cancel: "cancel"
       actions:
         refresh: "refresh"
+        edit: "edit"
         remove: "remove"
         confirm_remove: "Remove the feed '%{title}' and all of its entries?"
       create:
         success: "Feed added: %{title}"
         duplicate: "That feed is already subscribed."
         invalid: "Could not read the feed: %{error}"
+      update:
+        success: "Feed updated: %{title}"
+        invalid: "Could not save: %{error}"
       destroy:
         success: "Feed removed: %{title}"
       refresh:

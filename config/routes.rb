@@ -39,7 +39,7 @@ Rails.application.routes.draw do
     namespace :reader do
       root to: "entries#index"
 
-      resources :feeds, only: [ :index, :create, :destroy ] do
+      resources :feeds, only: [ :index, :create, :edit, :update, :destroy ] do
         member { post :refresh }
         collection { post :refresh_all }
       end

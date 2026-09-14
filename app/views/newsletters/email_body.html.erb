@@ -25,7 +25,7 @@
               <% @clippings.each_with_index do |clipping, index| %>
                 <div style="<%= index.positive? ? "border-top:1px solid #{line};padding-top:18px;margin-top:18px;" : "" %>">
                   <p style="margin:0 0 6px;font-size:12px;color:<%= muted %>;">
-                    <%= format("%02d", index + 1) %><%= ". #{clipping.entry.feed.title}" if clipping.entry&.feed %>
+                    <%= format("%02d", index + 1) %><%= ". #{clipping.entry.feed.display_title}" if clipping.entry&.feed %>
                   </p>
                   <p style="margin:0 0 8px;font-size:16px;font-weight:700;">
                     <a href="<%= clipping.url %>" style="color:<%= accent %>;text-decoration:underline;"><%= clipping.title %></a>

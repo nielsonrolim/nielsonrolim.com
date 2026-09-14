@@ -1,0 +1,54 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.feeds.edit.prompt") %></p>
+
+  <div class="max-w-measure">
+    <%= form_with model: @feed, url: reader_feed_path(@feed), class: "grid gap-6" do |form| %>
+      <div>
+        <%= form.label :url, t("reader.feeds.form.url"), class: "mb-1 block text-chrome text-muted" %>
+        <p class="m-0 rounded-frame border border-line bg-surface px-3 py-[0.35rem] font-mono text-form break-all text-muted">
+          <%= @feed.url %>
+        </p>
+        <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.feeds.edit.url_locked") %></p>
+      </div>
+
+      <div>
+        <%= form.label :custom_title, t("reader.feeds.form.custom_title"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.text_field :custom_title, placeholder: @feed.title,
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+        <p class="mt-1 mb-0 text-meta text-muted">
+          <%= t("reader.feeds.form.custom_title_hint", title: @feed.title) %>
+        </p>
+      </div>
+
+      <fieldset class="m-0 border-0 p-0">
+        <legend class="mb-1 block text-chrome text-muted"><%= t("reader.feeds.form.categories") %></legend>
+
+        <% if @categories.any? %>
+          <div class="grid grid-cols-1 gap-1 narrow:grid-cols-2">
+            <%= form.collection_check_boxes :category_ids, @categories, :id, :name do |builder| %>
+              <label class="flex cursor-pointer items-center gap-2 text-prompt">
+                <%= builder.check_box class: "accent-ruby" %>
+                <span><%= builder.text %></span>
+              </label>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="m-0 text-meta text-muted"><%= t("reader.feeds.form.no_categories") %></p>
+        <% end %>
+      </fieldset>
+
+      <div>
+        <%= label_tag "feed_new_categories", t("reader.feeds.form.new_categories"), class: "mb-1 block text-chrome text-muted" %>
+        <%= text_field_tag "feed[new_categories]", nil,
+              placeholder: t("reader.feeds.form.new_categories_placeholder"),
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <%= form.submit t("reader.feeds.form.save"),
+              class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+        <%= link_to t("reader.feeds.edit.cancel"), reader_feeds_path, class: "text-chrome text-muted no-underline hover:text-ink" %>
+      </div>
+    <% end %>
+  </div>
+</section>

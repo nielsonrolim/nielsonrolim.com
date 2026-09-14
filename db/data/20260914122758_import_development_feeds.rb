@@ -37,11 +37,13 @@ class ImportDevelopmentFeeds < ActiveRecord::Migration[8.1]
   ].freeze
 
   def up
-    FEEDS.each do |title, url, category|
-      Feed.find_or_create_by!(url: url) do |feed|
-        feed.title = title
-        feed.category = category
-      end
+    FEEDS.each do |title, url, category_name|
+      feed = Feed.find_or_create_by!(url: url) { |new_feed| new_feed.title = title }
+
+      category = Category.find_or_create_by_name(category_name)
+      next if category.nil? || feed.categories.any? { |own| own.id == category.id }
+
+      feed.categories << category
     end
   end
 

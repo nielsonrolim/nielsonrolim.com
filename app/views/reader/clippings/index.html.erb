@@ -15,7 +15,7 @@
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
             <span class="text-ruby"><%= format("%02d", index + 1) %></span>
             <% if clipping.entry&.feed %>
-              <span><%= clipping.entry.feed.title %></span>
+              <span><%= clipping.entry.feed.display_title %></span>
             <% end %>
             <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
             <%= render "reader/clippings/summary_status", clipping: clipping %>

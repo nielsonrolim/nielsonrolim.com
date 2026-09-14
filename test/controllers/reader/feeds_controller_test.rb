@@ -41,7 +41,8 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = Feed.last
     assert_equal "Ruby & Rails Weekly", feed.title
     assert_equal "https://example.com", feed.site_url
-    assert_equal "ruby", feed.category
+    # Reuses the existing "Ruby" category rather than creating a "ruby" one.
+    assert_equal [ "Ruby" ], feed.categories.map(&:name)
     assert_redirected_to reader_feeds_path
   end
 
@@ -148,5 +149,125 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
       assert_response :forbidden
     end
+  end
+
+  test "the edit page shows the URL as text, never as an input" do
+    feed = feeds(:ruby_blog)
+
+    get edit_reader_feed_path(feed), headers: reader_headers
+
+    assert_response :success
+    assert_select "p", /#{Regexp.escape(feed.url)}/
+    assert_select "input[name=?]", "feed[url]", count: 0
+    assert_select "input[type=checkbox][name=?]", "feed[category_ids][]"
+  end
+
+  test "the edit page checks the feed's current categories" do
+    feed = feeds(:ruby_blog)
+
+    get edit_reader_feed_path(feed), headers: reader_headers
+
+    assert_response :success
+    assert_select "input[type=checkbox][name=?][value=?][checked]", "feed[category_ids][]", categories(:ruby).id
+    assert_select "input[type=checkbox][name=?][value=?][checked]", "feed[category_ids][]", categories(:web).id
+    assert_select "input[type=checkbox][name=?][value=?][checked]", "feed[category_ids][]", categories(:news).id, count: 0
+  end
+
+  test "updating sets the display title while keeping the feed's own title" do
+    feed = feeds(:hacker_news)
+
+    patch reader_feed_path(feed), params: { feed: { custom_title: "HN" } }, headers: reader_headers
+
+    assert_redirected_to reader_feeds_path
+    feed.reload
+    assert_equal "HN", feed.custom_title
+    assert_equal "HN", feed.display_title
+    assert_equal "Hacker News", feed.title
+  end
+
+  test "updating can clear the custom title" do
+    feed = feeds(:ruby_blog)
+    assert_equal "Ruby Weekly (curadoria)", feed.display_title
+
+    patch reader_feed_path(feed), params: { feed: { custom_title: "" } }, headers: reader_headers
+
+    assert_equal "Ruby Weekly", feed.reload.display_title
+  end
+
+  test "updating replaces the whole category set" do
+    feed = feeds(:broken)
+
+    patch reader_feed_path(feed),
+          params: { feed: { category_ids: [ categories(:ruby).id.to_s, categories(:news).id.to_s ] } },
+          headers: reader_headers
+
+    assert_equal [ "News", "Ruby" ], feed.reload.categories.map(&:name).sort
+  end
+
+  test "unchecking a category removes it" do
+    feed = feeds(:ruby_blog)
+    assert_equal [ "Ruby", "Web" ], feed.categories.map(&:name).sort
+
+    patch reader_feed_path(feed),
+          params: { feed: { category_ids: [ categories(:ruby).id.to_s ] } },
+          headers: reader_headers
+
+    assert_equal [ "Ruby" ], feed.reload.categories.map(&:name)
+  end
+
+  test "categories typed into the new-category field are created and attached" do
+    feed = feeds(:broken)
+
+    assert_difference -> { Category.count }, 2 do
+      patch reader_feed_path(feed),
+            params: { feed: { new_categories: "Linux,  Rust " } },
+            headers: reader_headers
+    end
+
+    assert_equal [ "Linux", "Rust" ], feed.reload.categories.map(&:name).sort
+  end
+
+  test "a new category that already exists is reused, not duplicated" do
+    feed = feeds(:broken)
+
+    assert_no_difference -> { Category.count } do
+      patch reader_feed_path(feed),
+            params: { feed: { new_categories: "ruby" } },
+            headers: reader_headers
+    end
+
+    assert_equal [ categories(:ruby).id ], feed.reload.category_ids
+  end
+
+  test "an unknown category id is ignored rather than raising" do
+    feed = feeds(:broken)
+
+    patch reader_feed_path(feed), params: { feed: { category_ids: [ "999999" ] } }, headers: reader_headers
+
+    assert_redirected_to reader_feeds_path
+    assert_empty feed.reload.categories
+  end
+
+  test "the URL cannot be changed through update" do
+    feed = feeds(:hacker_news)
+
+    patch reader_feed_path(feed),
+          params: { feed: { url: "https://evil.example.com/feed" } },
+          headers: reader_headers
+
+    assert_equal "https://news.ycombinator.com/rss", feed.reload.url
+  end
+
+  test "a validation failure re-renders the form and rolls the categories back" do
+    feed = feeds(:ruby_blog)
+    feed.update_column(:title, "") # bypass validation to leave an invalid row
+
+    patch reader_feed_path(feed),
+          params: { feed: { category_ids: [ categories(:news).id.to_s ] } },
+          headers: reader_headers
+
+    assert_response :unprocessable_content
+    assert_select ".flash--alert"
+    assert_equal [ "Ruby", "Web" ], feed.reload.categories.map(&:name).sort
   end
 end

@@ -93,8 +93,9 @@ than becoming public. The reader and the job dashboard live underneath it.
 | Path                   | What it does                                                    |
 | ---------------------- | --------------------------------------------------------------- |
 | `/admin`               | Dashboard: totals and links into the sections                    |
-| `/admin/reader`        | Entry stream: filter by feed and time window, paginate, clip     |
+| `/admin/reader`        | Entry stream: filter by feed, category and window; paginate; clip |
 | `/admin/reader/feeds`  | Add/remove feeds, refresh one or all, see per-feed poll errors   |
+| `/admin/reader/feeds/:id/edit` | Edit a feed: display title and categories                |
 | `/admin/reader/clippings` | The queue for the next issue, with each summary's status      |
 | `/admin/reader/newsletters` | Issue archive, live stats, and a manual "send now"          |
 | `/admin/jobs`          | Mission Control dashboard: queues, pending/failed/scheduled jobs, workers, recurring tasks; retry or discard |
@@ -102,6 +103,24 @@ than becoming public. The reader and the job dashboard live underneath it.
 The layout has two navigation levels: the admin sections (`[painel] [leitor]
 [jobs]`) and, inside the reader, its own sub-navigation (`[entradas] [recortes]
 [fontes] [arquivo]`).
+
+### Feeds, categories and titles
+
+- **Categories are many-to-many.** `categories` + `feed_categories` (replacing
+  the old single `feeds.category` string). A feed can carry several, a category
+  groups many feeds, and matching names is case-insensitive, so typing `ruby`
+  finds an existing `Ruby` instead of creating a near-duplicate.
+- **`custom_title` is a display override** for the feed's own title. The feed
+  title keeps being refreshed from the feed on every poll; `display_title`
+  returns the override when set and the feed's title otherwise. Editing a title
+  therefore never fights the fetcher, and clearing the field restores the
+  original. Ordering follows the display title.
+- **The URL is not editable.** Entries are matched by it, so changing it would
+  orphan the history.
+- **The entry filter is grouped**: feeds live behind a disclosure grouped by
+  category (a feed with several categories shows under each), plus a category
+  row. Every filter link carries the other active filters, so combining feed,
+  category and window never silently drops one.
 
 ### Inspecting jobs
 
@@ -358,7 +377,8 @@ app/
   jobs/                             RefreshFeedsJob, GenerateSummaryJob,
                                     SendNewsletterJob
   mailers/newsletter_mailer.rb      One issue → one subscriber
-  models/                           Subscriber, Feed, Entry, Clipping, Newsletter
+  models/                           Subscriber, Feed, Category, FeedCategory,
+                                    Entry, Clipping, Newsletter
   services/
     feed_fetcher.rb                 HTTP transport + Feedjira parsing + ingest
     opencode_cli.rb                 Locked-down `opencode` process wrapper

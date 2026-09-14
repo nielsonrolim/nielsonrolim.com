@@ -45,14 +45,16 @@ FEEDS = {
 
 created = 0
 
-FEEDS.each do |category, feeds|
+FEEDS.each do |category_name, feeds|
+  category = Category.find_or_create_by_name(category_name)
+
   feeds.each do |title, url|
     feed = Feed.find_or_initialize_by(url: url)
     next if feed.persisted?
 
     feed.title = title
-    feed.category = category
     feed.save!
+    feed.categories << category if category
     created += 1
   end
 end

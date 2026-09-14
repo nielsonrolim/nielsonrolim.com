@@ -134,4 +134,53 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "the feed picker is grouped by category and shows display titles" do
+    get reader_entries_path, headers: reader_headers
+
+    assert_response :success
+    picker = css_select("details").map(&:text).join
+    assert_includes picker, "Ruby"
+    assert_includes picker, "News"
+    assert_includes picker, "Web"
+    assert_includes picker, "Ruby Weekly (curadoria)"
+    assert_includes picker, "sem categoria"
+  end
+
+  test "a feed with two categories appears under each of them" do
+    get reader_entries_path, headers: reader_headers
+
+    assert_equal 2, css_select("details").text.scan("Ruby Weekly (curadoria)").size
+  end
+
+  test "filters entries by category" do
+    get reader_entries_path, params: { category_id: categories(:ruby).id }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Solid Queue internals/
+    assert_select "body", text: /Show HN/, count: 0
+  end
+
+  test "combines the category filter with a time window" do
+    get reader_entries_path, params: { category_id: categories(:ruby).id, since: 1 }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Solid Queue internals/          # 20 hours ago
+    assert_select "body", text: /Rails 8\.1 ships/, count: 0 # 3 days ago
+  end
+
+  test "a filter link keeps the other active filters" do
+    get reader_entries_path, params: { feed_id: feeds(:ruby_blog).id, since: 7 }, headers: reader_headers
+
+    assert_response :success
+    assert_select "a[href*=?][href*=?]", "category_id=#{categories(:ruby).id}", "feed_id=#{feeds(:ruby_blog).id}"
+    assert_select "a[href*=?][href*=?]", "category_id=#{categories(:ruby).id}", "since=7"
+  end
+
+  test "an unknown category filter is ignored" do
+    get reader_entries_path, params: { category_id: -1 }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Solid Queue internals/
+  end
 end

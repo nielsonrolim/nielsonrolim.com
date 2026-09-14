@@ -51,6 +51,52 @@ class FeedTest < ActiveSupport::TestCase
     Feed.create!(title: "aaa feed", url: "https://a.example.com/feed")
     Feed.create!(title: "ZZZ feed", url: "https://z.example.com/feed")
 
-    assert_equal "aaa feed", Feed.alphabetical.first.title
+    assert_equal "aaa feed", Feed.alphabetical.first.display_title
+  end
+
+  test "alphabetical sorts by the custom title when there is one" do
+    feeds(:hacker_news).update!(custom_title: "Aaa first")
+
+    assert_equal "Aaa first", Feed.alphabetical.first.display_title
+  end
+
+  test "display_title prefers the custom title and falls back to the feed title" do
+    feed = feeds(:hacker_news)
+
+    assert_nil feed.custom_title
+    assert_equal "Hacker News", feed.display_title
+
+    feed.custom_title = "HN"
+    assert_equal "HN", feed.display_title
+
+    feed.custom_title = ""
+    assert_equal "Hacker News", feed.display_title
+  end
+
+  test "a feed can have several categories" do
+    feed = feeds(:ruby_blog)
+
+    assert_equal [ "Ruby", "Web" ], feed.categories.sort_by(&:name).map(&:name)
+  end
+
+  test "a feed can be uncategorised" do
+    assert_empty feeds(:broken).categories
+  end
+
+  test "removing a feed removes its category joins" do
+    feed = feeds(:ruby_blog)
+
+    assert_difference -> { FeedCategory.count }, -feed.feed_categories.count do
+      assert_no_difference -> { Category.count } do
+        feed.destroy
+      end
+    end
+  end
+
+  test "the compact add form's category field is not a column" do
+    feed = Feed.new(title: "x", url: "https://x.example.com/feed", category: "Ruby")
+
+    assert_equal "Ruby", feed.category
+    assert_not_includes Feed.column_names, "category"
   end
 end

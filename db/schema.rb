@@ -10,7 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_160500) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_130100) do
+  create_table "categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower(name)", name: "index_categories_on_lower_name", unique: true
+  end
+
   create_table "clippings", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "entry_id", null: false
@@ -25,6 +32,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_160500) do
     t.index ["entry_id"], name: "index_clippings_on_unsent_entry", unique: true, where: "newsletter_id IS NULL"
     t.index ["newsletter_id"], name: "index_clippings_on_newsletter_id"
     t.index ["summary_status"], name: "index_clippings_on_summary_status"
+  end
+
+  create_table "data_migrations", primary_key: "version", id: :string, force: :cascade do |t|
   end
 
   create_table "entries", force: :cascade do |t|
@@ -44,9 +54,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_160500) do
     t.index ["url"], name: "index_entries_on_url"
   end
 
-  create_table "feeds", force: :cascade do |t|
-    t.string "category"
+  create_table "feed_categories", force: :cascade do |t|
+    t.integer "category_id", null: false
     t.datetime "created_at", null: false
+    t.integer "feed_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_feed_categories_on_category_id"
+    t.index ["feed_id", "category_id"], name: "index_feed_categories_on_feed_id_and_category_id", unique: true
+    t.index ["feed_id"], name: "index_feed_categories_on_feed_id"
+  end
+
+  create_table "feeds", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "custom_title"
     t.text "description"
     t.string "last_error"
     t.datetime "last_fetched_at"
@@ -83,4 +103,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_160500) do
   add_foreign_key "clippings", "entries"
   add_foreign_key "clippings", "newsletters"
   add_foreign_key "entries", "feeds"
+  add_foreign_key "feed_categories", "categories"
+  add_foreign_key "feed_categories", "feeds"
 end

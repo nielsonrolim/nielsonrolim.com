@@ -187,6 +187,10 @@ pt-BR:
       filters:
         feed: "fonte"
         all_feeds: "todas"
+        choose: "escolher"
+        category: "categoria"
+        all_categories: "todas"
+        uncategorized: "sem categoria"
         since: "período"
         week: "7d"
         month: "30d"
@@ -216,14 +220,29 @@ pt-BR:
         category: "categoria"
         category_placeholder: "opcional"
         submit: "adicionar"
+        custom_title: "título exibido"
+        custom_title_hint: "Em branco usa o título da fonte: %{title}"
+        categories: "categorias"
+        no_categories: "Nenhuma categoria ainda — crie uma abaixo."
+        new_categories: "nova categoria"
+        new_categories_placeholder: "separadas por vírgula"
+        save: "salvar"
+      edit:
+        prompt: "edit source.conf"
+        url_locked: "A URL identifica a fonte (as entradas são casadas por ela), então não é editável."
+        cancel: "cancelar"
       actions:
         refresh: "atualizar"
+        edit: "editar"
         remove: "remover"
         confirm_remove: "Remover a fonte '%{title}' e todas as suas entradas?"
       create:
         success: "Fonte adicionada: %{title}"
         duplicate: "Essa fonte já está cadastrada."
         invalid: "Não foi possível ler o feed: %{error}"
+      update:
+        success: "Fonte atualizada: %{title}"
+        invalid: "Não foi possível salvar: %{error}"
       destroy:
         success: "Fonte removida: %{title}"
       refresh:

@@ -1,28 +1,67 @@
 <section>
   <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.entries.prompt") %></p>
 
-  <div class="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-3 text-chrome">
-    <div class="flex flex-wrap items-center gap-2">
+  <%# Every filter link carries the other active filters, so combining them
+      (feed + category + window) never silently drops one. %>
+  <% filters = { feed_id: @feed&.id, category_id: @category&.id, since: params[:since] } %>
+
+  <div class="mb-6 space-y-2 border-y border-line py-3 text-chrome">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span class="text-ruby"><%= t("reader.entries.filters.feed") %>:</span>
-      <%= link_to t("reader.entries.filters.all_feeds"), reader_entries_path(since: params[:since]),
+      <%= link_to t("reader.entries.filters.all_feeds"), reader_entries_path(filters.except(:feed_id)),
             class: "no-underline #{@feed ? 'text-muted hover:text-ink' : 'font-bold text-ink'}" %>
-      <% @feeds.each do |feed| %>
-        <%= link_to feed.title, reader_entries_path(feed_id: feed.id, since: params[:since]),
-              class: "no-underline #{@feed&.id == feed.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+      <% if @feed %>
+        <span class="font-bold text-ink"><%= @feed.display_title %></span>
+      <% end %>
+
+      <%# All 24+ feeds in one line was unreadable, so they live behind a
+          disclosure, grouped by category. %>
+      <details class="w-full">
+        <summary class="mt-1 inline-flex cursor-pointer list-none text-ruby hover:text-ruby-ink">
+          [+ <%= t("reader.entries.filters.choose") %>]
+        </summary>
+
+        <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-3 border-l border-line pl-4 narrow:grid-cols-2">
+          <% @feed_groups.each do |category, feeds| %>
+            <div>
+              <p class="m-0 text-meta text-ruby">
+                <%= category&.name || t("reader.entries.filters.uncategorized") %>
+              </p>
+              <ul class="m-0 list-none p-0 text-meta">
+                <% feeds.each do |feed| %>
+                  <li class="py-[0.05rem]">
+                    <%= link_to feed.display_title, reader_entries_path(filters.merge(feed_id: feed.id)),
+                          class: "no-underline #{@feed&.id == feed.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+        </div>
+      </details>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="text-ruby"><%= t("reader.entries.filters.category") %>:</span>
+      <%= link_to t("reader.entries.filters.all_categories"), reader_entries_path(filters.except(:category_id)),
+            class: "no-underline #{@category ? 'text-muted hover:text-ink' : 'font-bold text-ink'}" %>
+      <% @categories.each do |category| %>
+        <%= link_to category.name, reader_entries_path(filters.merge(category_id: category.id)),
+              class: "no-underline #{@category&.id == category.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
       <% end %>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span class="text-ruby"><%= t("reader.entries.filters.since") %>:</span>
       <% { 7 => "reader.entries.filters.week", 30 => "reader.entries.filters.month" }.each do |days, key| %>
-        <%= link_to t(key), reader_entries_path(feed_id: @feed&.id, since: days),
+        <%= link_to t(key), reader_entries_path(filters.merge(since: days)),
               class: "no-underline #{params[:since].to_s == days.to_s ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
       <% end %>
-      <%= link_to t("reader.entries.filters.all_time"), reader_entries_path(feed_id: @feed&.id),
+      <%= link_to t("reader.entries.filters.all_time"), reader_entries_path(filters.except(:since)),
             class: "no-underline #{params[:since].blank? ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
-    </div>
 
-    <span class="ml-auto text-muted"><%= t("reader.entries.count", count: @total) %></span>
+      <span class="ml-auto text-muted"><%= t("reader.entries.count", count: @total) %></span>
+    </div>
   </div>
 
   <% if @entries.empty? %>
@@ -33,7 +72,7 @@
         <% clipped = entry.clipped? %>
         <li class="border-t border-line py-[1.1rem] last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
-            <span class="text-ruby"><%= entry.feed.title %></span>
+            <span class="text-ruby"><%= entry.feed.display_title %></span>
             <% if entry.published_at %>
               <span><%= l(entry.published_at.to_date, format: :long) %></span>
             <% end %>
@@ -74,13 +113,13 @@
       <nav class="mt-6 flex items-center gap-3 text-chrome" aria-label="<%= t("reader.entries.pagination.label") %>">
         <% if @page > 1 %>
           <%= link_to t("reader.entries.pagination.previous"),
-                reader_entries_path(feed_id: @feed&.id, since: params[:since], page: @page - 1),
+                reader_entries_path(filters.merge(page: @page - 1)),
                 class: "text-ruby no-underline" %>
         <% end %>
         <span class="text-muted"><%= t("reader.entries.pagination.status", page: @page, pages: @pages) %></span>
         <% if @page < @pages %>
           <%= link_to t("reader.entries.pagination.next"),
-                reader_entries_path(feed_id: @feed&.id, since: params[:since], page: @page + 1),
+                reader_entries_path(filters.merge(page: @page + 1)),
                 class: "text-ruby no-underline" %>
         <% end %>
       </nav>
