@@ -204,7 +204,6 @@ en-US:
         status: "page %{page} of %{pages}"
     feeds:
       prompt: "cat sources.conf"
-      refresh_all: "refresh all"
       empty: "No feeds yet."
       never_fetched: "never fetched"
       error: "error"
@@ -215,6 +214,11 @@ en-US:
         one: "%{count} entry"
         other: "%{count} entries"
       last_fetched: "last fetched: %{time}"
+      filters:
+        category: "category"
+        all_categories: "all"
+        uncategorized: "uncategorised"
+        empty: "No feeds in this category."
       form:
         url: "Feed URL"
         category: "category"
@@ -233,6 +237,7 @@ en-US:
         cancel: "cancel"
       actions:
         refresh: "refresh"
+        refresh_all: "refresh all"
         edit: "edit"
         remove: "remove"
         confirm_remove: "Remove the feed '%{title}' and all of its entries?"

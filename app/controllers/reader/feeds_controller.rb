@@ -1,7 +1,12 @@
 module Reader
   class FeedsController < BaseController
     def index
-      @feeds = Feed.alphabetical.includes(:categories)
+      @categories = Category.alphabetical
+      @category = Category.find_by(id: params[:category_id])
+      # Feeds that carry no category at all are worth surfacing on this page.
+      @uncategorised = params[:uncategorised].present?
+
+      @feeds = filtered_feeds
       @entry_counts = Entry.group(:feed_id).count
       @feed = Feed.new
     end
@@ -83,6 +88,20 @@ module Reader
     end
 
     private
+
+    # Feeds for the current filter. An unknown category id falls back to the
+    # full list rather than erroring, same as the entry filters.
+    def filtered_feeds
+      scope = Feed.alphabetical.includes(:categories)
+
+      if @category
+        scope.joins(:categories).where(categories: { id: @category.id })
+      elsif @uncategorised
+        scope.where.missing(:categories)
+      else
+        scope
+      end
+    end
 
     def create_params
       params.require(:feed).permit(:url, :category)

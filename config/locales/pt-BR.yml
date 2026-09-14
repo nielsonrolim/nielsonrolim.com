@@ -204,7 +204,6 @@ pt-BR:
         status: "página %{page} de %{pages}"
     feeds:
       prompt: "cat sources.conf"
-      refresh_all: "atualizar todas"
       empty: "Nenhuma fonte cadastrada."
       never_fetched: "nunca consultada"
       error: "erro"
@@ -215,6 +214,11 @@ pt-BR:
         one: "%{count} entrada"
         other: "%{count} entradas"
       last_fetched: "última consulta: %{time}"
+      filters:
+        category: "categoria"
+        all_categories: "todas"
+        uncategorized: "sem categoria"
+        empty: "Nenhuma fonte nesta categoria."
       form:
         url: "URL do feed"
         category: "categoria"
@@ -233,6 +237,7 @@ pt-BR:
         cancel: "cancelar"
       actions:
         refresh: "atualizar"
+        refresh_all: "atualizar todas"
         edit: "editar"
         remove: "remover"
         confirm_remove: "Remover a fonte '%{title}' e todas as suas entradas?"

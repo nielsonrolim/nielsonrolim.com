@@ -270,4 +270,78 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".flash--alert"
     assert_equal [ "Ruby", "Web" ], feed.reload.categories.map(&:name).sort
   end
+
+  test "the refresh-all button shows its label, not a raw translation hash" do
+    get reader_feeds_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "form button", /atualizar todas/
+    # Regression: the label and the flash used to share a duplicate
+    # `refresh_all` key, and YAML kept the hash, so the button rendered
+    # `{queued: "…"}`.
+    assert_select "body", text: /\{queued:/, count: 0
+  end
+
+  test "renders the category filter links" do
+    get reader_feeds_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "a[href=?]", reader_feeds_path(category_id: categories(:ruby).id)
+    assert_select "a[href=?]", reader_feeds_path(category_id: categories(:news).id)
+    assert_select "a[href=?]", reader_feeds_path(uncategorised: 1)
+    assert_select "a[href=?]", reader_feeds_path
+  end
+
+  test "filters the list by category" do
+    get reader_feeds_path, params: { category_id: categories(:news).id }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Hacker News/
+    assert_select "body", text: /Ruby Weekly/, count: 0
+  end
+
+  test "a feed with the category shows up under it" do
+    get reader_feeds_path, params: { category_id: categories(:web).id }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Ruby Weekly/
+    assert_select "body", text: /Hacker News/, count: 0
+  end
+
+  test "filters to the feeds that carry no category" do
+    get reader_feeds_path, params: { uncategorised: 1 }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Broken Feed/
+    assert_select "body", text: /Hacker News/, count: 0
+    assert_select "body", text: /Ruby Weekly/, count: 0
+  end
+
+  test "an unknown category filter falls back to the full list" do
+    get reader_feeds_path, params: { category_id: -1 }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Broken Feed/
+    assert_select "body", /Hacker News/
+    assert_select "body", /Ruby Weekly/
+  end
+
+  test "says so when a category has no feeds" do
+    empty = Category.create!(name: "Vazia")
+
+    get reader_feeds_path, params: { category_id: empty.id }, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Nenhuma fonte nesta categoria/
+    assert_select "body", text: /Nenhuma fonte cadastrada/, count: 0
+  end
+
+  test "the unfiltered list still says nothing is subscribed when there are no feeds" do
+    Feed.destroy_all
+
+    get reader_feeds_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /Nenhuma fonte cadastrada/
+  end
 end

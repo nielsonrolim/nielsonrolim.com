@@ -18,15 +18,30 @@
     <% end %>
 
     <div class="mt-3 flex items-center gap-3 text-chrome">
-      <%= button_to t("reader.feeds.refresh_all"), refresh_all_reader_feeds_path, method: :post,
+      <%= button_to t("reader.feeds.actions.refresh_all"), refresh_all_reader_feeds_path, method: :post,
             class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-3 py-[0.2rem] text-muted hover:border-ruby hover:text-ruby",
             form: { class: "m-0 inline" } %>
       <span class="text-muted"><%= t("reader.feeds.total", count: @feeds.size) %></span>
     </div>
   </div>
 
+  <% filtering = @category.present? || @uncategorised %>
+  <div class="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-y border-line py-3 text-chrome">
+    <span class="text-ruby"><%= t("reader.feeds.filters.category") %>:</span>
+    <%= link_to t("reader.feeds.filters.all_categories"), reader_feeds_path,
+          class: "no-underline #{filtering ? 'text-muted hover:text-ink' : 'font-bold text-ink'}" %>
+    <% @categories.each do |category| %>
+      <%= link_to category.name, reader_feeds_path(category_id: category.id),
+            class: "no-underline #{@category&.id == category.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+    <% end %>
+    <%= link_to t("reader.feeds.filters.uncategorized"), reader_feeds_path(uncategorised: 1),
+          class: "no-underline #{@uncategorised ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
+  </div>
+
   <% if @feeds.empty? %>
-    <p class="text-prompt text-muted"><%= t("reader.feeds.empty") %></p>
+    <p class="text-prompt text-muted">
+      <%= filtering ? t("reader.feeds.filters.empty") : t("reader.feeds.empty") %>
+    </p>
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @feeds.each do |feed| %>
