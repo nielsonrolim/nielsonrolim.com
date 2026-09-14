@@ -126,6 +126,25 @@ app's default language when the issue lacks theirs, and localises the transport
 footer too. The archive at `/admin/reader/newsletters` shows the language tabs,
 using an `issue_locale` param so it does not collide with the admin's own locale.
 
+### Clippings, their language and translations
+
+A clipping keeps what it was clipped with — `title` and `summary`, in the
+article's own language — plus `language` (detected when the summary is
+generated) and `title_translated` / `summary_translated`, the other language.
+
+The generation is a single model call that also reports the language, so the
+detected language decides which title is kept verbatim and which one is the
+translation. `title_for(locale)` / `summary_for(locale)` hand the right version
+to each reader and fall back to the original while there is no translation, which
+is why clippings summarized before this still work.
+
+`/admin/reader/clippings` shows **both languages side by side**, labelled
+`original` and `tradução`, plus a badge with the detected language (or
+"idioma não detectado" while it has not run). Re-running the summary from there
+fills the language and the translations for older clippings too. In the issue
+each clipping also carries the language it was written in, and the title and
+summary go out in the subscriber's language.
+
 ### Feeds, categories and titles
 
 - **Categories are many-to-many.** `categories` + `feed_categories` (replacing
@@ -180,8 +199,13 @@ local workers — the Docker `jobs` container writes to the production queue.
    `GenerateSummaryJob` is enqueued.
 2. **Summarize** — the job shells out to
    `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free`
-   and stores the resulting paragraph. Up to 3 attempts; a clipping whose summary
-   keeps failing is marked `failed` and still ships, just without a summary.
+   and asks for a single JSON object: the article's language, its title
+   translated into the other language, and a summary in *both* languages. The
+   detected language decides which title is the original and which is the
+   translation; `summary` holds the one in the article's own language and
+   `summary_translated` the other. Up to 3 attempts; a clipping whose summary
+   keeps failing is marked `failed` and still ships, with its original title and
+   no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is
@@ -261,7 +285,6 @@ environment variables are read:
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
 | `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/ling-3.0-flash-fin-free`).   |
-| `OPENCODE_SUMMARY_LANGUAGE` | Language the summary is written in (default pt-BR).                   |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |

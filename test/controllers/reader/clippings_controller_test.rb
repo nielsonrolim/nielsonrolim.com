@@ -35,6 +35,37 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Ruby Weekly/
   end
 
+  test "shows both languages of a clipping" do
+    get reader_clippings_path, headers: reader_headers
+
+    assert_response :success
+    # The original (en-US) and its pt-BR translation, each labelled.
+    assert_select "body", /Rails 8\.1 ships with a new queue UI/
+    assert_select "body", /O Rails 8\.1 traz uma nova interface de filas/
+    assert_select "body", /original/
+    assert_select "body", /tradução/
+  end
+
+  test "shows the detected language of a summarized clipping" do
+    get reader_clippings_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /en-US/
+    # The one still waiting has no language yet.
+    assert_select "body", /idioma não detectado/
+  end
+
+  test "flags a translation that is still pending" do
+    clipping = clippings(:pending)
+    clipping.update_columns(language: "en-US", title_translated: nil, summary_translated: nil,
+                            summary_status: "summarized")
+
+    get reader_clippings_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /tradução pendente/
+  end
+
   test "removing a clipping takes it out of the queue" do
     clipping = clippings(:queued)
 

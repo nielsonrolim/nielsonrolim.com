@@ -1,9 +1,7 @@
 require "csv"
 
 class Subscriber < ApplicationRecord
-  # The site's locales are the newsletter languages; storing the locale string
-  # itself lets the mailer do I18n.with_locale(subscriber.language) directly.
-  LANGUAGES = I18n.available_locales.map(&:to_s).freeze
+  include SupportedLanguages
 
   attr_accessor :nickname
 

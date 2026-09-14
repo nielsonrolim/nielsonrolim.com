@@ -19,20 +19,50 @@
             <% end %>
             <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
             <%= render "reader/clippings/summary_status", clipping: clipping %>
+
+            <%# The language the article is written in, detected with the summary. %>
+            <% if clipping.language.present? %>
+              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-ok"><%= clipping.language %></span>
+            <% else %>
+              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-muted"><%= t("reader.clippings.language_pending") %></span>
+            <% end %>
           </div>
 
-          <h3 class="mt-[0.3rem] mb-[0.35rem] text-lead font-bold text-ink">
-            <%= link_to clipping.title, clipping.url, target: "_blank", rel: "noopener noreferrer",
-                  class: "text-ink no-underline hover:text-ruby" %>
-          </h3>
-
-          <% if clipping.summary.present? %>
-            <p class="mt-0 mb-[0.6rem] max-w-measure text-prompt text-ink-soft"><%= clipping.summary %></p>
-          <% elsif clipping.summary_error.present? %>
-            <p class="mt-0 mb-[0.6rem] max-w-measure text-meta text-err"><%= clipping.summary_error %></p>
+          <% if clipping.summary.blank? && clipping.summary_error.present? %>
+            <p class="mt-2 mb-0 max-w-measure text-meta text-err"><%= clipping.summary_error %></p>
           <% end %>
 
-          <div class="flex flex-wrap items-center gap-3 text-chrome">
+          <%# Both languages side by side: what the original says, and what would go
+              out to a subscriber reading the other one. %>
+          <div class="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 narrow:grid-cols-2">
+            <% Clipping::LANGUAGES.each do |locale| %>
+              <% original = clipping.language.blank? || clipping.language == locale %>
+              <div class="border-l border-line pl-3">
+                <p class="m-0 text-meta text-muted">
+                  <span class="text-ruby"><%= locale %></span>
+                  <% if clipping.language.present? %>
+                    &middot; <%= t("reader.clippings.#{original ? 'original' : 'translation'}") %>
+                  <% end %>
+                </p>
+
+                <h3 class="mt-[0.2rem] mb-[0.25rem] text-base font-bold text-ink">
+                  <%= link_to clipping.title_for(locale), clipping.url, target: "_blank", rel: "noopener noreferrer",
+                        class: "text-ink no-underline hover:text-ruby" %>
+                </h3>
+
+                <% summary = clipping.summary_for(locale) %>
+                <% if summary.present? %>
+                  <p class="mt-0 mb-0 text-prompt text-ink-soft"><%= summary %></p>
+                <% end %>
+
+                <% if clipping.language.present? && !original && !clipping.translated? %>
+                  <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.translation_pending") %></p>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-3 text-chrome">
             <% if clipping.failed? %>
               <%= button_to t("reader.clippings.actions.retry_summary"), retry_summary_reader_clipping_path(clipping), method: :post,
                     class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",

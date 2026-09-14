@@ -2,9 +2,13 @@ queued:
   entry: rails_eight
   title: "Rails 8.1 ships with a new queue UI"
   url: "https://example.com/rails-8-1"
-  summary: "O Rails 8.1 traz um novo painel de filas."
+  language: "en-US"
+  title_translated: "O Rails 8.1 traz uma nova interface de filas"
+  summary: "Solid Queue is a database-backed adapter for Active Job."
+  summary_translated: "O Rails 8.1 traz um novo painel de filas."
   summary_status: "summarized"
 
+# Not summarized yet, so no language and no translation.
 pending:
   entry: solid_queue
   title: "Understanding Solid Queue internals"
@@ -16,5 +20,8 @@ sent:
   newsletter: last_week
   title: "Show HN: I built an RSS reader in Rails"
   url: "https://example.com/show-hn"
-  summary: "Um leitor de RSS construído em Rails."
+  language: "en-US"
+  title_translated: "Show HN: construí um leitor de RSS em Rails"
+  summary: "An RSS reader built with Rails."
+  summary_translated: "Um leitor de RSS construído em Rails."
   summary_status: "summarized"

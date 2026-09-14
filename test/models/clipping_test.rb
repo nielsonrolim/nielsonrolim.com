@@ -57,4 +57,65 @@ class ClippingTest < ActiveSupport::TestCase
     assert_includes Clipping.unsent, clippings(:pending)
     assert_not_includes Clipping.unsent, clippings(:sent)
   end
+
+  test "the languages are the site's locales" do
+    assert_equal %w[pt-BR en-US], Clipping::LANGUAGES
+  end
+
+  test "rejects a language the site does not speak" do
+    clipping = Clipping.new(entry: entries(:front_page), title: "t",
+                            url: "https://example.com/x", language: "de-DE")
+
+    assert_not clipping.valid?
+    assert_includes clipping.errors.attribute_names, :language
+  end
+
+  test "title_for and summary_for follow the detected language" do
+    clipping = clippings(:queued) # written in en-US
+
+    assert_equal "Rails 8.1 ships with a new queue UI", clipping.title_for("en-US")
+    assert_equal "O Rails 8.1 traz uma nova interface de filas", clipping.title_for("pt-BR")
+    assert_equal "Solid Queue is a database-backed adapter for Active Job.", clipping.summary_for("en-US")
+    assert_equal "O Rails 8.1 traz um novo painel de filas.", clipping.summary_for("pt-BR")
+  end
+
+  test "title_for falls back to the original when nothing is translated" do
+    clipping = clippings(:pending)
+
+    assert_nil clipping.language
+    assert_equal clipping.title, clipping.title_for("pt-BR")
+    assert_equal clipping.title, clipping.title_for("en-US")
+  end
+
+  test "other_locale is the language that is not the detected one" do
+    assert_equal "pt-BR", clippings(:queued).other_locale
+    assert_nil clippings(:pending).other_locale
+  end
+
+  test "translated? is false until a translation exists" do
+    assert clippings(:queued).translated?
+    assert_not clippings(:pending).translated?
+  end
+
+  test "apply_summary stores the result and keeps the original title" do
+    clipping = clippings(:pending)
+    original_title = clipping.title
+
+    clipping.apply_summary(
+      SummaryGenerator::Result.new(
+        language: "pt-BR",
+        title_translated: "Understanding Solid Queue internals (EN)",
+        summaries: { "pt-BR" => "Resumo em português.", "en-US" => "Summary in English." }
+      )
+    )
+
+    assert_equal "pt-BR", clipping.language
+    assert_equal original_title, clipping.title
+    assert_equal "Understanding Solid Queue internals (EN)", clipping.title_translated
+    # `summary` is the article's own language; the other is the translation.
+    assert_equal "Resumo em português.", clipping.summary
+    assert_equal "Summary in English.", clipping.summary_translated
+    assert clipping.summarized?
+    assert_nil clipping.summary_error
+  end
 end

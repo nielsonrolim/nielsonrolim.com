@@ -20,13 +20,14 @@ class GenerateSummaryJob < ApplicationJob
 
     clipping.update!(summary_status: :summarizing)
 
-    summary = summary_generator.call(
+    result = summary_generator.call(
       title: clipping.title,
       url: clipping.url,
       source: clipping.entry&.summary
     )
 
-    clipping.update!(summary: summary, summary_status: :summarized, summary_error: nil)
+    clipping.apply_summary(result)
+    clipping.save!
   rescue SummaryGenerator::Error, OpencodeCli::TimeoutError => e
     if attempt < MAX_ATTEMPTS
       Rails.logger.info(

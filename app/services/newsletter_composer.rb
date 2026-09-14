@@ -39,7 +39,7 @@ class NewsletterComposer
         template: "newsletters/email_body",
         layout: false,
         formats: formats,
-        assigns: { clippings: clippings, issue_date: date }
+        assigns: { clippings: clippings, issue_date: date, locale: locale }
       )
     end
   end

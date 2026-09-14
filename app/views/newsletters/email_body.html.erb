@@ -25,13 +25,14 @@
               <% @clippings.each_with_index do |clipping, index| %>
                 <div style="<%= index.positive? ? "border-top:1px solid #{line};padding-top:18px;margin-top:18px;" : "" %>">
                   <p style="margin:0 0 6px;font-size:12px;color:<%= muted %>;">
-                    <%= format("%02d", index + 1) %><%= ". #{clipping.entry.feed.display_title}" if clipping.entry&.feed %>
+                    <%= format("%02d", index + 1) %><%= ". #{clipping.entry.feed.display_title}" if clipping.entry&.feed %><%= " · #{clipping.language}" if clipping.language.present? %>
                   </p>
                   <p style="margin:0 0 8px;font-size:16px;font-weight:700;">
-                    <a href="<%= clipping.url %>" style="color:<%= accent %>;text-decoration:underline;"><%= clipping.title %></a>
+                    <a href="<%= clipping.url %>" style="color:<%= accent %>;text-decoration:underline;"><%= clipping.title_for(@locale) %></a>
                   </p>
-                  <% if clipping.summary.present? %>
-                    <p style="margin:0 0 8px;font-size:14px;color:<%= soft %>;"><%= clipping.summary %></p>
+                  <% localized_summary = clipping.summary_for(@locale) %>
+                  <% if localized_summary.present? %>
+                    <p style="margin:0 0 8px;font-size:14px;color:<%= soft %>;"><%= localized_summary %></p>
                   <% end %>
                   <p style="margin:0;font-size:12px;color:<%= muted %>;word-break:break-all;">
                     <a href="<%= clipping.url %>" style="color:<%= muted %>;text-decoration:none;"><%= clipping.url %></a>

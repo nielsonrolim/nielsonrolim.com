@@ -32,7 +32,9 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     assert_equal [ clippings(:queued), clippings(:pending) ].sort_by(&:id), issue.clippings.sort_by(&:id)
     assert_empty Clipping.unsent
 
-    assert_includes issue.body, "Rails 8.1 ships with a new queue UI"
+    # Each language's body carries that language's title and summary.
+    assert_includes issue.body_for("pt-BR").body, "O Rails 8.1 traz uma nova interface de filas"
+    assert_includes issue.body_for("en-US").body, "Rails 8.1 ships with a new queue UI"
     assert_includes issue.body_text, "https://example.com/solid-queue"
     assert_equal NewsletterComposer.subject_for(issue.created_at), issue.subject
   end

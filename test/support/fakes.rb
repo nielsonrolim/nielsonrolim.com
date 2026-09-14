@@ -75,12 +75,13 @@ class FakeOpencodeCli
   end
 end
 
-# Stands in for SummaryGenerator inside jobs.
+# Stands in for SummaryGenerator inside jobs. Returns the same Result shape the
+# real generator builds from the model's JSON.
 class FakeSummaryGenerator
   attr_reader :calls
 
-  def initialize(summary: "Um resumo gerado.", error: nil)
-    @summary = summary
+  def initialize(result: nil, error: nil)
+    @result = result || default_result
     @error = error
     @calls = []
   end
@@ -89,7 +90,17 @@ class FakeSummaryGenerator
     @calls << kwargs
     raise @error if @error
 
-    @summary
+    @result
+  end
+
+  private
+
+  def default_result
+    SummaryGenerator::Result.new(
+      language: "en-US",
+      title_translated: "Título traduzido",
+      summaries: { "pt-BR" => "Resumo em português.", "en-US" => "Summary in English." }
+    )
   end
 end
 

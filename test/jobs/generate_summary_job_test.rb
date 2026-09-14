@@ -12,23 +12,58 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
 
     def call(**)
       @status_seen = @clipping.reload.summary_status
-      "Resumo observado."
+      SummaryGenerator::Result.new(
+        language: "en-US",
+        title_translated: "Título traduzido",
+        summaries: { "pt-BR" => "Resumo em português.", "en-US" => "Summary in English." }
+      )
     end
+  end
+
+  def result(language: "en-US", title: "Título traduzido", pt: "Resumo em português.", en: "Summary in English.")
+    SummaryGenerator::Result.new(
+      language: language,
+      title_translated: title,
+      summaries: { "pt-BR" => pt, "en-US" => en }
+    )
   end
 
   setup do
     @clipping = clippings(:pending)
   end
 
-  test "stores the generated summary and clears a previous error" do
+  test "stores the detected language, the translated title and both summaries" do
     @clipping.update_columns(summary_status: "failed", summary_error: "boom")
 
-    perform_with(FakeSummaryGenerator.new(summary: "Resumo novo."))
+    perform_with(FakeSummaryGenerator.new(result: result))
 
     @clipping.reload
     assert @clipping.summarized?
-    assert_equal "Resumo novo.", @clipping.summary
+    assert_equal "en-US", @clipping.language
+    assert_equal "Título traduzido", @clipping.title_translated
+    # `summary` is the one in the article's own language.
+    assert_equal "Summary in English.", @clipping.summary
+    assert_equal "Resumo em português.", @clipping.summary_translated
     assert_nil @clipping.summary_error
+  end
+
+  test "keeps the original title untouched" do
+    original = @clipping.title
+
+    perform_with(FakeSummaryGenerator.new(result: result))
+
+    assert_equal original, @clipping.reload.title
+  end
+
+  test "maps the summaries the right way round for a Portuguese article" do
+    perform_with(FakeSummaryGenerator.new(result: result(language: "pt-BR", pt: "Resumo em pt.", en: "English summary.")))
+
+    @clipping.reload
+    assert_equal "pt-BR", @clipping.language
+    assert_equal "Resumo em pt.", @clipping.summary
+    assert_equal "English summary.", @clipping.summary_translated
+    assert_equal "English summary.", @clipping.summary_for("en-US")
+    assert_equal "Resumo em pt.", @clipping.summary_for("pt-BR")
   end
 
   test "passes the title, URL and the entry summary as source" do
@@ -66,6 +101,7 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert @clipping.failed?
     assert_equal "still broken", @clipping.summary_error
     assert_nil @clipping.summary
+    assert_nil @clipping.language
   end
 
   test "truncates a long error message" do
