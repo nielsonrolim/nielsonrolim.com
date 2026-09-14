@@ -154,6 +154,29 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     assert_not_includes english.html_part.body.to_s, "valeu a leitura"
   end
 
+  test "leaves a clipping whose summary failed out of the issue" do
+    make_all_summaries_ready
+    clippings(:pending).update!(summary_status: :failed, summary_error: "sem fonte")
+
+    assert_difference -> { Newsletter.count }, 1 do
+      SendNewsletterJob.perform_now
+    end
+
+    issue = Newsletter.last
+    assert_equal [ clippings(:queued).id ], issue.clippings.map(&:id)
+    # It stays in the queue, waiting to be fixed.
+    assert_includes Clipping.unsent, clippings(:pending)
+  end
+
+  test "creates no issue when every clipping failed" do
+    make_all_summaries_ready
+    Clipping.unsent.find_each { |clipping| clipping.update!(summary_status: :failed) }
+
+    assert_no_difference -> { Newsletter.count } do
+      assert_no_enqueued_emails { SendNewsletterJob.perform_now }
+    end
+  end
+
   private
 
   def make_all_summaries_ready

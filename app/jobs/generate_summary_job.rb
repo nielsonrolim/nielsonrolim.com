@@ -23,7 +23,7 @@ class GenerateSummaryJob < ApplicationJob
     result = summary_generator.call(
       title: clipping.title,
       url: clipping.url,
-      source: clipping.entry&.summary
+      source: clipping.summary_source
     )
 
     clipping.apply_summary(result)

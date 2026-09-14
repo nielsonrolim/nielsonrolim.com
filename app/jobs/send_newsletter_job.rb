@@ -16,7 +16,9 @@ class SendNewsletterJob < ApplicationJob
   attr_writer :mailer
 
   def perform(deferrals = 0)
-    clippings = Clipping.unsent.includes(entry: :feed).to_a
+    # Shippable only: a clipping whose summary failed has nothing to show and
+    # waits for the next issue.
+    clippings = Clipping.shippable.includes(entry: :feed).to_a
 
     if clippings.empty?
       Rails.logger.info("[SendNewsletterJob] nothing clipped this week; skipping")

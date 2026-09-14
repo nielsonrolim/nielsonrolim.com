@@ -57,8 +57,8 @@ Rails.application.routes.draw do
         member { post :clip }
       end
 
-      resources :clippings, only: [ :index, :destroy ] do
-        member { post :retry_summary }
+      resources :clippings, only: [ :index, :create, :edit, :update, :destroy ] do
+        member { post :generate_summary }
       end
 
       resources :newsletters, only: [ :index, :show, :create ]

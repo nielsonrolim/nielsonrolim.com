@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_160000) do
   create_table "categories", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -20,9 +20,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_150000) do
 
   create_table "clippings", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "entry_id", null: false
+    t.integer "entry_id"
     t.string "language"
     t.integer "newsletter_id"
+    t.text "source_text"
     t.text "summary"
     t.string "summary_error"
     t.string "summary_status", default: "pending", null: false

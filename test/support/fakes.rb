@@ -32,12 +32,12 @@ module HttpResponseHelpers
       queue.shift || raise(FeedFetcher::Error, "no canned response left for #{uri}")
     end
 
-    FeedFetcher::HttpTransport.new(session: session)
+    HttpTransport.new(session: session)
   end
 
   # A transport that always returns the same response.
   def transport_always(response)
-    FeedFetcher::HttpTransport.new(session: ->(_uri) { response })
+    HttpTransport.new(session: ->(_uri) { response })
   end
 end
 

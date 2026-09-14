@@ -2,7 +2,7 @@ module Reader
   class NewslettersController < BaseController
     def index
       @newsletters = Newsletter.newest_first.includes(:bodies)
-      @queued_count = Clipping.unsent.count
+      @queued_count = Clipping.shippable.count
       @subscriber_count = Subscriber.count
     end
 

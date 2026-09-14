@@ -28,7 +28,7 @@ class RefreshFeedsJobTest < ActiveJob::TestCase
       "https://news.ycombinator.com/rss" => http_response(200, @xml),
       "https://broken.example.com/feed" => http_response(503, "unavailable")
     }
-    transport = FeedFetcher::HttpTransport.new(session: ->(uri) { responses.fetch(uri.to_s) })
+    transport = HttpTransport.new(session: ->(uri) { responses.fetch(uri.to_s) })
 
     results = job_with(transport).perform_now
 

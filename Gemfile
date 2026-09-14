@@ -13,6 +13,11 @@ gem "puma", ">= 5.0"
 # RSS/Atom feed parsing [https://github.com/feedjira/feedjira]
 gem "feedjira"
 
+# HTML parsing, for pulling a title and body text out of a linked article.
+# Already in the bundle via loofah, but the article fetcher uses it directly.
+# [https://github.com/sparklemotion/nokogiri]
+gem "nokogiri"
+
 # Rails 8.1 is incompatible with json 3.x's JSON.parse signature
 gem "json", "~> 2.21"
 

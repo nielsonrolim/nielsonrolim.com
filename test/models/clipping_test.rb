@@ -118,4 +118,82 @@ class ClippingTest < ActiveSupport::TestCase
     assert clipping.summarized?
     assert_nil clipping.summary_error
   end
+
+  test "can exist without a feed entry" do
+    clipping = Clipping.new(title: "t", url: "https://example.com/x")
+
+    assert clipping.valid?
+    assert clipping.manual?
+    assert_nil clipping.entry_id
+  end
+
+  test "a clipping from a feed is not manual" do
+    assert_not clippings(:queued).manual?
+  end
+
+  test "summary_source is the entry summary when there is one" do
+    assert_equal entries(:rails_eight).summary, clippings(:queued).summary_source
+  end
+
+  test "summary_source falls back to the stored article text" do
+    clipping = Clipping.new(entry: nil, title: "t", url: "https://example.com/x",
+                            source_text: "texto colado à mão")
+
+    assert_equal "texto colado à mão", clipping.summary_source
+  end
+
+  test "a manual clipping cannot duplicate a queued URL" do
+    existing = clippings(:queued)
+
+    duplicate = Clipping.new(title: "t", url: existing.url)
+
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors.attribute_names, :url
+  end
+
+  test "the manual URL check ignores case" do
+    existing = clippings(:queued)
+
+    duplicate = Clipping.new(title: "t", url: existing.url.sub("rails-8-1", "RAILS-8-1"))
+
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors.attribute_names, :url
+  end
+
+  test "the manual URL check only guards unsent clippings" do
+    sent = clippings(:sent)
+
+    assert Clipping.new(title: "t", url: sent.url).valid?
+  end
+
+  test "shippable leaves failed clippings out of the next issue" do
+    clippings(:pending).update!(summary_status: :failed)
+
+    assert_includes Clipping.shippable, clippings(:queued)
+    assert_not_includes Clipping.shippable, clippings(:pending)
+    assert_not_includes Clipping.shippable, clippings(:sent)
+  end
+
+  test "a clipping created as failed does not kick off a generation run" do
+    assert_no_enqueued_jobs(only: GenerateSummaryJob) do
+      Clipping.create!(title: "t", url: "https://example.com/fresh",
+                       summary_status: :failed, summary_error: "sem fonte")
+    end
+  end
+
+  test "stored content gives the raw value for each language" do
+    clipping = clippings(:queued) # written in en-US
+
+    assert_equal clipping.title, clipping.stored_title("en-US")
+    assert_equal clipping.title_translated, clipping.stored_title("pt-BR")
+    assert_equal clipping.summary, clipping.stored_summary("en-US")
+    assert_equal clipping.summary_translated, clipping.stored_summary("pt-BR")
+  end
+
+  test "with no detected language the originals live in the first locale" do
+    clipping = clippings(:pending)
+
+    assert_equal clipping.title, clipping.stored_title("pt-BR")
+    assert_nil clipping.stored_title("en-US")
+  end
 end

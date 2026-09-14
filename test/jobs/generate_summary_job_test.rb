@@ -66,6 +66,16 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_equal "Resumo em pt.", @clipping.summary_for("pt-BR")
   end
 
+  test "uses the stored article text when there is no feed entry" do
+    clipping = Clipping.create!(title: "Manual", url: "https://example.com/manual",
+                                source_text: "texto colado à mão")
+    generator = FakeSummaryGenerator.new
+
+    job_with(generator, clipping_id: clipping.id).perform_now
+
+    assert_equal "texto colado à mão", generator.calls.first[:source]
+  end
+
   test "passes the title, URL and the entry summary as source" do
     generator = FakeSummaryGenerator.new
     perform_with(generator)

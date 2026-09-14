@@ -4,12 +4,12 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   setup do
     set_reader_credentials!
     @xml = file_fixture("sample_feed.xml").read
-    @original_transport = FeedFetcher.default_transport
-    FeedFetcher.default_transport = transport_always(http_response(200, @xml))
+    @original_transport = HttpTransport.default
+    HttpTransport.default = transport_always(http_response(200, @xml))
   end
 
   teardown do
-    FeedFetcher.default_transport = @original_transport
+    HttpTransport.default = @original_transport
     restore_reader_credentials!
   end
 
@@ -66,7 +66,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "adding a broken feed reports the error" do
-    FeedFetcher.default_transport = transport_always(http_response(503, "unavailable"))
+    HttpTransport.default = transport_always(http_response(503, "unavailable"))
 
     assert_no_difference -> { Feed.count } do
       post reader_feeds_path, params: { feed: { url: "https://down.example.com/feed" } }, headers: reader_headers
@@ -77,7 +77,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "adding a URL that is not a feed reports the error" do
-    FeedFetcher.default_transport = transport_always(http_response(200, "<html>not a feed</html>"))
+    HttpTransport.default = transport_always(http_response(200, "<html>not a feed</html>"))
 
     assert_no_difference -> { Feed.count } do
       post reader_feeds_path, params: { feed: { url: "https://example.com/" } }, headers: reader_headers
@@ -107,7 +107,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "refreshing a failing feed reports the error and keeps the old poll time" do
-    FeedFetcher.default_transport = transport_always(http_response(503, "unavailable"))
+    HttpTransport.default = transport_always(http_response(503, "unavailable"))
     feed = feeds(:ruby_blog)
     polled_at = feed.last_fetched_at
 

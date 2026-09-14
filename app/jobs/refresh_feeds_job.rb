@@ -27,6 +27,6 @@ class RefreshFeedsJob < ApplicationJob
   private
 
   def transport
-    @transport ||= FeedFetcher.default_transport
+    @transport ||= HttpTransport.default
   end
 end
