@@ -308,29 +308,60 @@ pt-BR:
     clippings:
       prompt: "cat clipping-queue.md"
       view_issues: "ver edições enviadas"
-      empty: "Nenhum recorte na fila. Marque entradas no leitor."
+      empty: "Nenhum recorte na fila. Marque entradas no leitor ou adicione por URL."
       marked_at: "marcado em %{time}"
-      language: "idioma"
+      manual: "manual"
       language_pending: "idioma não detectado"
       original: "original"
       translation: "tradução"
       translation_pending: "tradução pendente"
       hint:
-        one: "%{count} recorte aguardando a próxima edição semanal."
-        other: "%{count} recortes aguardando a próxima edição semanal."
+        one: "%{count} recorte vai na próxima edição semanal."
+        other: "%{count} recortes vão na próxima edição semanal."
+      failed_in_queue:
+        one: "(%{count} com resumo falhou e fica de fora)"
+        other: "(%{count} com resumo falharam e ficam de fora)"
       summary_status:
         pending: "resumo pendente"
         summarizing: "gerando resumo"
         summarized: "resumo pronto"
         failed: "resumo falhou"
+      form:
+        url: "URL da notícia"
+        title: "título"
+        title_placeholder: "opcional"
+        submit: "adicionar"
+        hint: "Buscamos a página para pegar título e texto e gerar o resumo. Se a busca falhar, o recorte é criado mesmo assim para você completar na edição."
+      edit:
+        prompt: "edit clipping.conf"
+        status: "resumo: %{status}"
+        language: "idioma do artigo"
+        language_hint: "Decide qual título/resumo é o original e qual é a tradução."
+        content: "conteúdo por idioma"
+        title: "título"
+        summary: "resumo"
+        source_text: "texto fonte do resumo"
+        source_text_hint: "É o que alimenta o resumo. Cole aqui o texto do artigo quando a busca não conseguir pegar."
+        save: "salvar"
+        cancel: "cancelar"
+      create:
+        success: "Recorte adicionado: %{title}"
+        duplicate: "Essa URL já está na fila."
+        invalid: "Não foi possível adicionar: %{error}"
+        fetch_failed: "Não foi possível buscar a página: %{error}"
+        added_without_source: "Recorte criado, mas não conseguimos buscar a página. Cole o texto e use \"gerar sumário e tradução\"."
+      update:
+        success: "Recorte atualizado: %{title}"
+        invalid: "Não foi possível salvar: %{error}"
+      generate_summary:
+        queued: "Sumário e tradução enfileirados: %{title}"
       actions:
-        retry_summary: "tentar resumo de novo"
+        edit: "editar"
+        generate_summary: "gerar sumário e tradução"
         remove: "remover"
         confirm_remove: "Remover '%{title}' da próxima edição?"
       destroy:
         success: "Removido da fila: %{title}"
-      retry_summary:
-        queued: "Resumo enfileirado novamente: %{title}"
     newsletters:
       prompt: "ls issues/"
       send_now: "enviar edição agora"

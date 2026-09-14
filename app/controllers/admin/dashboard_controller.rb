@@ -5,7 +5,7 @@ module Admin
     def index
       @feed_count = Feed.count
       @entry_count = Entry.count
-      @queued_clippings = Clipping.unsent.count
+      @queued_clippings = Clipping.shippable.count
       @subscriber_count = Subscriber.count
       @latest_newsletter = Newsletter.newest_first.first
       @failed_jobs = SolidQueue::FailedExecution.count

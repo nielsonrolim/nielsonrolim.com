@@ -3,9 +3,13 @@ require "test_helper"
 class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   setup do
     set_reader_credentials!
+    @html = file_fixture("article.html").read
+    @original_transport = HttpTransport.default
+    HttpTransport.default = transport_always(http_response(200, @html))
   end
 
   teardown do
+    HttpTransport.default = @original_transport
     restore_reader_credentials!
   end
 
@@ -16,7 +20,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Rails 8\.1 ships with a new queue UI/
     assert_select "body", /Understanding Solid Queue internals/
     assert_select "body", text: /Show HN/, count: 0 # already sent last week
-    assert_select "body", /2 recortes aguardando/
+    assert_select "body", /2 recortes vão na próxima edição semanal/
   end
 
   test "shows the summary and its status" do
@@ -88,12 +92,12 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "retrying a failed summary requeues it" do
+  test "generating the summary requeues it" do
     clipping = clippings(:pending)
     clipping.update!(summary_status: :failed, summary_error: "boom")
 
     assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
-      post retry_summary_reader_clipping_path(clipping), headers: reader_headers
+      post generate_summary_reader_clipping_path(clipping), headers: reader_headers
     end
 
     clipping.reload
@@ -115,5 +119,168 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     get reader_clippings_path, headers: reader_headers
 
     assert_select "a[href=?]", reader_newsletters_path
+  end
+
+  test "adds a clipping by URL, fetching its title and text" do
+    assert_difference -> { Clipping.count }, 1 do
+      assert_enqueued_with(job: GenerateSummaryJob) do
+        post reader_clippings_path,
+             params: { clipping: { url: "https://example.com/post" } },
+             headers: reader_headers
+      end
+    end
+
+    clipping = Clipping.order(:id).last
+    assert clipping.manual?
+    assert_nil clipping.entry_id
+    assert_equal "Rails ships a new queue UI", clipping.title
+    assert_includes clipping.source_text, "Solid Queue replaces Redis"
+    assert clipping.pending?
+    assert_redirected_to reader_clippings_path
+  end
+
+  test "a title typed by hand wins over the fetched one" do
+    post reader_clippings_path,
+         params: { clipping: { url: "https://example.com/post", title: "Meu título" } },
+         headers: reader_headers
+
+    assert_equal "Meu título", Clipping.order(:id).last.title
+  end
+
+  test "still creates the clipping when the page cannot be fetched" do
+    HttpTransport.default = transport_always(http_response(404, "gone"))
+
+    assert_difference -> { Clipping.count }, 1 do
+      assert_no_enqueued_jobs(only: GenerateSummaryJob) do
+        post reader_clippings_path,
+             params: { clipping: { url: "https://example.com/post" } },
+             headers: reader_headers
+      end
+    end
+
+    clipping = Clipping.order(:id).last
+    assert clipping.failed?
+    assert_match(/404/, clipping.summary_error)
+    assert_equal "example.com", clipping.title
+    # Sent to the edit page so the text can be pasted in.
+    assert_redirected_to edit_reader_clipping_path(clipping)
+  end
+
+  test "does not queue the same URL twice" do
+    assert_no_difference -> { Clipping.count } do
+      post reader_clippings_path,
+           params: { clipping: { url: clippings(:queued).url } },
+           headers: reader_headers
+    end
+
+    assert_redirected_to reader_clippings_path
+    get reader_clippings_path, headers: reader_headers
+    assert_select ".flash--alert", /já está na fila/
+  end
+
+  test "refuses something that is not a URL" do
+    assert_no_difference -> { Clipping.count } do
+      post reader_clippings_path,
+           params: { clipping: { url: "not-a-url" } },
+           headers: reader_headers
+    end
+
+    assert_redirected_to reader_clippings_path
+  end
+
+  test "marks a manual clipping as such in the list" do
+    post reader_clippings_path, params: { clipping: { url: "https://example.com/post" } }, headers: reader_headers
+
+    get reader_clippings_path, headers: reader_headers
+
+    assert_select "body", /manual/
+  end
+
+  test "shows a failed clipping and says it stays out of the issue" do
+    clippings(:pending).update!(summary_status: :failed, summary_error: "sem fonte")
+
+    get reader_clippings_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /resumo falhou/
+    assert_select "body", /fica de fora/
+    assert_select "body", /sem fonte/
+  end
+
+  test "the edit page shows the url and the content per language" do
+    clipping = clippings(:queued) # written in en-US, with a pt-BR translation
+
+    get edit_reader_clipping_path(clipping), headers: reader_headers
+
+    assert_response :success
+    assert_select "input[name=?][value=?]", "clipping[url]", clipping.url
+    assert_select "input[name=?][value=?]", "clipping[title_en_us]", clipping.title
+    assert_select "input[name=?][value=?]", "clipping[title_pt_br]", clipping.title_translated
+    assert_select "textarea[name=?]", "clipping[summary_en_us]"
+    assert_select "textarea[name=?]", "clipping[summary_pt_br]"
+    assert_select "textarea[name=?]", "clipping[source_text]"
+    assert_select "select[name=?] option[selected][value=?]", "clipping[language]", "en-US"
+    assert_select "form button", /gerar sumário e tradução/
+  end
+
+  test "updating writes the per-language content to the right columns" do
+    clipping = clippings(:queued)
+
+    patch reader_clipping_path(clipping),
+          params: { clipping: {
+            url: clipping.url,
+            language: "en-US",
+            source_text: "novo texto",
+            title_pt_br: "Título PT", summary_pt_br: "Resumo PT",
+            title_en_us: "Title EN", summary_en_us: "Summary EN"
+          } },
+          headers: reader_headers
+
+    clipping.reload
+    assert_equal "Title EN", clipping.title
+    assert_equal "Título PT", clipping.title_translated
+    assert_equal "Summary EN", clipping.summary
+    assert_equal "Resumo PT", clipping.summary_translated
+    assert_equal "novo texto", clipping.source_text
+    assert_redirected_to reader_clippings_path
+  end
+
+  test "changing the language re-maps which column holds the original" do
+    clipping = clippings(:queued)
+
+    patch reader_clipping_path(clipping),
+          params: { clipping: {
+            url: clipping.url, language: "pt-BR",
+            title_pt_br: "Título PT", summary_pt_br: "Resumo PT",
+            title_en_us: "Title EN", summary_en_us: "Summary EN"
+          } },
+          headers: reader_headers
+
+    clipping.reload
+    assert_equal "pt-BR", clipping.language
+    assert_equal "Título PT", clipping.title
+    assert_equal "Title EN", clipping.title_translated
+    assert_equal "Resumo PT", clipping.summary
+    assert_equal "Summary EN", clipping.summary_translated
+    assert_equal "Title EN", clipping.title_for("en-US")
+  end
+
+  test "a manual clipping can be completed by hand and generated" do
+    post reader_clippings_path,
+         params: { clipping: { url: "https://example.com/post", title: "Título" } },
+         headers: reader_headers
+    clipping = Clipping.order(:id).last
+
+    patch reader_clipping_path(clipping),
+          params: { clipping: { url: clipping.url, source_text: "Texto colado à mão." } },
+          headers: reader_headers
+
+    assert_equal "Texto colado à mão.", clipping.reload.source_text
+
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
+      post generate_summary_reader_clipping_path(clipping), headers: reader_headers
+    end
+
+    assert clipping.reload.pending?
   end
 end

@@ -12,4 +12,9 @@ module SupportedLanguages
 
     (LANGUAGES - [ locale.to_s ]).first
   end
+
+  # How a locale's fields are named in a form: "pt-BR" -> "pt_br".
+  def self.param_key(locale)
+    locale.to_s.downcase.tr("-", "_")
+  end
 end

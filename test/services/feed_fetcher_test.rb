@@ -127,7 +127,7 @@ class FeedFetcherTest < ActiveSupport::TestCase
 
   test "refresh_due only polls feeds that are stale" do
     polled = []
-    transport = FeedFetcher::HttpTransport.new(session: lambda { |uri|
+    transport = HttpTransport.new(session: lambda { |uri|
       polled << uri.to_s
       http_response(200, @xml)
     })
@@ -164,7 +164,7 @@ class HttpTransportTest < ActiveSupport::TestCase
 
   test "resolves relative redirect targets" do
     requested = []
-    transport = FeedFetcher::HttpTransport.new(session: lambda { |uri|
+    transport = HttpTransport.new(session: lambda { |uri|
       requested << uri.to_s
       if requested.size == 1
         http_response(302, "", { "location" => "/moved" })
@@ -180,34 +180,34 @@ class HttpTransportTest < ActiveSupport::TestCase
   test "gives up after too many redirects" do
     transport = transport_always(http_response(301, "", { "location" => "https://example.com/loop" }))
 
-    error = assert_raises(FeedFetcher::Error) { transport.get("https://example.com/start") }
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/start") }
     assert_match(/too many redirects/, error.message)
   end
 
   test "raises when a redirect has no Location header" do
     transport = transport_always(http_response(301, ""))
 
-    assert_raises(FeedFetcher::Error) { transport.get("https://example.com/start") }
+    assert_raises(HttpTransport::Error) { transport.get("https://example.com/start") }
   end
 
   test "raises on HTTP error statuses" do
     transport = transport_always(http_response(503, "unavailable"))
 
-    error = assert_raises(FeedFetcher::Error) { transport.get("https://example.com/feed") }
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
     assert_match(/HTTP 503/, error.message)
   end
 
   test "raises on an empty body" do
     transport = transport_always(http_response(200, ""))
 
-    assert_raises(FeedFetcher::Error) { transport.get("https://example.com/feed") }
+    assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
   end
 
   test "rejects unsupported schemes" do
     transport = transport_always(http_response(200, "never reached"))
 
     %w[file:///etc/passwd ftp://example.com/feed].each do |url|
-      assert_raises(FeedFetcher::Error) { transport.get(url) }
+      assert_raises(HttpTransport::Error) { transport.get(url) }
     end
   end
 
@@ -240,10 +240,10 @@ class HttpTransportTest < ActiveSupport::TestCase
   end
 
   test "rejects bodies over the size cap" do
-    oversized = "x" * (FeedFetcher::MAX_BODY_BYTES + 1)
+    oversized = "x" * (HttpTransport::MAX_BODY_BYTES + 1)
     transport = transport_always(http_response(200, oversized))
 
-    error = assert_raises(FeedFetcher::Error) { transport.get("https://example.com/feed") }
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
     assert_match(/larger than/, error.message)
   end
 

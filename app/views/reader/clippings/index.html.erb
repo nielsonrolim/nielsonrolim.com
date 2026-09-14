@@ -2,9 +2,31 @@
   <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.clippings.prompt") %></p>
 
   <p class="mb-6 max-w-measure border-y border-line py-3 text-chrome text-muted">
-    <%= t("reader.clippings.hint", count: @clippings.size) %>
+    <%= t("reader.clippings.hint", count: @shippable_count) %>
+    <% if @clippings.size > @shippable_count %>
+      <span class="text-err"><%= t("reader.clippings.failed_in_queue", count: @clippings.size - @shippable_count) %></span>
+    <% end %>
     <%= link_to t("reader.clippings.view_issues"), reader_newsletters_path, class: "text-ruby" %>
   </p>
+
+  <div class="mb-8 border border-line bg-surface p-4">
+    <%= form_with model: @clipping, url: reader_clippings_path, class: "flex flex-wrap items-end gap-3" do |form| %>
+      <div class="min-w-[16rem] flex-1">
+        <%= form.label :url, t("reader.clippings.form.url"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.url_field :url, required: true, placeholder: "https://exemplo.com/noticia",
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <div class="min-w-[14rem]">
+        <%= form.label :title, t("reader.clippings.form.title"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.text_field :title, placeholder: t("reader.clippings.form.title_placeholder"),
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <%= form.submit t("reader.clippings.form.submit"),
+            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+    <% end %>
+
+    <p class="mt-3 mb-0 text-meta text-muted"><%= t("reader.clippings.form.hint") %></p>
+  </div>
 
   <% if @clippings.empty? %>
     <p class="text-prompt text-muted"><%= t("reader.clippings.empty") %></p>
@@ -16,6 +38,8 @@
             <span class="text-ruby"><%= format("%02d", index + 1) %></span>
             <% if clipping.entry&.feed %>
               <span><%= clipping.entry.feed.display_title %></span>
+            <% else %>
+              <span><%= t("reader.clippings.manual") %></span>
             <% end %>
             <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
             <%= render "reader/clippings/summary_status", clipping: clipping %>
@@ -63,11 +87,15 @@
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-3 text-chrome">
+            <%= link_to t("reader.clippings.actions.edit"), edit_reader_clipping_path(clipping),
+                  class: "rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted no-underline hover:border-ruby hover:text-ruby" %>
+
             <% if clipping.failed? %>
-              <%= button_to t("reader.clippings.actions.retry_summary"), retry_summary_reader_clipping_path(clipping), method: :post,
+              <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(clipping), method: :post,
                     class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
                     form: { class: "m-0 inline" } %>
             <% end %>
+
             <%= button_to t("reader.clippings.actions.remove"), reader_clipping_path(clipping), method: :delete,
                   data: { confirm: t("reader.clippings.actions.confirm_remove", title: clipping.title) },
                   class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",

@@ -145,6 +145,26 @@ fills the language and the translations for older clippings too. In the issue
 each clipping also carries the language it was written in, and the title and
 summary go out in the subscriber's language.
 
+### Adding and editing a clipping by hand
+
+A clipping does not have to come from a feed: the form at the top of the page
+takes a URL and an optional title. `ArticleFetcher` fetches the page through the
+same `HttpTransport` feeds use, and pulls out a title (`og:title` → `twitter:title`
+→ `<title>` → `<h1>`) and the body text (dropping scripts, chrome and asides),
+which becomes `source_text` — the text the summary is generated from.
+
+When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping is
+**still created**, marked `failed` with the reason and with the host as its title,
+and the page sends you to `/admin/reader/clippings/:id/edit`. There you can paste
+the article text and press **"gerar sumário e tradução"**, which runs the summary
+and the translation on demand. The edit page exposes every field — URL, language,
+the content for each language, and the source text — so a mis-detected language or
+a bad translation can be corrected by hand, and the same button regenerates them.
+
+A clipping marked `failed` is **left out of the next issue** (see
+`Clipping.shippable`); it stays in the queue until it is fixed or removed, which
+is why the page counts what will actually go out and how many are stuck.
+
 ### Feeds, categories and titles
 
 - **Categories are many-to-many.** `categories` + `feed_categories` (replacing

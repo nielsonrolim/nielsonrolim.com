@@ -308,29 +308,60 @@ en-US:
     clippings:
       prompt: "cat clipping-queue.md"
       view_issues: "view sent issues"
-      empty: "Nothing in the queue. Clip entries from the reader."
+      empty: "Nothing in the queue. Clip entries from the reader or add one by URL."
       marked_at: "clipped %{time}"
-      language: "language"
+      manual: "manual"
       language_pending: "language not detected"
       original: "original"
       translation: "translation"
       translation_pending: "translation pending"
       hint:
-        one: "%{count} clipping waiting for the next weekly issue."
-        other: "%{count} clippings waiting for the next weekly issue."
+        one: "%{count} clipping will go out in the next weekly issue."
+        other: "%{count} clippings will go out in the next weekly issue."
+      failed_in_queue:
+        one: "(%{count} with a failed summary stays out)"
+        other: "(%{count} with a failed summary stay out)"
       summary_status:
         pending: "summary pending"
         summarizing: "summarizing"
         summarized: "summary ready"
         failed: "summary failed"
+      form:
+        url: "Article URL"
+        title: "title"
+        title_placeholder: "optional"
+        submit: "add"
+        hint: "We fetch the page for its title and text to generate the summary. If the fetch fails the clipping is still created so you can complete it on the edit page."
+      edit:
+        prompt: "edit clipping.conf"
+        status: "summary: %{status}"
+        language: "article language"
+        language_hint: "Decides which title/summary is the original and which is the translation."
+        content: "content per language"
+        title: "title"
+        summary: "summary"
+        source_text: "text the summary is generated from"
+        source_text_hint: "This is what feeds the summary. Paste the article text here when the fetch could not get it."
+        save: "save"
+        cancel: "cancel"
+      create:
+        success: "Clipping added: %{title}"
+        duplicate: "That URL is already in the queue."
+        invalid: "Could not add: %{error}"
+        fetch_failed: "Could not fetch the page: %{error}"
+        added_without_source: "Clipping created, but we could not fetch the page. Paste the text and use \"generate summary and translation\"."
+      update:
+        success: "Clipping updated: %{title}"
+        invalid: "Could not save: %{error}"
+      generate_summary:
+        queued: "Summary and translation queued: %{title}"
       actions:
-        retry_summary: "retry summary"
+        edit: "edit"
+        generate_summary: "generate summary and translation"
         remove: "remove"
         confirm_remove: "Remove '%{title}' from the next issue?"
       destroy:
         success: "Removed from the queue: %{title}"
-      retry_summary:
-        queued: "Summary queued again: %{title}"
     newsletters:
       prompt: "ls issues/"
       send_now: "send issue now"
