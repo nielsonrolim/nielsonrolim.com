@@ -62,4 +62,16 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", "https://github.com/nielsonrolim"
     assert_select "a[href=?]", "https://www.linkedin.com/in/nielsonrolim/"
   end
+
+  test "the newsletter signup sits right above the experience section" do
+    get "/pt-BR"
+
+    body = response.body
+    newsletter = body.index(I18n.t("pages.home.newsletter.prompt"))
+    experience = body.index(I18n.t("pages.home.experience.prompt"))
+
+    assert_not_nil newsletter
+    assert_not_nil experience
+    assert_operator newsletter, :<, experience
+  end
 end

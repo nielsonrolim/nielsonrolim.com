@@ -28,6 +28,25 @@
 </section>
 
 <section>
+  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".newsletter.prompt") %></p>
+  <div class="max-w-measure">
+    <p class="mt-0 mb-4"><%= t(".newsletter.body") %></p>
+    <%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
+      <div class="flex flex-wrap gap-[0.6rem]">
+        <%= form.label :email, t(".newsletter.email_placeholder"), class: "sr-only" %>
+        <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true, autocomplete: "email", class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby" %>
+        <%= form.submit t(".newsletter.submit"), class: "cursor-pointer rounded-frame border border-ruby bg-ruby px-[1.1rem] py-[0.65rem] text-form font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink" %>
+      </div>
+
+      <div class="honeypot absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+        <%= form.label :nickname, t(".newsletter.nickname_label") %>
+        <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section>
   <% experience = t(".experience.jobs") %>
   <% recent_experience = experience.first(6) %>
   <% earlier_experience = experience.drop(6) %>
@@ -120,23 +139,4 @@
       <%= link_to "linkedin.com/in/nielsonrolim", "https://www.linkedin.com/in/nielsonrolim/" %>
     </li>
   </ul>
-</section>
-
-<section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".newsletter.prompt") %></p>
-  <div class="max-w-measure">
-    <p class="mt-0 mb-4"><%= t(".newsletter.body") %></p>
-    <%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
-      <div class="flex flex-wrap gap-[0.6rem]">
-        <%= form.label :email, t(".newsletter.email_placeholder"), class: "sr-only" %>
-        <%= form.email_field :email, placeholder: t(".newsletter.email_placeholder"), required: true, autocomplete: "email", class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby" %>
-        <%= form.submit t(".newsletter.submit"), class: "cursor-pointer rounded-frame border border-ruby bg-ruby px-[1.1rem] py-[0.65rem] text-form font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink" %>
-      </div>
-
-      <div class="honeypot absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-        <%= form.label :nickname, t(".newsletter.nickname_label") %>
-        <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
-      </div>
-    <% end %>
-  </div>
 </section>
