@@ -233,6 +233,51 @@ segment; `/` redirects to `/pt-BR`. The admin area itself is not locale-scoped a
 always renders in the default locale. `rails-i18n` supplies the pt-BR
 ActiveRecord error messages and date formats.
 
+## Data migrations
+
+Versioned data changes live in `db/data/` and are tracked in their own
+`data_migrations` table, separately from schema migrations, by
+[data_migrate](https://github.com/ilyakatz/data-migrate).
+
+```sh
+bin/rails data:migrate          # apply pending data migrations
+bin/rails data:migrate:status   # what is pending / already applied
+bin/rails data:rollback         # step back (only for reversible migrations)
+bin/rails g data_migration my_change
+```
+
+A data migration runs against **the database of the environment you run it in** —
+it cannot read another environment's data. So bringing data across (say, feeds
+authored in development) means snapshotting it into the migration and running
+`data:migrate` wherever it should land:
+
+```ruby
+# db/data/20260914122758_import_development_feeds.rb
+def up
+  FEEDS.each do |title, url, category|
+    Feed.find_or_create_by!(url: url) do |feed|
+      feed.title = title
+      feed.category = category
+    end
+  end
+end
+```
+
+That one is idempotent (matched by URL, never overwrites an existing row), so it
+is a no-op in development and creates only what is missing elsewhere. Unlike
+`db/seeds.rb` — idempotent starter data that keeps evolving — a data migration is
+a point-in-time snapshot and must keep meaning the same thing forever, which is
+why it embeds its data instead of reading the seed file.
+
+`bin/docker-entrypoint` runs `bin/rails data:migrate` right after `db:prepare` on
+the `web` container, so deployments apply them automatically. It is deliberately
+non-fatal: a failing data migration logs loudly and is retried on the next boot
+rather than taking the site down. To run it by hand:
+
+```sh
+docker compose exec web bin/rails data:migrate
+```
+
 ## Deployment (Docker Compose)
 
 Two containers share one SQLite volume: `web` (Rails + Puma) and `jobs`

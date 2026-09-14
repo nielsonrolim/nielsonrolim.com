@@ -5,6 +5,15 @@ set -e
 # container waits for web to become healthy, so only web runs this.
 if [ "${1}" == "bin/rails" ] && [ "${2}" == "server" ]; then
   ./bin/rails db:prepare
+
+  # Apply versioned data migrations (db/data, tracked in their own table and
+  # safe to re-run). Non-fatal on purpose: a failing data migration must not take
+  # the site down — it is logged loudly and retried on the next boot.
+  if ! ./bin/rails data:migrate; then
+    echo "[docker-entrypoint] WARNING: bin/rails data:migrate failed." >&2
+    echo "[docker-entrypoint] The site will still boot; the migration is retried on the next restart." >&2
+    echo "[docker-entrypoint] Inspect with: bin/rails data:migrate:status" >&2
+  fi
 fi
 
 # Populate opencode's auth.json from OPENCODE_API_KEY so the credential lives in

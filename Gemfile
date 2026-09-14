@@ -16,6 +16,11 @@ gem "feedjira"
 # Rails 8.1 is incompatible with json 3.x's JSON.parse signature
 gem "json", "~> 2.21"
 
+# Versioned data migrations (`bin/rails data:migrate`), tracked separately from
+# schema migrations. Needed at runtime so production can run them too.
+# [https://github.com/ilyakatz/data-migrate]
+gem "data_migrate"
+
 # pt-BR translations for ActiveRecord errors, date/time formats and friends
 # [https://github.com/svenfuchs/rails-i18n]
 gem "rails-i18n", "~> 8.0"
