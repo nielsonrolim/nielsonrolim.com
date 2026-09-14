@@ -1,0 +1,9 @@
+# Emails deliberately avoid reader@example.com and bot@example.com, which the
+# existing subscriber tests create themselves.
+first:
+  email: "clipping-fan@example.org"
+  unsubscribe_token: "token-first-subscriber"
+
+second:
+  email: "clipping-reader@example.org"
+  unsubscribe_token: "token-second-subscriber"

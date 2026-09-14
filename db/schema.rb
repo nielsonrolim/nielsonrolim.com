@@ -10,11 +10,77 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_152045) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_13_160500) do
+  create_table "clippings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "entry_id", null: false
+    t.integer "newsletter_id"
+    t.text "summary"
+    t.string "summary_error"
+    t.string "summary_status", default: "pending", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["entry_id"], name: "index_clippings_on_entry_id"
+    t.index ["entry_id"], name: "index_clippings_on_unsent_entry", unique: true, where: "newsletter_id IS NULL"
+    t.index ["newsletter_id"], name: "index_clippings_on_newsletter_id"
+    t.index ["summary_status"], name: "index_clippings_on_summary_status"
+  end
+
+  create_table "entries", force: :cascade do |t|
+    t.string "author"
+    t.datetime "created_at", null: false
+    t.integer "feed_id", null: false
+    t.string "guid", null: false
+    t.datetime "published_at"
+    t.text "summary"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["feed_id", "guid"], name: "index_entries_on_feed_id_and_guid", unique: true
+    t.index ["feed_id", "published_at"], name: "index_entries_on_feed_id_and_published_at"
+    t.index ["feed_id"], name: "index_entries_on_feed_id"
+    t.index ["published_at"], name: "index_entries_on_published_at"
+    t.index ["url"], name: "index_entries_on_url"
+  end
+
+  create_table "feeds", force: :cascade do |t|
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "last_error"
+    t.datetime "last_fetched_at"
+    t.string "site_url"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["last_fetched_at"], name: "index_feeds_on_last_fetched_at"
+    t.index ["url"], name: "index_feeds_on_url", unique: true
+  end
+
+  create_table "newsletters", force: :cascade do |t|
+    t.text "body", null: false
+    t.text "body_text"
+    t.datetime "created_at", null: false
+    t.integer "recipient_count", default: 0, null: false
+    t.datetime "sent_at"
+    t.string "status", default: "draft", null: false
+    t.string "subject", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sent_at"], name: "index_newsletters_on_sent_at"
+    t.index ["status"], name: "index_newsletters_on_status"
+  end
+
   create_table "subscribers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.string "unsubscribe_token"
     t.datetime "updated_at", null: false
     t.index "lower(email)", name: "index_subscribers_on_lower_email", unique: true
+    t.index ["unsubscribe_token"], name: "index_subscribers_on_unsubscribe_token", unique: true
   end
+
+  add_foreign_key "clippings", "entries"
+  add_foreign_key "clippings", "newsletters"
+  add_foreign_key "entries", "feeds"
 end

@@ -1,0 +1,20 @@
+queued:
+  entry: rails_eight
+  title: "Rails 8.1 ships with a new queue UI"
+  url: "https://example.com/rails-8-1"
+  summary: "O Rails 8.1 traz um novo painel de filas."
+  summary_status: "summarized"
+
+pending:
+  entry: solid_queue
+  title: "Understanding Solid Queue internals"
+  url: "https://example.com/solid-queue"
+  summary_status: "pending"
+
+sent:
+  entry: front_page
+  newsletter: last_week
+  title: "Show HN: I built an RSS reader in Rails"
+  url: "https://example.com/show-hn"
+  summary: "Um leitor de RSS construído em Rails."
+  summary_status: "summarized"

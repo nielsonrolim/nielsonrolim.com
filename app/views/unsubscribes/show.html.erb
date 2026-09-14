@@ -1,0 +1,15 @@
+<section class="mt-2 max-w-measure">
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("unsubscribes.show.prompt") %></p>
+  <h1 class="mt-[0.1rem] mb-[0.9rem] text-lead font-bold text-ink"><%= t("unsubscribes.show.title") %></h1>
+
+  <p class="mb-6 text-prompt text-ink-soft">
+    <%= t("unsubscribes.show.body", email: @subscriber.email) %>
+  </p>
+
+  <%= button_to t("unsubscribes.show.confirm"), unsubscribe_path(token: @subscriber.unsubscribe_token), method: :post,
+        class: "cursor-pointer rounded-frame border border-line-strong bg-surface px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+
+  <p class="mt-6 text-chrome">
+    <%= link_to t("unsubscribes.show.cancel"), home_path(locale: I18n.locale), class: "text-muted" %>
+  </p>
+</section>

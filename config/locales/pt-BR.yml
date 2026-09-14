@@ -134,3 +134,151 @@ pt-BR:
     create:
       success: "Inscrição confirmada! Obrigado por assinar."
       invalid: "Não foi possível concluir a inscrição. Verifique o e-mail informado."
+  date:
+    formats:
+      long: "%d/%m/%Y"
+      short: "%d/%m"
+  time:
+    formats:
+      long: "%d/%m/%Y %H:%M"
+      short: "%H:%M"
+  reader:
+    realm: "Leitor de RSS"
+    title: "Leitor de RSS"
+    theme_toggle: "Alternar tema claro/escuro"
+    nav:
+      label: "Navegação do leitor"
+      entries: "[entradas]"
+      clippings: "[recortes]"
+      feeds: "[fontes]"
+      newsletters: "[arquivo]"
+      back_to_site: "← voltar ao site"
+    entries:
+      prompt: "cat entries.log"
+      clip: "marcar p/ newsletter"
+      clipped: "[na próxima edição]"
+      empty: "Nenhuma entrada ainda. Adicione fontes ou rode uma atualização."
+      by_author: "por %{author}"
+      count:
+        one: "%{count} entrada"
+        other: "%{count} entradas"
+      filters:
+        feed: "fonte"
+        all_feeds: "todas"
+        since: "período"
+        week: "7d"
+        month: "30d"
+        all_time: "tudo"
+      clip_success: "Marcado: %{title}"
+      clip_failure: "Não foi possível marcar: %{error}"
+      pagination:
+        label: "Paginação"
+        previous: "← anterior"
+        next: "próxima →"
+        status: "página %{page} de %{pages}"
+    feeds:
+      prompt: "cat sources.conf"
+      refresh_all: "atualizar todas"
+      empty: "Nenhuma fonte cadastrada."
+      never_fetched: "nunca consultada"
+      error: "erro"
+      total:
+        one: "%{count} fonte"
+        other: "%{count} fontes"
+      entry_count:
+        one: "%{count} entrada"
+        other: "%{count} entradas"
+      last_fetched: "última consulta: %{time}"
+      form:
+        url: "URL do feed"
+        category: "categoria"
+        category_placeholder: "opcional"
+        submit: "adicionar"
+      actions:
+        refresh: "atualizar"
+        remove: "remover"
+        confirm_remove: "Remover a fonte '%{title}' e todas as suas entradas?"
+      create:
+        success: "Fonte adicionada: %{title}"
+        duplicate: "Essa fonte já está cadastrada."
+        invalid: "Não foi possível ler o feed: %{error}"
+      destroy:
+        success: "Fonte removida: %{title}"
+      refresh:
+        success:
+          one: "'%{title}' atualizada — %{count} entrada nova"
+          other: "'%{title}' atualizada — %{count} entradas novas"
+        failure: "Falha ao atualizar '%{title}': %{error}"
+      refresh_all:
+        queued: "Atualização de todas as fontes enfileirada."
+    clippings:
+      prompt: "cat clipping-queue.md"
+      view_issues: "ver edições enviadas"
+      empty: "Nenhum recorte na fila. Marque entradas no leitor."
+      marked_at: "marcado em %{time}"
+      hint:
+        one: "%{count} recorte aguardando a próxima edição semanal."
+        other: "%{count} recortes aguardando a próxima edição semanal."
+      summary_status:
+        pending: "resumo pendente"
+        summarizing: "gerando resumo"
+        summarized: "resumo pronto"
+        failed: "resumo falhou"
+      actions:
+        retry_summary: "tentar resumo de novo"
+        remove: "remover"
+        confirm_remove: "Remover '%{title}' da próxima edição?"
+      destroy:
+        success: "Removido da fila: %{title}"
+      retry_summary:
+        queued: "Resumo enfileirado novamente: %{title}"
+    newsletters:
+      prompt: "ls issues/"
+      send_now: "enviar edição agora"
+      back: "← voltar ao arquivo"
+      empty: "Nenhuma edição enviada ainda."
+      stats:
+        queued: "na fila: %{count}"
+        subscribers: "assinantes: %{count}"
+        schedule: "envio automático: segundas, 09:00"
+      confirm_send_now:
+        one: "Enviar agora uma edição com %{count} recorte para todos os assinantes?"
+        other: "Enviar agora uma edição com %{count} recortes para todos os assinantes?"
+      clippings_count:
+        one: "%{count} recorte"
+        other: "%{count} recortes"
+      recipients:
+        one: "%{count} destinatário"
+        other: "%{count} destinatários"
+      status:
+        draft: "rascunho"
+        sending: "enviando"
+        sent: "enviada"
+        failed: "falhou"
+      create:
+        queued: "Edição enfileirada para envio."
+  newsletters:
+    subject: "Clipping de tecnologia — %{date}"
+    email:
+      intro:
+        one: "O que valeu a leitura nesta semana (%{date}): %{count} link selecionado, com resumo."
+        other: "O que valeu a leitura nesta semana (%{date}): %{count} links selecionados, com resumo."
+      empty: "Nada foi selecionado para esta edição."
+      source: "fonte: %{feed}"
+      footer: "selecionado e resumido por Nielson Rolim."
+      sent_to: "Enviado para %{email}."
+      unsubscribe: "cancelar inscrição"
+  unsubscribes:
+    show:
+      prompt: "./unsubscribe.sh"
+      title: "Cancelar inscrição"
+      body: "O e-mail %{email} vai parar de receber o clipping semanal."
+      confirm: "confirmar cancelamento"
+      cancel: "← manter minha inscrição"
+    gone:
+      prompt: "./unsubscribe.sh"
+      title: "Nada a cancelar"
+      body: "Este link não corresponde a nenhuma inscrição ativa — ela já foi cancelada ou o link é inválido."
+      back: "← voltar ao site"
+    destroy:
+      success: "Inscrição cancelada. Você não receberá mais o clipping."

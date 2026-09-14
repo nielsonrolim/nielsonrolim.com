@@ -1,0 +1,18 @@
+ruby_blog:
+  title: "Ruby Weekly"
+  url: "https://rubyweekly.com/rss/"
+  site_url: "https://rubyweekly.com"
+  description: "A free weekly roundup of Ruby news and articles."
+  category: "ruby"
+  last_fetched_at: <%= 10.minutes.ago.to_fs(:db) %>
+
+hacker_news:
+  title: "Hacker News"
+  url: "https://news.ycombinator.com/rss"
+  site_url: "https://news.ycombinator.com"
+  category: "news"
+
+broken:
+  title: "Broken Feed"
+  url: "https://broken.example.com/feed"
+  last_error: "FeedFetcher::Error: HTTP 503 for https://broken.example.com/feed"

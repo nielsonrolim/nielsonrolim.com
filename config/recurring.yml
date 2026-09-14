@@ -1,0 +1,32 @@
+# Solid Queue recurring tasks. The section matching Rails.env is loaded by the
+# scheduler (bin/jobs start --recurring).
+#
+# Times are interpreted in the application time zone (config.time_zone, set from
+# APP_TIME_ZONE / default "Brasilia"). Make sure TZ is exported in production so
+# the scheduler and the app agree.
+
+default: &default
+  # Poll every feed that has not been refreshed within FEED_REFRESH_MINUTES.
+  refresh_feeds:
+    class: RefreshFeedsJob
+    queue: feeds
+    schedule: every 30 minutes
+
+  # Weekly clipping issue: Mondays at 09:00.
+  send_weekly_newsletter:
+    class: SendNewsletterJob
+    queue: newsletters
+    schedule: "0 9 * * 1"
+
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

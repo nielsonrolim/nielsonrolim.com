@@ -1,9 +1,41 @@
 #!/usr/bin/env bash
 set -e
 
-# Prepare the database (create + migrate) before booting the server.
+# Prepare the database (create + migrate) before booting the server. The jobs
+# container waits for web to become healthy, so only web runs this.
 if [ "${1}" == "bin/rails" ] && [ "${2}" == "server" ]; then
   ./bin/rails db:prepare
+fi
+
+# Populate opencode's auth.json from OPENCODE_API_KEY so the credential lives in
+# an env var (.env) instead of being baked into the image. Leave it unset to run
+# `docker compose exec web opencode auth login` once instead; the data directory
+# is a named volume, so that login survives restarts.
+#
+# A failure here must NOT take the container down: the site works fine without
+# summaries, so warn loudly and carry on.
+if [ -n "${OPENCODE_API_KEY}" ]; then
+  auth_dir="${HOME}/.local/share/opencode"
+  auth_file="${auth_dir}/auth.json"
+
+  if mkdir -p "${auth_dir}" 2>/dev/null && touch "${auth_file}" 2>/dev/null; then
+    cat > "${auth_file}" <<JSON
+{
+  "opencode": {
+    "type": "api",
+    "key": "${OPENCODE_API_KEY}"
+  }
+}
+JSON
+    chmod 600 "${auth_file}"
+  else
+    echo "[docker-entrypoint] WARNING: cannot write ${auth_file} (permission denied)." >&2
+    echo "[docker-entrypoint] Summaries will fail until this is fixed. ${auth_dir} is" >&2
+    echo "[docker-entrypoint] probably root-owned, left over from an image built before" >&2
+    echo "[docker-entrypoint] the mount point existed. Recreate the volume with:" >&2
+    echo "[docker-entrypoint]   docker compose down && docker volume rm <project>_opencode_data" >&2
+    echo "[docker-entrypoint]   docker compose up --build" >&2
+  fi
 fi
 
 exec "$@"
