@@ -22,7 +22,7 @@
               class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
       </div>
       <%= form.submit t("reader.clippings.form.submit"),
-            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+            class: "btn btn--primary" %>
     <% end %>
 
     <p class="mt-3 mb-0 text-meta text-muted"><%= t("reader.clippings.form.hint") %></p>
@@ -46,9 +46,9 @@
 
             <%# The language the article is written in, detected with the summary. %>
             <% if clipping.language.present? %>
-              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-ok"><%= clipping.language %></span>
+              <span class="chip chip--ok"><%= clipping.language %></span>
             <% else %>
-              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-muted"><%= t("reader.clippings.language_pending") %></span>
+              <span class="chip"><%= t("reader.clippings.language_pending") %></span>
             <% end %>
           </div>
 
@@ -88,17 +88,17 @@
 
           <div class="mt-3 flex flex-wrap items-center gap-3 text-chrome">
             <%= link_to t("reader.clippings.actions.edit"), edit_reader_clipping_path(clipping),
-                  class: "rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted no-underline hover:border-ruby hover:text-ruby" %>
+                  class: "btn btn--sm btn--neutral" %>
 
             <% if clipping.failed? %>
               <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(clipping), method: :post,
-                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
+                    class: "btn btn--sm btn--primary",
                     form: { class: "m-0 inline" } %>
             <% end %>
 
             <%= button_to t("reader.clippings.actions.remove"), reader_clipping_path(clipping), method: :delete,
                   data: { confirm: t("reader.clippings.actions.confirm_remove", title: clipping.title) },
-                  class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                  class: "btn btn--sm btn--danger",
                   form: { class: "m-0 inline" } %>
           </div>
         </li>

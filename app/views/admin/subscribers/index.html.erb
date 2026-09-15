@@ -10,7 +10,7 @@
                 class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
         </div>
         <%= form.submit t("admin.subscribers.search.submit"),
-              class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-3 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+              class: "btn btn--primary" %>
         <% if @query.present? %>
           <%= link_to t("admin.subscribers.search.clear"), admin_subscribers_path,
                 class: "text-chrome text-muted no-underline hover:text-ink" %>
@@ -18,7 +18,7 @@
       <% end %>
 
       <%= link_to t("admin.subscribers.export"), export_admin_subscribers_path(q: @query.presence),
-            class: "ml-auto rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] text-chrome text-muted no-underline hover:border-ruby hover:text-ruby" %>
+            class: "ml-auto btn btn--neutral" %>
     </div>
 
     <%= form_with model: @subscriber, url: admin_subscribers_path, class: "flex flex-wrap items-end gap-3 border-t border-line pt-4" do |form| %>
@@ -33,7 +33,7 @@
               class: "rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
       </div>
       <%= form.submit t("admin.subscribers.form.submit"),
-            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+            class: "btn btn--primary" %>
     <% end %>
   </div>
 
@@ -43,7 +43,7 @@
     <%= form_with url: bulk_destroy_admin_subscribers_path, method: :delete, html: { id: "bulk-actions" }, class: "m-0 inline" do |form| %>
       <%= form.submit t("admin.subscribers.bulk.remove"),
             data: { confirm: t("admin.subscribers.bulk.confirm") },
-            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.6rem] py-[0.2rem] text-muted hover:border-err hover:text-err" %>
+            class: "btn btn--sm btn--danger" %>
     <% end %>
 
     <span class="ml-auto text-muted"><%= t("admin.subscribers.total", count: @total) %></span>
@@ -89,13 +89,13 @@
                       options_from_collection_for_select(@recent_newsletters, :id, :subject),
                       class: "max-w-[16rem] rounded-frame border border-line-strong bg-paper px-2 py-[0.15rem] font-mono text-meta text-ink" %>
                 <%= form.submit t("admin.subscribers.resend.submit"),
-                      class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby" %>
+                      class: "btn btn--sm btn--primary" %>
               <% end %>
             <% end %>
 
             <%= button_to t("admin.subscribers.actions.remove"), admin_subscriber_path(subscriber), method: :delete,
                   data: { confirm: t("admin.subscribers.actions.confirm_remove", email: subscriber.email) },
-                  class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                  class: "btn btn--sm btn--danger",
                   form: { class: "m-0 inline" } %>
           </div>
         </li>

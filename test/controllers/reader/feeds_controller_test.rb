@@ -62,7 +62,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get reader_feeds_path, headers: reader_headers
-    assert_select ".flash--alert", /já está cadastrada/
+    assert_select ".toast--alert", /já está cadastrada/
   end
 
   test "adding a broken feed reports the error" do
@@ -73,7 +73,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get reader_feeds_path, headers: reader_headers
-    assert_select ".flash--alert", /Não foi possível ler o feed/
+    assert_select ".toast--alert", /Não foi possível ler o feed/
   end
 
   test "adding a URL that is not a feed reports the error" do
@@ -84,7 +84,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get reader_feeds_path, headers: reader_headers
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "a missing URL is rejected" do
@@ -119,7 +119,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/503/, feed.last_error)
 
     get reader_feeds_path, headers: reader_headers
-    assert_select ".flash--alert", /Falha ao atualizar/
+    assert_select ".toast--alert", /Falha ao atualizar/
   end
 
   test "refresh all queues the job" do
@@ -267,7 +267,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
           headers: reader_headers
 
     assert_response :unprocessable_content
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
     assert_equal [ "Ruby", "Web" ], feed.reload.categories.map(&:name).sort
   end
 

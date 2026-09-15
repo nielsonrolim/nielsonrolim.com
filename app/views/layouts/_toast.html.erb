@@ -1,0 +1,4 @@
+<%# A single toast. `type` is the flash key: notice or alert. %>
+<p class="toast toast--<%= type %>" role="<%= type.to_s == "alert" ? "alert" : "status" %>"
+   data-controller="toast"
+   data-action="click->toast#dismiss"><%= message %></p>

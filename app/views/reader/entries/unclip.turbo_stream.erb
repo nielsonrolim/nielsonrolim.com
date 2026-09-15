@@ -1,0 +1,7 @@
+<%= turbo_stream.replace dom_id(@entry, :clip) do %>
+  <%= render "reader/entries/clip_state", entry: @entry %>
+<% end %>
+
+<%= turbo_stream.append "toasts",
+      partial: "layouts/toast",
+      locals: { type: :notice, message: t("reader.entries.unclip_success", title: @entry.title) } %>

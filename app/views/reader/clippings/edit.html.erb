@@ -13,7 +13,7 @@
     <%# Runs the summary and the translation on demand, from whatever source the
         clipping has now (pasted text included). %>
     <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(@clipping), method: :post,
-          class: "ml-auto cursor-pointer rounded-frame border border-line-strong bg-surface px-[0.6rem] py-[0.2rem] text-ruby hover:border-ruby",
+          class: "ml-auto btn btn--sm btn--primary",
           form: { class: "m-0 inline" } %>
   </div>
 
@@ -69,7 +69,7 @@
 
       <div class="flex items-center gap-4">
         <%= form.submit t("reader.clippings.edit.save"),
-              class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+              class: "btn btn--primary" %>
         <%= link_to t("reader.clippings.edit.cancel"), reader_clippings_path,
               class: "text-chrome text-muted no-underline hover:text-ink" %>
       </div>

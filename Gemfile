@@ -10,6 +10,15 @@ gem "sqlite3", ">= 2.1"
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 
+# Hotwire: server-rendered HTML over the wire. Import maps keep the no-build
+# workflow (no Node.js), while Turbo/Stimulus ship the interactive bits.
+# [https://github.com/hotwired/turbo-rails]
+gem "turbo-rails"
+# [https://github.com/hotwired/stimulus-rails]
+gem "stimulus-rails"
+# [https://github.com/rails/importmap-rails]
+gem "importmap-rails"
+
 # RSS/Atom feed parsing [https://github.com/feedjira/feedjira]
 gem "feedjira"
 

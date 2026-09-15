@@ -1,10 +1,10 @@
 <%# Summary generation state for one clipping. %>
 <% badge = {
-     "summarized" => "border-line-strong text-ok",
-     "summarizing" => "border-line-strong text-muted",
-     "pending" => "border-line-strong text-muted",
-     "failed" => "border-err text-err"
+     "summarized" => "chip--ok",
+     "summarizing" => nil,
+     "pending" => nil,
+     "failed" => "chip--err"
    }[clipping.summary_status] %>
-<span class="rounded-frame border px-[0.4rem] py-[0.05rem] <%= badge %>">
+<span class="chip <%= badge %>">
   <%= t("reader.clippings.summary_status.#{clipping.summary_status}") %>
 </span>

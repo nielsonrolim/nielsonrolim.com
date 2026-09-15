@@ -366,6 +366,7 @@ DEPENDENCIES
   debug
   dotenv-rails
   feedjira
+  importmap-rails
   json (~> 2.21)
   letter_opener
   mission_control-jobs
@@ -378,7 +379,9 @@ DEPENDENCIES
   rubocop-rails-omakase
   solid_queue
   sqlite3 (>= 2.1)
+  stimulus-rails
   tailwindcss-rails (~> 4.6)
+  turbo-rails
   tzinfo-data
   web-console
 

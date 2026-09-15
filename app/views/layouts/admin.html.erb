@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow">
     <%= render "layouts/theme_script" %>
     <script>
-      // The admin layout ships no JS framework, so `data-confirm` (used by the
-      // destructive actions, like removing subscribers) needs a handler to work.
+      // Destructive actions use `data-confirm` (not Turbo's `data-turbo-confirm`),
+      // so this delegated handler turns it into a native confirm dialog.
       document.addEventListener("submit", (event) => {
         const message = event.submitter?.dataset?.confirm;
         if (message && !window.confirm(message)) event.preventDefault();
@@ -16,9 +16,14 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
   </head>
 
   <body class="max-tiny:text-[15px]">
+    <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="true">
+      <%= render "layouts/toasts" %>
+    </div>
+
     <div class="mx-auto max-w-site px-6 pb-16 max-tiny:px-[1.1rem] max-tiny:pb-12">
       <header class="mb-10 border-b border-line py-[1.1rem]">
         <div class="flex items-center justify-between gap-4 text-chrome text-muted">
@@ -52,10 +57,6 @@
           </nav>
         <% end %>
       </header>
-
-      <% flash.each do |type, message| %>
-        <p class="flash flash--<%= type %>"><%= message %></p>
-      <% end %>
 
       <main>
         <%= yield %>

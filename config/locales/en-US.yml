@@ -245,6 +245,9 @@ en-US:
         all_time: "all"
       clip_success: "Clipped: %{title}"
       clip_failure: "Could not clip: %{error}"
+      unclip: "remove from next issue"
+      unclip_confirm: "Remove '%{title}' from the next issue?"
+      unclip_success: "Removed from the next issue: %{title}"
       pagination:
         label: "Pagination"
         previous: "← previous"

@@ -1,0 +1,19 @@
+<%# The clip action for a single entry: a "marked" badge with a way to take it
+    back out once it is in the queue, otherwise the button.
+    Rendered both in the list and, via Turbo Stream, on its own — so it owns the
+    id the stream targets, otherwise a replace would drop it. %>
+<div id="<%= dom_id(entry, :clip) %>" class="flex flex-col items-start gap-[0.55rem]">
+  <% if entry.clipped? %>
+    <span class="chip chip--ok">
+      <%= t("reader.entries.clipped") %>
+    </span>
+    <%= button_to t("reader.entries.unclip"), unclip_reader_entry_path(entry), method: :delete,
+          data: { confirm: t("reader.entries.unclip_confirm", title: entry.title) },
+          class: "btn btn--sm btn--danger",
+          form: { class: "m-0 inline" } %>
+  <% else %>
+    <%= button_to t("reader.entries.clip"), clip_reader_entry_path(entry), method: :post,
+          class: "btn btn--sm btn--neutral",
+          form: { class: "m-0 inline" } %>
+  <% end %>
+</div>

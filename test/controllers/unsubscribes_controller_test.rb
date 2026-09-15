@@ -49,7 +49,7 @@ class UnsubscribesControllerTest < ActionDispatch::IntegrationTest
     # They land on the site in the language they were reading.
     assert_redirected_to "/en-US"
     follow_redirect!
-    assert_select ".flash--notice", /Unsubscribed/
+    assert_select ".toast--notice", /Unsubscribed/
   end
 
   test "a pt-BR subscriber is answered in Portuguese" do
@@ -57,7 +57,7 @@ class UnsubscribesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to "/pt-BR"
     follow_redirect!
-    assert_select ".flash--notice", /Inscrição cancelada/
+    assert_select ".toast--notice", /Inscrição cancelada/
   end
 
   test "the page follows the subscriber's language" do

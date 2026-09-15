@@ -22,9 +22,9 @@ articles into a weekly clipping newsletter with AI-written summaries.
   LLM through the `opencode` CLI, then all clippings of the week go out as one
   HTML + plain-text email to every subscriber in their own language, Mondays at
   09:00.
-- No JavaScript framework in the app's own pages; a tiny inline script handles
-  the theme. (The dashboard is a vendored engine shipping its own Turbo/Stimulus
-  assets, behind the same auth.)
+- **Hotwire** (Turbo + Stimulus) through `importmap-rails`: clipping an entry
+  updates just that entry and shows a toast, with no full-page reload. Still no
+  Node.js build step.
 - Tailwind CSS v4 through `tailwindcss-rails` — no Node.js required.
 
 ## Tech stack
@@ -39,6 +39,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 | Feeds      | `feedjira` (parsing) + `Net::HTTP` (transport)       |
 | Email      | Action Mailer over SMTP                              |
 | Summaries  | `opencode` CLI with a free model                     |
+| Front-end  | Hotwire (Turbo + Stimulus) via `importmap-rails`     |
 | Assets     | Propshaft + Tailwind CSS v4 (`tailwindcss-rails`)   |
 | Type       | FiraCode Nerd Font                                  |
 | Tests/Lint | Minitest, RuboCop (rails-omakase), Brakeman         |

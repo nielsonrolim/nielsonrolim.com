@@ -8,7 +8,7 @@
 
     <%= button_to t("reader.newsletters.send_now"), reader_newsletters_path, method: :post,
           data: { confirm: t("reader.newsletters.confirm_send_now", count: @queued_count) },
-          class: "ml-auto cursor-pointer rounded-frame border border-line-strong bg-surface px-[0.6rem] py-[0.2rem] text-ruby hover:border-ruby",
+          class: "ml-auto btn btn--sm btn--primary",
           form: { class: "m-0 inline" } %>
   </div>
 
@@ -22,7 +22,7 @@
             <%= link_to newsletter.subject, reader_newsletter_path(newsletter), class: "text-ink no-underline hover:text-ruby" %>
           </h3>
 
-          <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta <%= newsletter.sent? ? 'text-ok' : 'text-muted' %>">
+          <span class="chip <%= 'chip--ok' if newsletter.sent? %>">
             <%= t("reader.newsletters.status.#{newsletter.status}") %>
           </span>
 

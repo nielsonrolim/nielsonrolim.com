@@ -21,13 +21,15 @@ class PreferencesController < ApplicationController
     if subscriber.save
       I18n.with_locale(subscriber.language) do
         redirect_to preferences_path(token: subscriber.unsubscribe_token),
-                    notice: t("preferences.update.success", language: subscriber.language)
+                    notice: t("preferences.update.success", language: subscriber.language),
+                    status: :see_other
       end
     else
       I18n.with_locale(current_language) do
         redirect_to preferences_path(token: subscriber.unsubscribe_token),
                     alert: t("preferences.update.invalid",
-                             error: subscriber.errors.full_messages.to_sentence)
+                             error: subscriber.errors.full_messages.to_sentence),
+                    status: :see_other
       end
     end
   end

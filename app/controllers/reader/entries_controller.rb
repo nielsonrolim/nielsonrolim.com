@@ -23,20 +23,58 @@ module Reader
 
     # Marks an entry for the next newsletter issue. Creating the clipping also
     # enqueues the AI summary (see Clipping#enqueue_summary_generation).
+    #
+    # Turbo Streams replace just the entry's action and append a toast, so the
+    # list is not reloaded. Plain HTML requests keep the redirect fallback.
     def clip
       entry = Entry.find(params[:id])
 
       clipping = Clipping.new(entry: entry, title: entry.title, url: entry.url)
 
       if clipping.save
-        redirect_back fallback_location: reader_entries_path,
-                      notice: t("reader.entries.clip_success", title: clipping.title),
-                      status: :see_other
+        @entry = entry
+        respond_to do |format|
+          format.turbo_stream
+          format.html do
+            redirect_back fallback_location: reader_entries_path,
+                          notice: t("reader.entries.clip_success", title: clipping.title),
+                          status: :see_other
+          end
+        end
       else
         message = clipping.errors.full_messages.to_sentence
-        redirect_back fallback_location: reader_entries_path,
-                      alert: t("reader.entries.clip_failure", error: message),
-                      status: :see_other
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.append(
+              "toasts",
+              partial: "layouts/toast",
+              locals: { type: :alert, message: t("reader.entries.clip_failure", error: message) }
+            )
+          end
+          format.html do
+            redirect_back fallback_location: reader_entries_path,
+                          alert: t("reader.entries.clip_failure", error: message),
+                          status: :see_other
+          end
+        end
+      end
+    end
+
+    # Removes the entry from the next issue: its unsent clipping is deleted, so
+    # the entry can be clipped again. Mirrors #clip, in place over Turbo Streams.
+    def unclip
+      entry = Entry.find(params[:id])
+      entry.clippings.unsent.destroy_all
+      entry.association(:clippings).reset
+      @entry = entry
+
+      respond_to do |format|
+        format.turbo_stream
+        format.html do
+          redirect_back fallback_location: reader_entries_path,
+                        notice: t("reader.entries.unclip_success", title: entry.title),
+                        status: :see_other
+        end
       end
     end
 

@@ -19,17 +19,19 @@ module Reader
       url = create_params[:url].to_s.strip
 
       if Feed.where(url: url).exists?
-        redirect_to reader_feeds_path, alert: t("reader.feeds.create.duplicate")
+        redirect_to reader_feeds_path, alert: t("reader.feeds.create.duplicate"), status: :see_other
         return
       end
 
       feed = FeedFetcher.create_from_url(url, category: create_params[:category].presence)
       RefreshFeedsJob.perform_later
 
-      redirect_to reader_feeds_path, notice: t("reader.feeds.create.success", title: feed.display_title)
+      redirect_to reader_feeds_path, notice: t("reader.feeds.create.success", title: feed.display_title),
+                  status: :see_other
     rescue FeedFetcher::Error, Feedjira::NoParserAvailable,
            ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
-      redirect_to reader_feeds_path, alert: t("reader.feeds.create.invalid", error: e.message)
+      redirect_to reader_feeds_path, alert: t("reader.feeds.create.invalid", error: e.message),
+                  status: :see_other
     end
 
     def edit

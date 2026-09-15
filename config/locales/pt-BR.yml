@@ -245,6 +245,9 @@ pt-BR:
         all_time: "tudo"
       clip_success: "Marcado: %{title}"
       clip_failure: "Não foi possível marcar: %{error}"
+      unclip: "remover da próxima edição"
+      unclip_confirm: "Remover '%{title}' da próxima edição?"
+      unclip_success: "Removido da próxima edição: %{title}"
       pagination:
         label: "Paginação"
         previous: "← anterior"

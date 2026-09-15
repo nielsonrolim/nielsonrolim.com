@@ -69,7 +69,6 @@
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @entries.each do |entry| %>
-        <% clipped = entry.clipped? %>
         <li class="border-t border-line py-[1.1rem] last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
             <span class="text-ruby"><%= entry.feed.display_title %></span>
@@ -92,18 +91,11 @@
             </p>
           <% end %>
 
+          <%= link_to entry.url, entry.url, target: "_blank", rel: "noopener noreferrer",
+                class: "mb-[0.6rem] block break-all text-chrome text-muted no-underline hover:text-ink" %>
+
           <div class="flex flex-wrap items-center gap-3 text-chrome">
-            <% if clipped %>
-              <span class="rounded-frame border border-line-strong px-[0.45rem] py-[0.15rem] text-ok">
-                <%= t("reader.entries.clipped") %>
-              </span>
-            <% else %>
-              <%= button_to t("reader.entries.clip"), clip_reader_entry_path(entry), method: :post,
-                    class: "cursor-pointer rounded-frame border border-line-strong bg-surface px-[0.6rem] py-[0.2rem] text-ruby hover:border-ruby",
-                    form: { class: "m-0 inline" } %>
-            <% end %>
-            <%= link_to entry.url, entry.url, target: "_blank", rel: "noopener noreferrer",
-                  class: "text-muted no-underline hover:text-ink" %>
+            <%= render "reader/entries/clip_state", entry: entry %>
           </div>
         </li>
       <% end %>

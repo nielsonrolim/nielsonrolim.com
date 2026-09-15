@@ -60,7 +60,10 @@ Rails.application.routes.draw do
       end
 
       resources :entries, only: [ :index ] do
-        member { post :clip }
+        member do
+          post :clip
+          delete :unclip
+        end
       end
 
       resources :clippings, only: [ :index, :create, :edit, :update, :destroy ] do

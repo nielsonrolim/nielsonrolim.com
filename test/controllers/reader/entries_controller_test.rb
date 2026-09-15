@@ -63,10 +63,13 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the clipped state for an entry already in the queue" do
+    entry = entries(:rails_eight)
     get reader_entries_path, headers: reader_headers
 
     assert_response :success
     assert_select "body", /na próxima edição/
+    assert_select "#clip_entry_#{entry.id}"
+    assert_select "form[action=?]", unclip_reader_entry_path(entry)
   end
 
   test "links to the job dashboard from the reader navigation" do
@@ -112,11 +115,72 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to reader_entries_path
 
     get reader_entries_path, headers: reader_headers
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
 
     assert_no_difference -> { Clipping.count } do
       post clip_reader_entry_path(entries(:rails_eight)), headers: reader_headers
     end
+  end
+
+  test "clipping an entry answers with a Turbo Stream instead of a redirect" do
+    entry = entries(:front_page)
+
+    assert_difference -> { Clipping.count }, 1 do
+      post clip_reader_entry_path(entry),
+           headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+    end
+
+    assert_turbo_stream action: "replace", target: "clip_entry_#{entry.id}" do
+      assert_select "#clip_entry_#{entry.id}" # id kept, so the next replace lands
+      assert_select "span", /na próxima edição/
+    end
+
+    assert_turbo_stream action: "append", target: "toasts" do
+      assert_select "p.toast--notice", /#{Regexp.escape(entry.title)}/
+    end
+  end
+
+  test "a refused clip over Turbo Stream appends an alert toast" do
+    entry = entries(:rails_eight) # already queued in the fixtures
+
+    assert_no_difference -> { Clipping.count } do
+      post clip_reader_entry_path(entry),
+           headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+    end
+
+    assert_turbo_stream action: "append", target: "toasts" do
+      assert_select "p.toast--alert", /marcar/
+    end
+    assert_no_turbo_stream action: "replace"
+  end
+
+  test "unclipping an entry removes it from the queue over Turbo Stream" do
+    entry = entries(:rails_eight) # queued in the fixtures
+
+    assert_difference -> { Clipping.count }, -1 do
+      delete unclip_reader_entry_path(entry),
+             headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+    end
+
+    assert_not entry.reload.clipped?
+
+    assert_turbo_stream action: "replace", target: "clip_entry_#{entry.id}" do
+      assert_select "#clip_entry_#{entry.id}" # id kept, so the next clip lands
+      assert_select "form[action=?]", clip_reader_entry_path(entry)
+    end
+    assert_turbo_stream action: "append", target: "toasts" do
+      assert_select "p.toast--notice", /Removido da próxima edição/
+    end
+  end
+
+  test "unclipping via plain HTML redirects back with a notice" do
+    entry = entries(:rails_eight)
+
+    assert_difference -> { Clipping.count }, -1 do
+      delete unclip_reader_entry_path(entry), headers: reader_headers
+    end
+
+    assert_redirected_to reader_entries_path
   end
 
   test "clipping returns to the filtered list the reader came from" do

@@ -7,7 +7,7 @@ class SubscribersController < ApplicationController
 
     # Honeypot: a filled-in hidden field means a bot, so pretend it worked.
     if @subscriber.nickname.present?
-      redirect_to home_path, notice: t("subscribers.create.success")
+      redirect_to home_path, notice: t("subscribers.create.success"), status: :see_other
       return
     end
 
@@ -15,9 +15,9 @@ class SubscribersController < ApplicationController
     # a fresh signup, which also avoids revealing who is already on the list. Only
     # a genuinely unusable address is reported.
     if already_subscribed?(@subscriber.email) || @subscriber.save
-      redirect_to home_path, notice: t("subscribers.create.success")
+      redirect_to home_path, notice: t("subscribers.create.success"), status: :see_other
     else
-      redirect_to home_path, alert: t("subscribers.create.invalid")
+      redirect_to home_path, alert: t("subscribers.create.invalid"), status: :see_other
     end
   end
 

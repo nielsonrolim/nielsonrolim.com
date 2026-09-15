@@ -1,0 +1,5 @@
+<%# Renders the flash as toasts. The container lives in the layout so Turbo
+    Streams can append to it (#toasts). %>
+<% flash.each do |type, message| %>
+  <%= render "layouts/toast", type: type, message: message %>
+<% end %>

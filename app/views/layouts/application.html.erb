@@ -8,9 +8,14 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
   </head>
 
   <body class="max-tiny:text-[15px]">
+    <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="true">
+      <%= render "layouts/toasts" %>
+    </div>
+
     <div class="mx-auto max-w-site px-6 pb-16 max-tiny:px-[1.1rem] max-tiny:pb-12">
       <header class="mb-12 flex items-center justify-between gap-4 border-b border-line py-[1.1rem] text-chrome text-muted">
         <span class="topbar__path">~/nielsonrolim</span>
@@ -20,15 +25,11 @@
             <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
           <nav class="inline-flex items-center gap-2" aria-label="<%= t("pages.home.language_label") %>">
-            <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"pt-BR" } %>
-            <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink", aria: { current: I18n.locale == :"en-US" } %>
+            <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link", aria: { current: I18n.locale == :"pt-BR" } %>
+            <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link", aria: { current: I18n.locale == :"en-US" } %>
           </nav>
         </div>
       </header>
-
-      <% flash.each do |type, message| %>
-        <p class="flash flash--<%= type %>"><%= message %></p>
-      <% end %>
 
       <main>
         <%= yield %>

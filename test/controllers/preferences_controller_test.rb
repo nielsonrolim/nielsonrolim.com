@@ -39,7 +39,7 @@ class PreferencesControllerTest < ActionDispatch::IntegrationTest
           params: { subscriber: { language: "en-US" } }
 
     follow_redirect!
-    assert_select ".flash--notice", /Language updated to en-US/
+    assert_select ".toast--notice", /Language updated to en-US/
   end
 
   test "a language the site does not speak is refused" do
@@ -51,7 +51,7 @@ class PreferencesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pt-BR", subscriber.reload.language
     assert_response :redirect
     follow_redirect!
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "an unknown token renders nothing-to-manage instead of a 404" do

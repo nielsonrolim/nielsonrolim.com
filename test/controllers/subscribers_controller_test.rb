@@ -7,7 +7,7 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to "/pt-BR"
     follow_redirect!
-    assert_select ".flash--notice"
+    assert_select ".toast--notice"
   end
 
   test "an email that is already subscribed gets the success message" do
@@ -19,8 +19,8 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to "/pt-BR"
     follow_redirect!
-    assert_select ".flash--notice"
-    assert_select ".flash--alert", count: 0
+    assert_select ".toast--notice"
+    assert_select ".toast--alert", count: 0
   end
 
   test "a repeat signup is recognised regardless of case" do
@@ -31,7 +31,7 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     end
 
     follow_redirect!
-    assert_select ".flash--notice"
+    assert_select ".toast--notice"
   end
 
   test "a malformed email is still reported" do
@@ -41,7 +41,7 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to "/pt-BR"
     follow_redirect!
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "an empty email is still reported" do
@@ -50,7 +50,7 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     end
 
     follow_redirect!
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "filled honeypot silently skips creation but still looks successful" do
@@ -59,7 +59,7 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to "/pt-BR"
     follow_redirect!
-    assert_select ".flash--notice"
+    assert_select ".toast--notice"
   end
 
   test "the signup form submits namespaced subscriber params" do

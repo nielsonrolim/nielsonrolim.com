@@ -55,7 +55,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pt-BR", subscriber.reload.language
     assert_response :redirect
     get admin_subscribers_path, headers: reader_headers
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "shows the copyable unsubscribe link for a subscriber" do
@@ -120,7 +120,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     get admin_subscribers_path, headers: reader_headers
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "adding a malformed email is reported" do
@@ -132,7 +132,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     get admin_subscribers_path, headers: reader_headers
-    assert_select ".flash--alert"
+    assert_select ".toast--alert"
   end
 
   test "removing a subscriber deletes the row" do

@@ -14,12 +14,12 @@
               class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
       </div>
       <%= form.submit t("reader.feeds.form.submit"),
-            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-4 py-[0.4rem] font-mono text-form text-ruby hover:border-ruby" %>
+            class: "btn btn--primary" %>
     <% end %>
 
     <div class="mt-3 flex items-center gap-3 text-chrome">
       <%= button_to t("reader.feeds.actions.refresh_all"), refresh_all_reader_feeds_path, method: :post,
-            class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-3 py-[0.2rem] text-muted hover:border-ruby hover:text-ruby",
+            class: "btn btn--sm btn--neutral",
             form: { class: "m-0 inline" } %>
       <span class="text-muted"><%= t("reader.feeds.total", count: @feeds.size) %></span>
     </div>
@@ -55,7 +55,7 @@
             <% end %>
 
             <% feed.categories.sort_by { |category| category.name.downcase }.each do |category| %>
-              <span class="rounded-frame border border-line-strong px-[0.4rem] py-[0.05rem] text-meta text-muted"><%= category.name %></span>
+              <span class="chip"><%= category.name %></span>
             <% end %>
 
             <span class="text-meta text-muted"><%= t("reader.feeds.entry_count", count: @entry_counts[feed.id].to_i) %></span>
@@ -76,13 +76,13 @@
 
             <span class="ml-auto flex items-center gap-3">
               <%= link_to t("reader.feeds.actions.edit"), edit_reader_feed_path(feed),
-                    class: "rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted no-underline hover:border-ruby hover:text-ruby" %>
+                    class: "btn btn--sm btn--neutral" %>
               <%= button_to t("reader.feeds.actions.refresh"), refresh_reader_feed_path(feed), method: :post,
-                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-ruby hover:border-ruby",
+                    class: "btn btn--sm btn--primary",
                     form: { class: "m-0 inline" } %>
               <%= button_to t("reader.feeds.actions.remove"), reader_feed_path(feed), method: :delete,
                     data: { confirm: t("reader.feeds.actions.confirm_remove", title: feed.display_title) },
-                    class: "cursor-pointer rounded-frame border border-line-strong bg-paper px-[0.5rem] py-[0.15rem] text-muted hover:border-err hover:text-err",
+                    class: "btn btn--sm btn--danger",
                     form: { class: "m-0 inline" } %>
             </span>
           </div>

@@ -80,7 +80,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to reader_clippings_path
 
     get reader_clippings_path, headers: reader_headers
-    assert_select ".flash--notice", /Removido da fila/
+    assert_select ".toast--notice", /Removido da fila/
   end
 
   test "removing a clipping lets the same entry be clipped again" do
@@ -193,7 +193,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to reader_clippings_path
     get reader_clippings_path, headers: reader_headers
-    assert_select ".flash--alert", /já está na fila/
+    assert_select ".toast--alert", /já está na fila/
   end
 
   test "refuses something that is not a URL" do

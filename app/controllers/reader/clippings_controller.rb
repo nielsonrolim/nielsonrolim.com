@@ -17,7 +17,7 @@ module Reader
       url = create_params[:url].to_s.strip
 
       if Clipping.unsent.where("lower(url) = ?", url.downcase).exists?
-        redirect_to reader_clippings_path, alert: t("reader.clippings.create.duplicate")
+        redirect_to reader_clippings_path, alert: t("reader.clippings.create.duplicate"), status: :see_other
         return
       end
 
@@ -30,7 +30,8 @@ module Reader
         redirect_after_create(@clipping)
       else
         redirect_to reader_clippings_path,
-                    alert: t("reader.clippings.create.invalid", error: @clipping.errors.full_messages.to_sentence)
+                    alert: t("reader.clippings.create.invalid", error: @clipping.errors.full_messages.to_sentence),
+                    status: :see_other
       end
     end
 

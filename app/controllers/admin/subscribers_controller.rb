@@ -21,11 +21,13 @@ module Admin
 
       if @subscriber.save
         redirect_to index_path,
-                    notice: t("admin.subscribers.create.success", email: @subscriber.email)
+                    notice: t("admin.subscribers.create.success", email: @subscriber.email),
+                    status: :see_other
       else
         redirect_to index_path,
                     alert: t("admin.subscribers.create.invalid",
-                             error: @subscriber.errors.full_messages.to_sentence)
+                             error: @subscriber.errors.full_messages.to_sentence),
+                    status: :see_other
       end
     end
 
@@ -36,11 +38,13 @@ module Admin
       subscriber.language = update_params[:language]
 
       if subscriber.save
-        redirect_to index_path, notice: t("admin.subscribers.update.success", email: subscriber.email)
+        redirect_to index_path, notice: t("admin.subscribers.update.success", email: subscriber.email),
+                    status: :see_other
       else
         redirect_to index_path,
                     alert: t("admin.subscribers.update.invalid",
-                             error: subscriber.errors.full_messages.to_sentence)
+                             error: subscriber.errors.full_messages.to_sentence),
+                    status: :see_other
       end
     end
 

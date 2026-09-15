@@ -16,6 +16,7 @@
   --color-muted: #6b6560;
   --color-line: #e4dfd7;
   --color-line-strong: #cec7ba;
+  --color-line-stronger: #b5ad9f;
   --color-ruby: #b01e2d;
   --color-ruby-ink: #7d1420;
   --color-amber: #f3e4a8;
@@ -85,6 +86,7 @@
   --color-muted: #948d83;
   --color-line: #2b2925;
   --color-line-strong: #423f39;
+  --color-line-stronger: #57534b;
   --color-ruby: #e05666;
   --color-ruby-ink: #f08a95;
   --color-amber: #f3e4a8;
@@ -169,15 +171,76 @@
     @apply border-ruby bg-ruby;
   }
 
-  .flash {
-    @apply mb-6 rounded-frame border border-l-[3px] border-current px-4 py-[0.7rem] text-prompt;
+  .toast-region {
+    @apply pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4;
   }
 
-  .flash--notice {
+  .toast {
+    @apply pointer-events-auto w-full max-w-[32rem] cursor-pointer rounded-frame border border-l-[3px] border-current px-4 py-[0.7rem] text-prompt shadow-md;
+    animation: toast-in 0.18s ease-out;
+  }
+
+  .toast--notice {
     @apply bg-ok-bg text-ok;
   }
 
-  .flash--alert {
+  .toast--alert {
     @apply bg-err-bg text-err;
+  }
+
+  .toast--leaving {
+    @apply opacity-0;
+    transform: translateY(-0.5rem);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  /* Buttons — base first, then size and colour modifiers (source order wins). */
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-frame border border-line-stronger bg-paper px-4 py-[0.4rem] font-mono text-form text-ink-soft no-underline;
+  }
+
+  .btn--sm {
+    @apply px-[0.5rem] py-[0.15rem] text-chrome;
+  }
+
+  .btn--primary {
+    @apply text-ruby hover:border-ruby;
+  }
+
+  .btn--neutral {
+    @apply hover:border-ruby hover:text-ruby;
+  }
+
+  .btn--danger {
+    @apply hover:border-err hover:text-err;
+  }
+
+  .btn--cta {
+    @apply border-ruby bg-ruby px-[1.1rem] py-[0.65rem] font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink;
+  }
+
+  /* Chips — the small bordered labels (language, status, category). */
+  .chip {
+    @apply inline-flex items-center rounded-frame border border-line-strong bg-surface px-[0.4rem] py-[0.05rem] text-meta text-muted no-underline;
+  }
+
+  .chip--ok {
+    @apply text-ok;
+  }
+
+  .chip--err {
+    @apply border-err text-err;
+  }
+
+  /* Language switch, in the header and on an archived issue. */
+  .locale-switch__link {
+    @apply rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
   }
 }
