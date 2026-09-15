@@ -55,6 +55,15 @@ class SummaryGenerator
       - "summary_pt_br": a 2 to 3 sentence summary in Brazilian Portuguese, at most 60 words.
       - "summary_en_us": a 2 to 3 sentence summary in English, at most 60 words.
 
+      How to write each summary:
+      - Open directly with the most important claim, finding, or action. Skip any framing sentence about the article itself.
+      - Never begin with "O artigo", "Este artigo", "O autor", "O texto", "The article", "This article", "The author" or "The text".
+      - Avoid generic coverage verbs: apresenta, discute, aborda, explora, covers, discusses, presents, explores, provides.
+      - Bad (pt-BR): "O artigo apresenta um checklist prático para proteger servidores Linux..."
+      - Good (pt-BR): "Mudar a porta, usar autenticação por chave e bloquear IPs suspeitos protegem servidores Linux contra força bruta e botnets via SSH."
+      - Bad (en-US): "The article discusses the race in the AI market..."
+      - Good (en-US): "Harness engineering is becoming the competitive frontier of the AI market, with tools racing to make reliable AI solutions easier to build."
+
       Rules:
       - Values are plain text: no markdown, no line breaks inside a value.
       - Keep the keys exactly as named above.
