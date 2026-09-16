@@ -103,8 +103,9 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     clipping = Clipping.find_by(entry: entry, newsletter_id: nil)
-    assert_equal entry.title, clipping.title
-    assert_equal entry.url, clipping.url
+    assert_equal entry.title, clipping.display_title
+    assert_equal entry.url, clipping.primary_variant.url
+    assert_nil clipping.primary_variant.locale
     assert clipping.pending?
     assert_redirected_to reader_entries_path
   end

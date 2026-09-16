@@ -43,7 +43,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     get reader_clippings_path, headers: reader_headers
 
     assert_response :success
-    # The original (en-US) and its pt-BR translation, each labelled.
+    # The original (en-US) and its pt-BR edition, each labelled.
     assert_select "body", /Rails 8\.1 ships with a new queue UI/
     assert_select "body", /O Rails 8\.1 traz uma nova interface de filas/
     assert_select "body", /original/
@@ -60,9 +60,9 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "flags a translation that is still pending" do
-    clipping = clippings(:pending)
-    clipping.update_columns(language: "en-US", title_translated: nil, summary_translated: nil,
-                            summary_status: "summarized")
+    clipping = clippings(:queued)
+    clipping.variant_for("pt-BR").destroy
+    clipping.update_columns(summary_status: "summarized")
 
     get reader_clippings_path, headers: reader_headers
 
@@ -133,9 +133,10 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = Clipping.order(:id).last
     assert clipping.manual?
     assert_nil clipping.entry_id
-    assert_equal "Rails ships a new queue UI", clipping.title
+    assert_equal "Rails ships a new queue UI", clipping.display_title
     assert_equal "example.com", clipping.source_name
     assert_includes clipping.source_text, "Solid Queue replaces Redis"
+    assert_nil clipping.primary_variant.locale
     assert clipping.pending?
     assert_redirected_to reader_clippings_path
   end
@@ -160,7 +161,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
          params: { clipping: { url: "https://example.com/post", title: "Meu título" } },
          headers: reader_headers
 
-    assert_equal "Meu título", Clipping.order(:id).last.title
+    assert_equal "Meu título", Clipping.order(:id).last.display_title
   end
 
   test "still creates the clipping when the page cannot be fetched" do
@@ -177,7 +178,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = Clipping.order(:id).last
     assert clipping.failed?
     assert_match(/404/, clipping.summary_error)
-    assert_equal "example.com", clipping.title
+    assert_equal "example.com", clipping.display_title
     # The source does not depend on the fetch, so it is stored anyway.
     assert_equal "example.com", clipping.source_name
     # Sent to the edit page so the text can be pasted in.
@@ -185,9 +186,11 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "does not queue the same URL twice" do
+    existing = clippings(:queued).variant_for("en-US").url
+
     assert_no_difference -> { Clipping.count } do
       post reader_clippings_path,
-           params: { clipping: { url: clippings(:queued).url } },
+           params: { clipping: { url: existing } },
            headers: reader_headers
     end
 
@@ -215,7 +218,9 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a manual clipping without a source is still marked as manual" do
-    Clipping.create!(title: "Sem fonte", url: "https://example.org/sem-fonte", summary_status: "summarized")
+    clipping = Clipping.new(summary_status: "summarized")
+    clipping.variants.build(url: "https://example.org/sem-fonte", title: "Sem fonte")
+    clipping.save!
 
     get reader_clippings_path, headers: reader_headers
 
@@ -233,15 +238,16 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /sem fonte/
   end
 
-  test "the edit page shows the url and the content per language" do
-    clipping = clippings(:queued) # written in en-US, with a pt-BR translation
+  test "the edit page shows the URL and content per language" do
+    clipping = clippings(:queued) # written in en-US, with a pt-BR edition
 
     get edit_reader_clipping_path(clipping), headers: reader_headers
 
     assert_response :success
-    assert_select "input[name=?][value=?]", "clipping[url]", clipping.url
-    assert_select "input[name=?][value=?]", "clipping[title_en_us]", clipping.title
-    assert_select "input[name=?][value=?]", "clipping[title_pt_br]", clipping.title_translated
+    assert_select "input[name=?][value=?]", "clipping[url_en_us]", clipping.variant_for("en-US").url
+    assert_select "input[name=?][value=?]", "clipping[title_en_us]", clipping.variant_for("en-US").title
+    assert_select "input[name=?][value=?]", "clipping[url_pt_br]", clipping.variant_for("pt-BR").url
+    assert_select "input[name=?][value=?]", "clipping[title_pt_br]", clipping.variant_for("pt-BR").title
     assert_select "textarea[name=?]", "clipping[summary_en_us]"
     assert_select "textarea[name=?]", "clipping[summary_pt_br]"
     assert_select "textarea[name=?]", "clipping[source_text]"
@@ -249,46 +255,63 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "form button", /gerar sumário e tradução/
   end
 
-  test "updating writes the per-language content to the right columns" do
+  test "updating writes each language to its own edition" do
     clipping = clippings(:queued)
 
     patch reader_clipping_path(clipping),
           params: { clipping: {
-            url: clipping.url,
             language: "en-US",
             source_text: "novo texto",
-            title_pt_br: "Título PT", summary_pt_br: "Resumo PT",
-            title_en_us: "Title EN", summary_en_us: "Summary EN"
+            url_en_us: "https://example.com/en", title_en_us: "Title EN", summary_en_us: "Summary EN",
+            url_pt_br: "https://example.com/pt", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
           } },
           headers: reader_headers
 
     clipping.reload
-    assert_equal "Title EN", clipping.title
-    assert_equal "Título PT", clipping.title_translated
-    assert_equal "Summary EN", clipping.summary
-    assert_equal "Resumo PT", clipping.summary_translated
+    assert_equal "Title EN", clipping.title_for("en-US")
+    assert_equal "Título PT", clipping.title_for("pt-BR")
+    assert_equal "Summary EN", clipping.summary_for("en-US")
+    assert_equal "Resumo PT", clipping.summary_for("pt-BR")
+    assert_equal "https://example.com/en", clipping.url_for("en-US")
+    assert_equal "https://example.com/pt", clipping.url_for("pt-BR")
     assert_equal "novo texto", clipping.source_text
+    assert clipping.variant_for("pt-BR").manual?
     assert_redirected_to reader_clippings_path
   end
 
-  test "changing the language re-maps which column holds the original" do
+  test "updating can clear an edition's URL without filling it from the other" do
     clipping = clippings(:queued)
 
     patch reader_clipping_path(clipping),
           params: { clipping: {
-            url: clipping.url, language: "pt-BR",
-            title_pt_br: "Título PT", summary_pt_br: "Resumo PT",
-            title_en_us: "Title EN", summary_en_us: "Summary EN"
+            language: "en-US",
+            url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
+            url_pt_br: "", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
           } },
           headers: reader_headers
 
     clipping.reload
-    assert_equal "pt-BR", clipping.language
-    assert_equal "Título PT", clipping.title
-    assert_equal "Title EN", clipping.title_translated
-    assert_equal "Resumo PT", clipping.summary
-    assert_equal "Summary EN", clipping.summary_translated
+    assert_equal "https://example.com/rails-8-1", clipping.variant_for("en-US").url
+    assert_nil clipping.variant_for("pt-BR").url
+    # The blank edition still points readers at the one that exists.
+    assert_equal "https://example.com/rails-8-1", clipping.url_for("pt-BR")
+  end
+
+  test "leaving a language blank drops its edition" do
+    clipping = clippings(:queued)
+
+    patch reader_clipping_path(clipping),
+          params: { clipping: {
+            language: "en-US",
+            url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
+            url_pt_br: "", title_pt_br: "", summary_pt_br: ""
+          } },
+          headers: reader_headers
+
+    clipping.reload
     assert_equal "Title EN", clipping.title_for("en-US")
+    assert_nil clipping.variant_for("pt-BR")
+    assert_nil clipping.summary_for("pt-BR")
   end
 
   test "a manual clipping can be completed by hand and generated" do
@@ -298,7 +321,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = Clipping.order(:id).last
 
     patch reader_clipping_path(clipping),
-          params: { clipping: { url: clipping.url, source_text: "Texto colado à mão." } },
+          params: { clipping: { source_text: "Texto colado à mão." } },
           headers: reader_headers
 
     assert_equal "Texto colado à mão.", clipping.reload.source_text

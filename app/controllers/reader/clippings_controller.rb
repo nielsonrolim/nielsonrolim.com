@@ -3,7 +3,7 @@ module Reader
     # The queue for the next issue: everything marked but not yet sent, failed
     # ones included so they are visible and fixable.
     def index
-      @clippings = Clipping.unsent.includes(entry: :feed).order(:created_at)
+      @clippings = Clipping.unsent.includes(:variants, entry: :feed).order(:created_at)
       @recent_newsletters = Newsletter.newest_first.limit(5)
       @shippable_count = Clipping.shippable.count
       @clipping = Clipping.new
@@ -16,15 +16,17 @@ module Reader
     def create
       url = create_params[:url].to_s.strip
 
-      if Clipping.unsent.where("lower(url) = ?", url.downcase).exists?
+      if duplicate_url?(url)
         redirect_to reader_clippings_path, alert: t("reader.clippings.create.duplicate"), status: :see_other
         return
       end
 
       # The source (site domain or YouTube channel) is resolved before the
       # fetch so it is stored even when the page itself cannot be fetched.
-      @clipping = Clipping.new(url: url, source_name: SourceNameResolver.new.call(url))
-      fetch_article(@clipping, url, provided_title: create_params[:title].to_s.strip.presence)
+      @clipping = Clipping.new(source_name: SourceNameResolver.new.call(url))
+      # The language is not known yet, so the source edition starts without one.
+      variant = @clipping.variants.build(url: url, origin: :generated)
+      fetch_article(@clipping, variant, url, provided_title: create_params[:title].to_s.strip.presence)
 
       if @clipping.save
         redirect_after_create(@clipping)
@@ -39,21 +41,19 @@ module Reader
       @clipping = Clipping.find(params[:id])
     end
 
-    # Edits every field by hand, including the content per language, so a
-    # mis-detected language or a bad translation can be corrected without
-    # regenerating.
+    # Edits the story by hand: each language has its own URL, title and summary,
+    # so a story published in more than one language can point each reader at the
+    # right edition. What is saved here is marked manual and is not overwritten
+    # by a later summary run.
     def update
       @clipping = Clipping.find(params[:id])
-      @clipping.assign_attributes(
-        url: update_params[:url],
-        language: update_params[:language],
-        source_text: update_params[:source_text]
-      )
-      assign_localized_content(@clipping)
+      @clipping.language = update_params[:language] if update_params.key?(:language)
+      @clipping.source_text = update_params[:source_text] if update_params.key?(:source_text)
+      assign_variants(@clipping)
 
       if @clipping.save
         redirect_to reader_clippings_path,
-                    notice: t("reader.clippings.update.success", title: @clipping.title),
+                    notice: t("reader.clippings.update.success", title: @clipping.display_title),
                     status: :see_other
       else
         flash.now[:alert] = t("reader.clippings.update.invalid",
@@ -70,13 +70,13 @@ module Reader
       GenerateSummaryJob.perform_later(clipping.id)
 
       redirect_back fallback_location: reader_clippings_path,
-                    notice: t("reader.clippings.generate_summary.queued", title: clipping.title),
+                    notice: t("reader.clippings.generate_summary.queued", title: clipping.display_title),
                     status: :see_other
     end
 
     def destroy
       clipping = Clipping.find(params[:id])
-      title = clipping.title
+      title = clipping.display_title
       clipping.destroy
 
       redirect_to reader_clippings_path,
@@ -86,13 +86,19 @@ module Reader
 
     private
 
-    def fetch_article(clipping, url, provided_title:)
+    def duplicate_url?(url)
+      return false if url.blank?
+
+      Clipping.unsent.joins(:variants).where("lower(clipping_variants.url) = ?", url.downcase).exists?
+    end
+
+    def fetch_article(clipping, variant, url, provided_title:)
       article = ArticleFetcher.new.call(url)
 
-      clipping.title = provided_title || article.title
+      variant.title = provided_title || article.title
       clipping.source_text = article.text
     rescue ArticleFetcher::Error => e
-      clipping.title = provided_title || host_of(url)
+      variant.title = provided_title || host_of(url)
       clipping.summary_status = :failed
       clipping.summary_error = t("reader.clippings.create.fetch_failed", error: e.message)
     end
@@ -104,28 +110,44 @@ module Reader
                     status: :see_other
       else
         redirect_to reader_clippings_path,
-                    notice: t("reader.clippings.create.success", title: clipping.title),
+                    notice: t("reader.clippings.create.success", title: clipping.display_title),
                     status: :see_other
       end
     end
 
-    # The form edits content per language; which column each one belongs in is
-    # decided by the clipping's language (the original lives in `title`/`summary`).
-    # Only keys the request actually carried are assigned, so a partial update
-    # cannot blank a column by omission — while an explicitly emptied field still
-    # clears it.
-    def assign_localized_content(clipping)
-      source = clipping.language.presence || Clipping::LANGUAGES.first
-      translated = SupportedLanguages.other(source)
+    # Maps the per-language form fields onto variants. A locale with nothing
+    # typed is removed; one with any content is written as a manual edition. The
+    # language-less source edition adopts the language chosen for it.
+    def assign_variants(clipping)
+      chosen = update_params[:language].presence
+      if chosen && (source = clipping.source_variant)
+        source.locale = chosen
+      end
 
-      [
-        [ :title, source, :title ],
-        [ :summary, source, :summary ],
-        [ :title_translated, translated, :title ],
-        [ :summary_translated, translated, :summary ]
-      ].each do |column, locale, field|
-        param = :"#{field}_#{SupportedLanguages.param_key(locale)}"
-        clipping.public_send(:"#{column}=", update_params[param]) if update_params.key?(param)
+      Clipping::LANGUAGES.each do |locale|
+        key = SupportedLanguages.param_key(locale)
+        fields = [ :"url_#{key}", :"title_#{key}", :"summary_#{key}" ]
+        next if fields.none? { |field| update_params.key?(field) }
+
+        variant = clipping.stored_variant(locale)
+        title = update_params[:"title_#{key}"].to_s.strip
+        url = update_params[:"url_#{key}"].to_s.strip
+        summary = update_params[:"summary_#{key}"].to_s
+
+        if title.blank? && url.blank? && summary.blank?
+          variant&.mark_for_destruction
+          next
+        end
+
+        variant ||= clipping.variants.build
+        keep_sourceless = variant.locale.blank? && chosen.blank?
+        variant.locale = locale unless keep_sourceless
+        variant.origin = :manual
+        variant.title = title.presence || variant.title.presence || clipping.display_title
+        # Blank means "no published edition in this language": the URL is left
+        # empty on purpose, and readers fall back to the edition that exists.
+        variant.url = url.presence
+        variant.summary = summary.presence
       end
     end
 
@@ -141,8 +163,9 @@ module Reader
 
     def update_params
       @update_params ||= params.require(:clipping).permit(
-        :url, :language, :source_text,
-        :title_pt_br, :summary_pt_br, :title_en_us, :summary_en_us
+        :language, :source_text,
+        :url_pt_br, :title_pt_br, :summary_pt_br,
+        :url_en_us, :title_en_us, :summary_en_us
       )
     end
   end

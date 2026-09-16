@@ -41,7 +41,9 @@ class EntryTest < ActiveSupport::TestCase
     entry = entries(:front_page)
     assert_not entry.clipped?
 
-    Clipping.create!(entry: entry, title: entry.title, url: entry.url)
+    clipping = Clipping.new(entry: entry)
+    clipping.variants.build(title: entry.title, url: entry.url)
+    clipping.save!
 
     assert entry.clipped?
   end

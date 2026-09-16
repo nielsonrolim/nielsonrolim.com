@@ -1,4 +1,9 @@
 pt-BR:
+  activerecord:
+    errors:
+      models:
+        clipping:
+          duplicate_url: "Essa URL já está na fila."
   pages:
     home:
       title: "Nielson Rolim"
@@ -341,6 +346,9 @@ pt-BR:
         language: "idioma do artigo"
         language_hint: "Decide qual título/resumo é o original e qual é a tradução."
         content: "conteúdo por idioma"
+        content_hint: "Cada idioma tem sua própria URL, título e resumo. Deixe em branco o idioma que não existe nesta edição."
+        url: "URL da edição"
+        url_hint: "Só preencha quando o artigo tiver edição publicada neste idioma. Em branco, o link usa a URL da edição que existe."
         title: "título"
         summary: "resumo"
         source_text: "texto fonte do resumo"

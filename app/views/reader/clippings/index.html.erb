@@ -44,15 +44,16 @@
             <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
             <%= render "reader/clippings/summary_status", clipping: clipping %>
 
-            <%# The language the article is written in, detected with the summary. %>
-            <% if clipping.language.present? %>
-              <span class="chip chip--ok"><%= clipping.language %></span>
+            <%# The languages the story is published in, one or both. A translation
+                without a URL of its own does not count. %>
+            <% if clipping.languages.any? %>
+              <span class="chip chip--ok"><%= clipping.languages.join(" · ") %></span>
             <% else %>
               <span class="chip"><%= t("reader.clippings.language_pending") %></span>
             <% end %>
           </div>
 
-          <% if clipping.summary.blank? && clipping.summary_error.present? %>
+          <% if clipping.primary_variant&.summary.blank? && clipping.summary_error.present? %>
             <p class="mt-2 mb-0 max-w-measure text-meta text-err"><%= clipping.summary_error %></p>
           <% end %>
 
@@ -70,7 +71,7 @@
                 </p>
 
                 <h3 class="mt-[0.2rem] mb-[0.25rem] text-base font-bold text-ink">
-                  <%= link_to clipping.title_for(locale), clipping.url, target: "_blank", rel: "noopener noreferrer",
+                  <%= link_to clipping.title_for(locale), clipping.url_for(locale), target: "_blank", rel: "noopener noreferrer",
                         class: "text-ink no-underline hover:text-ruby" %>
                 </h3>
 
@@ -79,7 +80,7 @@
                   <p class="mt-0 mb-0 text-prompt text-ink-soft"><%= summary %></p>
                 <% end %>
 
-                <% if clipping.language.present? && !original && !clipping.translated? %>
+                <% if clipping.language.present? && !original && clipping.variant_for(locale).nil? %>
                   <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.translation_pending") %></p>
                 <% end %>
               </div>
@@ -97,7 +98,7 @@
             <% end %>
 
             <%= button_to t("reader.clippings.actions.remove"), reader_clipping_path(clipping), method: :delete,
-                  data: { confirm: t("reader.clippings.actions.confirm_remove", title: clipping.title) },
+                  data: { confirm: t("reader.clippings.actions.confirm_remove", title: clipping.display_title) },
                   class: "btn btn--sm btn--danger",
                   form: { class: "m-0 inline" } %>
           </div>

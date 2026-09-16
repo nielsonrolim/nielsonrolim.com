@@ -40,19 +40,22 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     @clipping.reload
     assert @clipping.summarized?
     assert_equal "en-US", @clipping.language
-    assert_equal "Título traduzido", @clipping.title_translated
-    # `summary` is the one in the article's own language.
-    assert_equal "Summary in English.", @clipping.summary
-    assert_equal "Resumo em português.", @clipping.summary_translated
+    assert_equal "Título traduzido", @clipping.title_for("pt-BR")
+    # The summary in the article's own language lands on its edition.
+    assert_equal "Summary in English.", @clipping.summary_for("en-US")
+    assert_equal "Resumo em português.", @clipping.summary_for("pt-BR")
+    # The pt-BR variant is only a translation: no URL of its own.
+    assert_nil @clipping.variant_for("pt-BR").url
+    assert_equal "https://example.com/solid-queue", @clipping.url_for("pt-BR")
     assert_nil @clipping.summary_error
   end
 
-  test "keeps the original title untouched" do
-    original = @clipping.title
+  test "keeps the original title on the source edition" do
+    original = @clipping.display_title
 
     perform_with(FakeSummaryGenerator.new(result: result))
 
-    assert_equal original, @clipping.reload.title
+    assert_equal original, @clipping.reload.title_for("en-US")
   end
 
   test "maps the summaries the right way round for a Portuguese article" do
@@ -60,17 +63,16 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
 
     @clipping.reload
     assert_equal "pt-BR", @clipping.language
-    assert_equal "Resumo em pt.", @clipping.summary
-    assert_equal "English summary.", @clipping.summary_translated
     assert_equal "English summary.", @clipping.summary_for("en-US")
     assert_equal "Resumo em pt.", @clipping.summary_for("pt-BR")
   end
 
   test "uses the stored article text when there is no feed entry" do
-    clipping = Clipping.create!(title: "Manual", url: "https://example.com/manual",
-                                source_text: "texto colado à mão")
-    generator = FakeSummaryGenerator.new
+    clipping = Clipping.new(source_text: "texto colado à mão")
+    clipping.variants.build(url: "https://example.com/manual", title: "Manual")
+    clipping.save!
 
+    generator = FakeSummaryGenerator.new
     job_with(generator, clipping_id: clipping.id).perform_now
 
     assert_equal "texto colado à mão", generator.calls.first[:source]
@@ -81,8 +83,8 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     perform_with(generator)
 
     kwargs = generator.calls.first
-    assert_equal @clipping.title, kwargs[:title]
-    assert_equal @clipping.url, kwargs[:url]
+    assert_equal @clipping.display_title, kwargs[:title]
+    assert_equal @clipping.primary_variant.url, kwargs[:url]
     assert_equal entries(:solid_queue).summary, kwargs[:source]
   end
 
@@ -110,7 +112,7 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     @clipping.reload
     assert @clipping.failed?
     assert_equal "still broken", @clipping.summary_error
-    assert_nil @clipping.summary
+    assert_nil @clipping.summary_for("en-US")
     assert_nil @clipping.language
   end
 

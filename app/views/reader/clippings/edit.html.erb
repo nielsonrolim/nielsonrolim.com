@@ -20,12 +20,6 @@
   <div class="max-w-measure">
     <%= form_with model: @clipping, url: reader_clipping_path(@clipping), class: "grid gap-6" do |form| %>
       <div>
-        <%= form.label :url, t("reader.clippings.form.url"), class: "mb-1 block text-chrome text-muted" %>
-        <%= form.url_field :url, required: true,
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
-      </div>
-
-      <div>
         <%= form.label :language, t("reader.clippings.edit.language"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.select :language, Clipping::LANGUAGES,
               { include_blank: t("reader.clippings.language_pending") },
@@ -35,24 +29,34 @@
 
       <fieldset class="m-0 border-0 p-0">
         <legend class="mb-1 block text-chrome text-muted"><%= t("reader.clippings.edit.content") %></legend>
+        <p class="mt-0 mb-3 text-meta text-muted"><%= t("reader.clippings.edit.content_hint") %></p>
 
         <div class="grid grid-cols-1 gap-x-6 gap-y-5 narrow:grid-cols-2">
           <% Clipping::LANGUAGES.each do |locale| %>
             <% suffix = SupportedLanguages.param_key(locale) %>
+            <% variant = @clipping.stored_variant(locale) %>
             <div class="grid gap-3 border-l border-line pl-3">
               <p class="m-0 text-meta text-ruby"><%= locale %></p>
 
               <div>
+                <%= label_tag "clipping_url_#{suffix}", t("reader.clippings.edit.url"),
+                      class: "mb-1 block text-meta text-muted" %>
+                <%= url_field_tag "clipping[url_#{suffix}]", variant&.url,
+                      class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+                <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.edit.url_hint") %></p>
+              </div>
+
+              <div>
                 <%= label_tag "clipping_title_#{suffix}", t("reader.clippings.edit.title"),
                       class: "mb-1 block text-meta text-muted" %>
-                <%= text_field_tag "clipping[title_#{suffix}]", @clipping.stored_title(locale),
+                <%= text_field_tag "clipping[title_#{suffix}]", variant&.title,
                       class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
               </div>
 
               <div>
                 <%= label_tag "clipping_summary_#{suffix}", t("reader.clippings.edit.summary"),
                       class: "mb-1 block text-meta text-muted" %>
-                <%= text_area_tag "clipping[summary_#{suffix}]", @clipping.stored_summary(locale), rows: 4,
+                <%= text_area_tag "clipping[summary_#{suffix}]", variant&.summary, rows: 4,
                       class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
               </div>
             </div>

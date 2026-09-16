@@ -10,12 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_170100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_16_130000) do
   create_table "categories", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index "lower(name)", name: "index_categories_on_lower_name", unique: true
+  end
+
+  create_table "clipping_variants", force: :cascade do |t|
+    t.integer "clipping_id", null: false
+    t.datetime "created_at", null: false
+    t.string "locale"
+    t.string "origin", default: "generated", null: false
+    t.text "summary"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["clipping_id", "locale"], name: "index_clipping_variants_on_clipping_id_and_locale", unique: true
+    t.index ["clipping_id"], name: "index_clipping_variants_on_clipping_id"
+    t.index ["clipping_id"], name: "index_clipping_variants_on_unsourced_locale", unique: true, where: "locale IS NULL"
   end
 
   create_table "clippings", force: :cascade do |t|
@@ -25,14 +39,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_170100) do
     t.integer "newsletter_id"
     t.string "source_name"
     t.text "source_text"
-    t.text "summary"
     t.string "summary_error"
     t.string "summary_status", default: "pending", null: false
-    t.text "summary_translated"
-    t.string "title", null: false
-    t.string "title_translated"
     t.datetime "updated_at", null: false
-    t.string "url", null: false
     t.index ["entry_id"], name: "index_clippings_on_entry_id"
     t.index ["entry_id"], name: "index_clippings_on_unsent_entry", unique: true, where: "newsletter_id IS NULL"
     t.index ["newsletter_id"], name: "index_clippings_on_newsletter_id"
@@ -115,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_170100) do
     t.index ["unsubscribe_token"], name: "index_subscribers_on_unsubscribe_token", unique: true
   end
 
+  add_foreign_key "clipping_variants", "clippings"
   add_foreign_key "clippings", "entries"
   add_foreign_key "clippings", "newsletters"
   add_foreign_key "entries", "feeds"
