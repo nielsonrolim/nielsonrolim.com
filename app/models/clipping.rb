@@ -19,7 +19,6 @@ class Clipping < ApplicationRecord
     failed: "failed"
   }
 
-  validates :language, inclusion: { in: LANGUAGES }, allow_nil: true
   validates_associated :variants
   validate :has_a_variant
   validate :url_not_already_queued
@@ -65,10 +64,10 @@ class Clipping < ApplicationRecord
     variants.detect { |variant| variant.locale.blank? }
   end
 
-  # The edition the clipping "is": the one in the detected language, falling back
-  # to the not-yet-detected source and then to any edition.
+  # The edition the clipping "is": a published one (the source placeholder while
+  # nothing has been published yet), falling back to any edition.
   def primary_variant
-    variant_for(language) || source_variant || variants.first
+    variants.detect { |variant| variant.url.present? } || variants.first
   end
 
   # The languages the story is actually published in — only pt-BR, only en-US,
@@ -81,8 +80,7 @@ class Clipping < ApplicationRecord
   # The edition the edit form shows for `locale`: the declared one, or the
   # language-less source under the first locale while the language is unknown.
   def stored_variant(locale)
-    variant_for(locale) ||
-      (source_variant if locale.to_s == (language.presence || LANGUAGES.first))
+    variant_for(locale) || (source_variant if locale.to_s == LANGUAGES.first)
   end
 
   # The title to show in `locale`: that language's edition, falling back to the
@@ -107,14 +105,12 @@ class Clipping < ApplicationRecord
     primary_variant&.title
   end
 
-  # Stores one generation result: the detected language, the translated title and
-  # the summary in each language. A variant the reader wrote or corrected by hand
-  # is left untouched; the source edition is moved to the detected language. The
-  # URL is never written here, so a published edition keeps its own address and a
-  # regeneration cannot overwrite one.
+  # Stores one generation result: the translated title and the summary in each
+  # language. A variant the reader wrote or corrected by hand is left untouched;
+  # the source edition is moved to the detected language. The URL is never written
+  # here, so a published edition keeps its own address and a regeneration cannot
+  # overwrite one.
   def apply_summary(result)
-    self.language = result.language
-
     source = adopt_source_variant(result)
     source.summary = result.summary_for(result.language) unless source.manual?
 
@@ -136,7 +132,7 @@ class Clipping < ApplicationRecord
     source = source_variant
     return source.tap { |variant| variant.locale = result.language } if source
 
-    variants.build(locale: result.language, url: primary_variant&.url, title: result.title_translated)
+    variants.build(locale: result.language, title: result.title_translated)
   end
 
   # Fills the edition for the other language — the model's translated title and

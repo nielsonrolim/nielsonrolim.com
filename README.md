@@ -143,15 +143,16 @@ A clipping is a story, and every language it was published in is a **variant**
 (`clipping_variants`): its own `title` and `summary`, keyed by `locale`, plus an
 optional `url`. A story can therefore point each reader at the edition in their
 own language — useful for sites like AkitaOnRails that publish the same article
-at `/…` and `/en/…`. The clipping itself keeps what identifies the story
-(`entry_id`, `source_name`, `source_text`), the detected `language` and the
-summary status.
+at `/…` and `/en/…`. The clipping itself keeps only what identifies the story
+(`entry_id`, `source_name`, `source_text`) and the summary status; the languages
+live entirely on the variants, so there is no single "article language" to keep
+in sync.
 
 The **URL belongs to a published edition, not to a language**: most articles exist
-in only one language, so only the variant of the detected language gets a URL. The
-other language's variant is a translation with no page of its own and stays
-without a URL — `url_for(locale)` then falls back to the URL of the edition that
-exists, so an en-US subscriber of a pt-BR-only article reads the translated
+in only one language, so only the variant of the language it was published in gets
+a URL. The other language's variant is a translation with no page of its own and
+stays without a URL — `url_for(locale)` then falls back to the URL of the edition
+that exists, so an en-US subscriber of a pt-BR-only article reads the translated
 title/summary and still lands on the pt-BR page. A story can have an edition in
 only pt-BR, only en-US, or both; `languages` lists the ones actually published
 (with a URL), which is what the queue badge shows — a translation without a page
@@ -163,7 +164,8 @@ single model call that reports the language, so it moves that source variant to 
 detected language and creates the variant for the other one — **without writing any
 URL**. `variant_for(locale)` is the lookup; `title_for` / `summary_for` /
 `url_for(locale)` hand the right edition to each reader, falling back to the primary
-edition when a language has no variant.
+edition when a language has no variant. The detection is not editable: it is what
+places the model's summary, and the per-language content is what the reader edits.
 
 A variant is either `generated` by the model or `manual` when the reader wrote or
 corrected it. A manual edition is **never overwritten** by a later summary run, and
@@ -171,12 +173,12 @@ no generation ever touches a URL, so typing the real translated URL and title
 (instead of the machine translation) is safe.
 
 `/admin/reader/clippings` shows **both languages side by side**, labelled
-`original` and `tradução`, plus a badge with the languages the story has (or
-"idioma não detectado" while it has not run). Re-running the summary from there
-fills the language and the other edition for older clippings too. In the issue
-each clipping also carries the language it was written in, and the title, summary
-and link go out in the subscriber's language (and to that edition's URL, with the
-same fallback).
+`publicado` for an edition with a URL and `tradução` for one without, plus a badge
+with the languages the story is published in (or "idioma não detectado" while it
+has not run). Re-running the summary from there fills the other edition for older
+clippings too. In the issue each clipping carries the languages it is published
+in, and the title, summary and link go out in the subscriber's language (and to
+that edition's URL, with the same fallback).
 
 ### Adding and editing a clipping by hand
 
@@ -193,9 +195,9 @@ the article text and press **"gerar sumário e tradução"**, which runs the sum
 and the translation on demand. The edit page exposes **one title, summary and
 optional URL per language**, plus the source text — so a story published in more
 than one language can be pointed at each edition by hand (fill the URL only for
-the languages that have a published page), a mis-detected language or a bad
-translation can be corrected, and the same button regenerates the machine-made
-editions. Leaving a language blank drops its edition.
+the languages that have a published page), a bad translation can be corrected, and
+the same button regenerates the machine-made editions. Leaving a language blank
+drops its edition.
 
 A clipping marked `failed` is **left out of the next issue** (see
 `Clipping.shippable`); it stays in the queue until it is fixed or removed, which

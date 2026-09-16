@@ -57,16 +57,16 @@
             <p class="mt-2 mb-0 max-w-measure text-meta text-err"><%= clipping.summary_error %></p>
           <% end %>
 
-          <%# Both languages side by side: what the original says, and what would go
-              out to a subscriber reading the other one. %>
+          <%# Both languages side by side: a published edition has its own URL,
+              a translation does not and falls back to the edition that exists. %>
           <div class="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 narrow:grid-cols-2">
             <% Clipping::LANGUAGES.each do |locale| %>
-              <% original = clipping.language.blank? || clipping.language == locale %>
+              <% variant = clipping.variant_for(locale) %>
               <div class="border-l border-line pl-3">
                 <p class="m-0 text-meta text-muted">
                   <span class="text-ruby"><%= locale %></span>
-                  <% if clipping.language.present? %>
-                    &middot; <%= t("reader.clippings.#{original ? 'original' : 'translation'}") %>
+                  <% if variant.present? %>
+                    &middot; <%= t("reader.clippings.#{variant.url.present? ? 'published' : 'translation'}") %>
                   <% end %>
                 </p>
 
@@ -80,7 +80,7 @@
                   <p class="mt-0 mb-0 text-prompt text-ink-soft"><%= summary %></p>
                 <% end %>
 
-                <% if clipping.language.present? && !original && clipping.variant_for(locale).nil? %>
+                <% if variant.nil? && clipping.languages.any? %>
                   <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.translation_pending") %></p>
                 <% end %>
               </div>

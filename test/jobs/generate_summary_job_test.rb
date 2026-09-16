@@ -39,7 +39,7 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
 
     @clipping.reload
     assert @clipping.summarized?
-    assert_equal "en-US", @clipping.language
+    assert_equal "en-US", @clipping.variant_for("en-US").locale
     assert_equal "Título traduzido", @clipping.title_for("pt-BR")
     # The summary in the article's own language lands on its edition.
     assert_equal "Summary in English.", @clipping.summary_for("en-US")
@@ -62,7 +62,7 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     perform_with(FakeSummaryGenerator.new(result: result(language: "pt-BR", pt: "Resumo em pt.", en: "English summary.")))
 
     @clipping.reload
-    assert_equal "pt-BR", @clipping.language
+    assert_equal "pt-BR", @clipping.variant_for("pt-BR").locale
     assert_equal "English summary.", @clipping.summary_for("en-US")
     assert_equal "Resumo em pt.", @clipping.summary_for("pt-BR")
   end
@@ -113,7 +113,8 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert @clipping.failed?
     assert_equal "still broken", @clipping.summary_error
     assert_nil @clipping.summary_for("en-US")
-    assert_nil @clipping.language
+    # The language was never detected, so the source edition has no locale yet.
+    assert_nil @clipping.source_variant.locale
   end
 
   test "truncates a long error message" do

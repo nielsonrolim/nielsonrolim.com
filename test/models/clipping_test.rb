@@ -15,13 +15,6 @@ class ClippingTest < ActiveSupport::TestCase
     assert_includes clipping.errors.attribute_names, :variants
   end
 
-  test "rejects a language the site does not speak" do
-    clipping = build_clipping(entry: entries(:front_page), language: "de-DE")
-
-    assert_not clipping.valid?
-    assert_includes clipping.errors.attribute_names, :language
-  end
-
   test "enqueues summary generation as soon as it is marked" do
     assert_enqueued_with(job: GenerateSummaryJob) do
       build_clipping(entry: entries(:front_page)).save!
@@ -85,7 +78,6 @@ class ClippingTest < ActiveSupport::TestCase
   test "title_for and url_for fall back to the primary edition" do
     clipping = clippings(:pending)
 
-    assert_nil clipping.language
     assert_equal clipping.display_title, clipping.title_for("pt-BR")
     assert_equal clipping.display_title, clipping.title_for("en-US")
     assert_equal clipping.url_for("pt-BR"), clipping.url_for("en-US")
@@ -123,7 +115,7 @@ class ClippingTest < ActiveSupport::TestCase
     assert_equal [], clippings(:pending).languages
   end
 
-  test "primary_variant is the detected language's edition" do
+  test "primary_variant is a published edition" do
     assert_equal "en-US", clippings(:queued).primary_variant.locale
 
     pending = clippings(:pending)
@@ -155,7 +147,6 @@ class ClippingTest < ActiveSupport::TestCase
     )
     clipping.save!
 
-    assert_equal "pt-BR", clipping.language
     # The original title is kept as the source edition's own title.
     assert_equal "t", clipping.title_for("pt-BR")
     assert_equal "Resumo em português.", clipping.summary_for("pt-BR")
@@ -232,8 +223,8 @@ class ClippingTest < ActiveSupport::TestCase
     )
     clipping.save!
 
-    assert_equal "en-US", clipping.language
     assert_nil clipping.source_variant
+    assert_equal "en-US", clipping.variant_for("en-US").locale
     assert_equal "Understanding Solid Queue internals", clipping.title_for("en-US")
     assert_equal "Resumo.", clipping.summary_for("pt-BR")
   end

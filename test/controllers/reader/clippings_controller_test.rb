@@ -43,14 +43,27 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     get reader_clippings_path, headers: reader_headers
 
     assert_response :success
-    # The original (en-US) and its pt-BR edition, each labelled.
+    # Both editions of the bilingual clipping.
     assert_select "body", /Rails 8\.1 ships with a new queue UI/
     assert_select "body", /O Rails 8\.1 traz uma nova interface de filas/
-    assert_select "body", /original/
+    assert_select "body", /publicado/
+  end
+
+  test "labels an edition without a URL as a translation" do
+    clipping = Clipping.new(source_name: "example.com", summary_status: :summarized)
+    clipping.variants.build(locale: "en-US", url: "https://example.com/a",
+                            title: "English title", summary: "Summary.", origin: :generated)
+    clipping.variants.build(locale: "pt-BR", title: "Título", summary: "Resumo.", origin: :generated)
+    clipping.save!
+
+    get reader_clippings_path, headers: reader_headers
+
+    assert_response :success
+    assert_select "body", /publicado/
     assert_select "body", /tradução/
   end
 
-  test "shows the detected language of a summarized clipping" do
+  test "shows the languages a summarized clipping is published in" do
     get reader_clippings_path, headers: reader_headers
 
     assert_response :success
@@ -251,7 +264,6 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "textarea[name=?]", "clipping[summary_en_us]"
     assert_select "textarea[name=?]", "clipping[summary_pt_br]"
     assert_select "textarea[name=?]", "clipping[source_text]"
-    assert_select "select[name=?] option[selected][value=?]", "clipping[language]", "en-US"
     assert_select "form button", /gerar sumário e tradução/
   end
 
@@ -260,7 +272,6 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     patch reader_clipping_path(clipping),
           params: { clipping: {
-            language: "en-US",
             source_text: "novo texto",
             url_en_us: "https://example.com/en", title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "https://example.com/pt", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
@@ -284,7 +295,6 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     patch reader_clipping_path(clipping),
           params: { clipping: {
-            language: "en-US",
             url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
           } },
@@ -302,7 +312,6 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     patch reader_clipping_path(clipping),
           params: { clipping: {
-            language: "en-US",
             url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "", title_pt_br: "", summary_pt_br: ""
           } },

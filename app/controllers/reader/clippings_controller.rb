@@ -44,10 +44,10 @@ module Reader
     # Edits the story by hand: each language has its own URL, title and summary,
     # so a story published in more than one language can point each reader at the
     # right edition. What is saved here is marked manual and is not overwritten
-    # by a later summary run.
+    # by a later summary run. The article's own language is not edited here: the
+    # detection from the summary run decides which edition is the source.
     def update
       @clipping = Clipping.find(params[:id])
-      @clipping.language = update_params[:language] if update_params.key?(:language)
       @clipping.source_text = update_params[:source_text] if update_params.key?(:source_text)
       assign_variants(@clipping)
 
@@ -117,13 +117,9 @@ module Reader
 
     # Maps the per-language form fields onto variants. A locale with nothing
     # typed is removed; one with any content is written as a manual edition. The
-    # language-less source edition adopts the language chosen for it.
+    # language-less source edition keeps its placeholder until the summary run
+    # detects the article's language.
     def assign_variants(clipping)
-      chosen = update_params[:language].presence
-      if chosen && (source = clipping.source_variant)
-        source.locale = chosen
-      end
-
       Clipping::LANGUAGES.each do |locale|
         key = SupportedLanguages.param_key(locale)
         fields = [ :"url_#{key}", :"title_#{key}", :"summary_#{key}" ]
@@ -140,8 +136,7 @@ module Reader
         end
 
         variant ||= clipping.variants.build
-        keep_sourceless = variant.locale.blank? && chosen.blank?
-        variant.locale = locale unless keep_sourceless
+        variant.locale = locale unless variant.equal?(clipping.source_variant)
         variant.origin = :manual
         variant.title = title.presence || variant.title.presence || clipping.display_title
         # Blank means "no published edition in this language": the URL is left
@@ -163,7 +158,7 @@ module Reader
 
     def update_params
       @update_params ||= params.require(:clipping).permit(
-        :language, :source_text,
+        :source_text,
         :url_pt_br, :title_pt_br, :summary_pt_br,
         :url_en_us, :title_en_us, :summary_en_us
       )

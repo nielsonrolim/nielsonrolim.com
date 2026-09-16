@@ -1,9 +1,8 @@
 queued:
   entry: rails_eight
-  language: "en-US"
   summary_status: "summarized"
 
-# Not summarized yet, so no language and only the source edition.
+# Not summarized yet: only the source edition, with no locale.
 pending:
   entry: solid_queue
   summary_status: "pending"
@@ -11,13 +10,11 @@ pending:
 sent:
   entry: front_page
   newsletter: last_week
-  language: "en-US"
   summary_status: "summarized"
 
 # A story published in a single language: the pt-BR variant is only a
 # translation, with no URL of its own.
 single:
   newsletter: last_week
-  language: "en-US"
   source_name: "example.com"
   summary_status: "summarized"

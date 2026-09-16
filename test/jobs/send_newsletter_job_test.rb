@@ -160,7 +160,7 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     clippings(:queued).variant_for("pt-BR").update!(url: "https://example.com/rails-8-1-pt")
 
     # An en-US-only story: pt-BR is just a translation, with no URL of its own.
-    en_only = Clipping.new(language: "en-US", source_name: "dev.to", summary_status: :summarized)
+    en_only = Clipping.new(source_name: "dev.to", summary_status: :summarized)
     en_only.variants.build(locale: "en-US", url: "https://dev.to/brewwi", origin: :generated,
                            title: "BrewUI: A First Look", summary: "BrewUI is a native macOS app.")
     en_only.variants.build(locale: "pt-BR", origin: :generated,
@@ -220,6 +220,6 @@ class SendNewsletterJobTest < ActiveJob::TestCase
   def make_all_summaries_ready
     clipping = clippings(:pending)
     clipping.source_variant.update!(locale: "pt-BR", summary: "Como o Solid Queue agenda jobs.")
-    clipping.update!(language: "pt-BR", summary_status: :summarized)
+    clipping.update!(summary_status: :summarized)
   end
 end

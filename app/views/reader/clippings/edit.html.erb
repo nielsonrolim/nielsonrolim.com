@@ -19,16 +19,15 @@
 
   <div class="max-w-measure">
     <%= form_with model: @clipping, url: reader_clipping_path(@clipping), class: "grid gap-6" do |form| %>
-      <div>
-        <%= form.label :language, t("reader.clippings.edit.language"), class: "mb-1 block text-chrome text-muted" %>
-        <%= form.select :language, Clipping::LANGUAGES,
-              { include_blank: t("reader.clippings.language_pending") },
-              class: "rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
-        <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.edit.language_hint") %></p>
-      </div>
-
       <fieldset class="m-0 border-0 p-0">
-        <legend class="mb-1 block text-chrome text-muted"><%= t("reader.clippings.edit.content") %></legend>
+        <legend class="mb-1 flex flex-wrap items-center gap-2 text-chrome text-muted">
+          <span><%= t("reader.clippings.edit.content") %></span>
+          <% if @clipping.languages.any? %>
+            <span class="chip chip--ok"><%= @clipping.languages.join(" · ") %></span>
+          <% else %>
+            <span class="chip"><%= t("reader.clippings.language_pending") %></span>
+          <% end %>
+        </legend>
         <p class="mt-0 mb-3 text-meta text-muted"><%= t("reader.clippings.edit.content_hint") %></p>
 
         <div class="grid grid-cols-1 gap-x-6 gap-y-5 narrow:grid-cols-2">

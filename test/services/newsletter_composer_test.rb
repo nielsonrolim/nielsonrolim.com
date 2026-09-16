@@ -30,7 +30,7 @@ class NewsletterComposerTest < ActiveSupport::TestCase
     assert_includes text, "O Rails 8.1 traz uma nova interface de filas"
     assert_includes text, "https://example.com/rails-8-1"
     assert_includes text, "fonte: Ruby Weekly"
-    assert_includes text, "idioma: en-US"
+    assert_includes text, "idiomas: pt-BR, en-US"
     assert_not_includes text, "<table"
   end
 
@@ -68,7 +68,7 @@ class NewsletterComposerTest < ActiveSupport::TestCase
     bilingual.variant_for("pt-BR").update!(url: "https://example.com/rails-8-1-pt")
 
     # Published in pt-BR only: the en-US variant is just a translation.
-    single = Clipping.new(language: "pt-BR", source_name: "diolinux.com.br")
+    single = Clipping.new(source_name: "diolinux.com.br")
     single.variants.build(locale: "pt-BR", url: "https://diolinux.com.br/post",
                           title: "Até a Epic!", summary: "Resumo em português.")
     single.variants.build(locale: "en-US", title: "Even Epic!", summary: "Summary in English.")
@@ -122,7 +122,7 @@ class NewsletterComposerTest < ActiveSupport::TestCase
   test "renders a clipping that has not been summarized yet" do
     clipping = clippings(:pending)
     assert_nil clipping.summary_for("pt-BR")
-    assert_nil clipping.language
+    assert_nil clipping.source_variant.locale
 
     composer = NewsletterComposer.new([ clipping ], date: @date)
 
