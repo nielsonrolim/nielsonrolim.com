@@ -35,14 +35,58 @@ class NewsletterComposerTest < ActiveSupport::TestCase
   end
 
   test "renders the stored source of a manual clipping" do
-    clipping = Clipping.create!(title: "Adicionado à mão", url: "https://example.org/post",
-                                source_name: "example.org", summary: "Resumo.",
-                                summary_status: "summarized")
+    clipping = Clipping.new(source_name: "example.org", summary_status: "summarized")
+    clipping.variants.build(url: "https://example.org/post", title: "Adicionado à mão", summary: "Resumo.")
+    clipping.save!
 
     composer = NewsletterComposer.new([ clipping ], date: @date)
 
     assert_includes composer.to_html, ". example.org"
     assert_includes composer.to_text, "fonte: example.org"
+  end
+
+  test "links each language to its own edition" do
+    clipping = clippings(:queued)
+    clipping.variant_for("pt-BR").update!(url: "https://example.com/rails-8-1-pt")
+
+    assert_includes NewsletterComposer.new([ clipping ], date: @date).to_html, "https://example.com/rails-8-1-pt"
+    assert_includes NewsletterComposer.new([ clipping ], date: @date, locale: :"en-US").to_html, "https://example.com/rails-8-1"
+  end
+
+  test "sends the translated text and the source link for a one-language story" do
+    clipping = clippings(:single) # en-US article, pt-BR translation with no URL
+
+    html = NewsletterComposer.new([ clipping ], date: @date).to_html
+
+    assert_includes html, "Uma história em um idioma só"
+    assert_includes html, "Resumo em português."
+    assert_includes html, "https://example.com/single"
+  end
+
+  test "links each reader to their edition, falling back when the story has none" do
+    bilingual = clippings(:queued) # published in en-US and pt-BR
+    bilingual.variant_for("pt-BR").update!(url: "https://example.com/rails-8-1-pt")
+
+    # Published in pt-BR only: the en-US variant is just a translation.
+    single = Clipping.new(language: "pt-BR", source_name: "diolinux.com.br")
+    single.variants.build(locale: "pt-BR", url: "https://diolinux.com.br/post",
+                          title: "Até a Epic!", summary: "Resumo em português.")
+    single.variants.build(locale: "en-US", title: "Even Epic!", summary: "Summary in English.")
+
+    clippings = [ bilingual, single ]
+    english = NewsletterComposer.new(clippings, date: @date, locale: :"en-US").to_html
+    portuguese = NewsletterComposer.new(clippings, date: @date).to_html
+
+    # Bilingual story: en-US goes to the en-US edition, pt-BR to the pt-BR one.
+    assert_includes english, "https://example.com/rails-8-1"
+    assert_not_includes english, "https://example.com/rails-8-1-pt"
+    assert_includes portuguese, "https://example.com/rails-8-1-pt"
+
+    # pt-BR-only story: both languages point at the pt-BR edition.
+    assert_includes english, "https://diolinux.com.br/post"
+    assert_includes english, "Even Epic!"
+    assert_includes portuguese, "https://diolinux.com.br/post"
+    assert_includes portuguese, "Até a Epic!"
   end
 
   test "the plain-text header uses the composer's language" do
@@ -59,11 +103,11 @@ class NewsletterComposerTest < ActiveSupport::TestCase
 
   test "escapes markup smuggled in through a feed, in both languages" do
     clipping = clippings(:queued)
-    clipping.update_columns(
-      title: "(script)alert(1)(/script)",
-      title_translated: "(script)alert(2)(/script)",
-      summary: "<b>bold</b> & \"quoted\"",
-      summary_translated: "<i>it</i> & \"aspas\""
+    clipping.variant_for("en-US").update_columns(
+      title: "(script)alert(1)(/script)", summary: "<b>bold</b> & \"quoted\""
+    )
+    clipping.variant_for("pt-BR").update_columns(
+      title: "(script)alert(2)(/script)", summary: "<i>it</i> & \"aspas\""
     )
 
     html = NewsletterComposer.new([ clipping ], date: @date).to_html
@@ -77,16 +121,16 @@ class NewsletterComposerTest < ActiveSupport::TestCase
 
   test "renders a clipping that has not been summarized yet" do
     clipping = clippings(:pending)
-    assert_nil clipping.summary
+    assert_nil clipping.summary_for("pt-BR")
     assert_nil clipping.language
 
     composer = NewsletterComposer.new([ clipping ], date: @date)
 
-    # With no language and no translation, both languages show the original.
-    assert_includes composer.to_html, clipping.title
-    assert_includes composer.to_html, clipping.url
+    # With no detected language, both languages show the source edition.
+    assert_includes composer.to_html, clipping.display_title
+    assert_includes composer.to_html, clipping.url_for("pt-BR")
     assert_match(/1 link selecionado/, composer.to_html)
-    assert_includes composer.to_text, clipping.title
+    assert_includes composer.to_text, clipping.display_title
   end
 
   test "renders an empty state" do

@@ -139,22 +139,44 @@ using an `issue_locale` param so it does not collide with the admin's own locale
 
 ### Clippings, their language and translations
 
-A clipping keeps what it was clipped with — `title` and `summary`, in the
-article's own language — plus `language` (detected when the summary is
-generated) and `title_translated` / `summary_translated`, the other language.
+A clipping is a story, and every language it was published in is a **variant**
+(`clipping_variants`): its own `title` and `summary`, keyed by `locale`, plus an
+optional `url`. A story can therefore point each reader at the edition in their
+own language — useful for sites like AkitaOnRails that publish the same article
+at `/…` and `/en/…`. The clipping itself keeps what identifies the story
+(`entry_id`, `source_name`, `source_text`), the detected `language` and the
+summary status.
 
-The generation is a single model call that also reports the language, so the
-detected language decides which title is kept verbatim and which one is the
-translation. `title_for(locale)` / `summary_for(locale)` hand the right version
-to each reader and fall back to the original while there is no translation, which
-is why clippings summarized before this still work.
+The **URL belongs to a published edition, not to a language**: most articles exist
+in only one language, so only the variant of the detected language gets a URL. The
+other language's variant is a translation with no page of its own and stays
+without a URL — `url_for(locale)` then falls back to the URL of the edition that
+exists, so an en-US subscriber of a pt-BR-only article reads the translated
+title/summary and still lands on the pt-BR page. A story can have an edition in
+only pt-BR, only en-US, or both; `languages` lists the ones actually published
+(with a URL), which is what the queue badge shows — a translation without a page
+of its own does not make the story be "in" that language.
+
+While the article's language has not been detected yet, the source variant has no
+`locale` (the partial unique index allows only one of those). The generation is a
+single model call that reports the language, so it moves that source variant to the
+detected language and creates the variant for the other one — **without writing any
+URL**. `variant_for(locale)` is the lookup; `title_for` / `summary_for` /
+`url_for(locale)` hand the right edition to each reader, falling back to the primary
+edition when a language has no variant.
+
+A variant is either `generated` by the model or `manual` when the reader wrote or
+corrected it. A manual edition is **never overwritten** by a later summary run, and
+no generation ever touches a URL, so typing the real translated URL and title
+(instead of the machine translation) is safe.
 
 `/admin/reader/clippings` shows **both languages side by side**, labelled
-`original` and `tradução`, plus a badge with the detected language (or
+`original` and `tradução`, plus a badge with the languages the story has (or
 "idioma não detectado" while it has not run). Re-running the summary from there
-fills the language and the translations for older clippings too. In the issue
-each clipping also carries the language it was written in, and the title and
-summary go out in the subscriber's language.
+fills the language and the other edition for older clippings too. In the issue
+each clipping also carries the language it was written in, and the title, summary
+and link go out in the subscriber's language (and to that edition's URL, with the
+same fallback).
 
 ### Adding and editing a clipping by hand
 
@@ -168,9 +190,12 @@ When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping i
 **still created**, marked `failed` with the reason and with the host as its title,
 and the page sends you to `/admin/reader/clippings/:id/edit`. There you can paste
 the article text and press **"gerar sumário e tradução"**, which runs the summary
-and the translation on demand. The edit page exposes every field — URL, language,
-the content for each language, and the source text — so a mis-detected language or
-a bad translation can be corrected by hand, and the same button regenerates them.
+and the translation on demand. The edit page exposes **one title, summary and
+optional URL per language**, plus the source text — so a story published in more
+than one language can be pointed at each edition by hand (fill the URL only for
+the languages that have a published page), a mis-detected language or a bad
+translation can be corrected, and the same button regenerates the machine-made
+editions. Leaving a language blank drops its edition.
 
 A clipping marked `failed` is **left out of the next issue** (see
 `Clipping.shippable`); it stays in the queue until it is fixed or removed, which
@@ -232,11 +257,11 @@ local workers — the Docker `jobs` container writes to the production queue.
    `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a summary in *both* languages. The
-   detected language decides which title is the original and which is the
-   translation; `summary` holds the one in the article's own language and
-   `summary_translated` the other. Up to 3 attempts; a clipping whose summary
-   keeps failing is marked `failed` and still ships, with its original title and
-   no summary.
+   detected language moves the source variant to that language; the title and the
+   summary in the article's own language stay on it, and the other language's
+   title and summary land on the generated variant beside it. A manual variant is
+   left alone. Up to 3 attempts; a clipping whose summary keeps failing is marked
+   `failed` and still ships, with its source title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is
@@ -455,7 +480,8 @@ app/
                                     SendNewsletterJob
   mailers/newsletter_mailer.rb      One issue → one subscriber
   models/                           Subscriber, Feed, Category, FeedCategory,
-                                    Entry, Clipping, Newsletter, NewsletterBody
+                                    Entry, Clipping, ClippingVariant, Newsletter,
+                                    NewsletterBody
   services/
     feed_fetcher.rb                 HTTP transport + Feedjira parsing + ingest
     opencode_cli.rb                 Locked-down `opencode` process wrapper

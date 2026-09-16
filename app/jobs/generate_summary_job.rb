@@ -21,8 +21,8 @@ class GenerateSummaryJob < ApplicationJob
     clipping.update!(summary_status: :summarizing)
 
     result = summary_generator.call(
-      title: clipping.title,
-      url: clipping.url,
+      title: clipping.display_title,
+      url: clipping.primary_variant.url,
       source: clipping.summary_source
     )
 

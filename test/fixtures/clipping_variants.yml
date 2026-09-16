@@ -1,0 +1,54 @@
+queued_en:
+  clipping: queued
+  locale: "en-US"
+  url: "https://example.com/rails-8-1"
+  title: "Rails 8.1 ships with a new queue UI"
+  summary: "Solid Queue is a database-backed adapter for Active Job."
+  origin: "generated"
+
+queued_pt:
+  clipping: queued
+  locale: "pt-BR"
+  url: "https://example.com/rails-8-1"
+  title: "O Rails 8.1 traz uma nova interface de filas"
+  summary: "O Rails 8.1 traz um novo painel de filas."
+  origin: "generated"
+
+# The source edition before the language was detected.
+pending_source:
+  clipping: pending
+  url: "https://example.com/solid-queue"
+  title: "Understanding Solid Queue internals"
+  origin: "generated"
+
+sent_en:
+  clipping: sent
+  locale: "en-US"
+  url: "https://example.com/show-hn"
+  title: "Show HN: I built an RSS reader in Rails"
+  summary: "An RSS reader built with Rails."
+  origin: "generated"
+
+sent_pt:
+  clipping: sent
+  locale: "pt-BR"
+  url: "https://example.com/show-hn"
+  title: "Show HN: construí um leitor de RSS em Rails"
+  summary: "Um leitor de RSS construído em Rails."
+  origin: "generated"
+
+single_source:
+  clipping: single
+  locale: "en-US"
+  url: "https://example.com/single"
+  title: "A one-language story"
+  summary: "Summary in English."
+  origin: "generated"
+
+# Only a translation: no URL, so readers fall back to the en-US edition.
+single_translation:
+  clipping: single
+  locale: "pt-BR"
+  title: "Uma história em um idioma só"
+  summary: "Resumo em português."
+  origin: "generated"

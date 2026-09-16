@@ -83,7 +83,7 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     assert issue.sent?
     assert_includes issue.clippings, clippings(:pending)
     # A clipping whose summary never arrived still ships, without one.
-    assert_nil issue.clippings.find(clippings(:pending).id).summary
+    assert_nil issue.clippings.find(clippings(:pending).id).summary_for("pt-BR")
   end
 
   test "ignores clippings that already went out" do
@@ -154,6 +154,44 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     assert_not_includes english.html_part.body.to_s, "valeu a leitura"
   end
 
+  test "links each subscriber to the right edition of every clipping" do
+    make_all_summaries_ready
+    # A bilingual story: en-US and pt-BR each have their own edition.
+    clippings(:queued).variant_for("pt-BR").update!(url: "https://example.com/rails-8-1-pt")
+
+    # An en-US-only story: pt-BR is just a translation, with no URL of its own.
+    en_only = Clipping.new(language: "en-US", source_name: "dev.to", summary_status: :summarized)
+    en_only.variants.build(locale: "en-US", url: "https://dev.to/brewwi", origin: :generated,
+                           title: "BrewUI: A First Look", summary: "BrewUI is a native macOS app.")
+    en_only.variants.build(locale: "pt-BR", origin: :generated,
+                           title: "BrewUI: Um Primeiro Olhar", summary: "BrewUI é um aplicativo nativo.")
+    en_only.save!
+    ActionMailer::Base.deliveries.clear
+
+    perform_enqueued_jobs(only: ActionMailer::MailDeliveryJob) do
+      SendNewsletterJob.perform_now
+    end
+
+    by_recipient = ActionMailer::Base.deliveries.index_by { |email| email.to.first }
+    portuguese = by_recipient.fetch(subscribers(:first).email).html_part.body.to_s
+    english = by_recipient.fetch(subscribers(:second).email).html_part.body.to_s
+
+    # Bilingual clipping: each language links to its own edition.
+    assert_includes english, "https://example.com/rails-8-1"
+    assert_not_includes english, "https://example.com/rails-8-1-pt"
+    assert_includes portuguese, "https://example.com/rails-8-1-pt"
+
+    # pt-BR-only clipping: both languages fall back to the pt-BR edition.
+    assert_includes english, "https://example.com/solid-queue"
+    assert_includes portuguese, "https://example.com/solid-queue"
+
+    # en-US-only clipping: both languages fall back to the en-US edition.
+    assert_includes english, "https://dev.to/brewwi"
+    assert_includes english, "BrewUI: A First Look"
+    assert_includes portuguese, "https://dev.to/brewwi"
+    assert_includes portuguese, "BrewUI: Um Primeiro Olhar"
+  end
+
   test "leaves a clipping whose summary failed out of the issue" do
     make_all_summaries_ready
     clippings(:pending).update!(summary_status: :failed, summary_error: "sem fonte")
@@ -180,6 +218,8 @@ class SendNewsletterJobTest < ActiveJob::TestCase
   private
 
   def make_all_summaries_ready
-    clippings(:pending).update!(summary_status: :summarized, summary: "Como o Solid Queue agenda jobs.")
+    clipping = clippings(:pending)
+    clipping.source_variant.update!(locale: "pt-BR", summary: "Como o Solid Queue agenda jobs.")
+    clipping.update!(language: "pt-BR", summary_status: :summarized)
   end
 end

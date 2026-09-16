@@ -29,7 +29,9 @@ module Reader
     def clip
       entry = Entry.find(params[:id])
 
-      clipping = Clipping.new(entry: entry, title: entry.title, url: entry.url)
+      clipping = Clipping.new(entry: entry)
+      # The source edition starts without a language; the summary detects it.
+      clipping.variants.build(url: entry.url, title: entry.title, origin: :generated)
 
       if clipping.save
         @entry = entry
@@ -37,7 +39,7 @@ module Reader
           format.turbo_stream
           format.html do
             redirect_back fallback_location: reader_entries_path,
-                          notice: t("reader.entries.clip_success", title: clipping.title),
+                          notice: t("reader.entries.clip_success", title: clipping.display_title),
                           status: :see_other
           end
         end
