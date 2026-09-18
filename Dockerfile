@@ -48,8 +48,11 @@ EXPOSE 3000
 USER rails
 
 # opencode CLI generates the AI summaries for clippings (see SummaryGenerator).
+# Must be the v2 CLI: summaries rely on `opencode run --standalone` and the v2
+# `permissions` config. Note https://opencode.ai/install serves v1, so use the
+# /v2/install endpoint or the container silently gets an incompatible CLI.
 # --no-modify-path because this is a non-interactive image; PATH is set explicitly.
-RUN curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
+RUN curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path
 ENV PATH="/home/rails/.opencode/bin:${PATH}"
 
 ENTRYPOINT ["bin/docker-entrypoint"]
