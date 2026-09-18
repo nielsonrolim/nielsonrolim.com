@@ -10,9 +10,11 @@ require "timeout"
 class OpencodeCli
   LOCKED_CONFIG = Rails.root.join("config/opencode/summarizer.json").to_s
 
-  # Deterministic, tool-free run: only our locked config is loaded (the
-  # project's own opencode.json is skipped so it cannot loosen permissions),
-  # with no external skills and no plugins.
+  # Deterministic, tool-free run. `OPENCODE_CONFIG` points at our locked config
+  # and `OPENCODE_DISABLE_PROJECT_CONFIG` keeps the project's own opencode.json
+  # from loosening permissions. On opencode v2 the caller must also pass
+  # `--standalone` (see SummaryGenerator#call): without it the run attaches to
+  # the shared background server, whose config our env cannot override.
   BASE_ENV = {
     "OPENCODE_CONFIG" => LOCKED_CONFIG,
     "OPENCODE_DISABLE_PROJECT_CONFIG" => "1",
