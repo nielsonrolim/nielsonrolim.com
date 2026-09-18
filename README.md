@@ -425,7 +425,9 @@ docker compose up -d --build
 - `jobs` runs `bin/jobs start` and waits for `web` to pass its healthcheck, so it
   never boots against an unprepared database (`web`'s entrypoint runs
   `db:prepare`).
-- The image installs the `opencode` CLI as the non-root `rails` user. Its data
+- The image installs the **v2** `opencode` CLI as the non-root `rails` user (via
+  the `/v2/install` endpoint — the default `/install` serves v1, which lacks
+  `--standalone`). Its data
   directory is the `opencode_data` volume, and `bin/docker-entrypoint` writes
   `auth.json` from `OPENCODE_API_KEY` on boot. Prefer that over baking the key in.
   Without `OPENCODE_API_KEY`, run `docker compose exec web opencode auth login`
