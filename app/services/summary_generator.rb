@@ -6,6 +6,10 @@
 class SummaryGenerator
   Error = Class.new(StandardError)
 
+  # opencode's free Zen tier refuses agents whose permissions `deny` read or
+  # shell outright, so the locked config marks those two as `ask` instead: the
+  # non-interactive run declines every ask, so no tool ever executes and the
+  # free model is accepted.
   DEFAULT_MODEL = "opencode/ling-3.0-flash-fin-free"
   MAX_SOURCE_CHARS = 6_000
 
@@ -28,8 +32,11 @@ class SummaryGenerator
   attr_reader :model, :timeout, :cli
 
   def call(title:, url:, source: nil)
+    # `--standalone` starts a private opencode server for this run so the locked
+    # config actually applies; without it the run attaches to the shared
+    # background server, which owns its own config and ignores ours.
     args = [ "run", build_prompt(title: title, url: url, source: source),
-             "--format", "json", "--model", model, "--pure" ]
+             "--format", "json", "--model", model, "--standalone" ]
 
     stdout, stderr, status = cli.exec(*args, timeout: timeout)
 

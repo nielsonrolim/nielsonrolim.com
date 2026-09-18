@@ -130,7 +130,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     end
   end
 
-  test "requests the free model with a JSON stream" do
+  test "requests the model with a JSON stream over a private server" do
     cli = cli_returning(payload)
 
     SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
@@ -139,7 +139,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_equal "run", args.first
     assert_equal "json", args[args.index("--format") + 1]
     assert_equal SummaryGenerator::DEFAULT_MODEL, args[args.index("--model") + 1]
-    assert_includes args, "--pure"
+    assert_includes args, "--standalone"
   end
 
   test "passes the timeout through to the CLI" do

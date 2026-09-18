@@ -256,7 +256,7 @@ local workers — the Docker `jobs` container writes to the production queue.
 1. **Clip** an entry → a `Clipping` is created (unique per entry while unsent) and
    `GenerateSummaryJob` is enqueued.
 2. **Summarize** — the job shells out to
-   `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free`
+   `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free --standalone`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a summary in *both* languages. The
    detected language moves the source variant to that language; the title and the
@@ -278,9 +278,14 @@ queue or an empty subscriber list means no issue is created at all.
 
 - Feed content is **untrusted**. It is HTML-sanitized on ingest, escaped on
   render, and the `opencode` run is executed with
-  `config/opencode/summarizer.json`, which denies *every* tool (no shell, no file
-  access, no web fetch) and skips the project's own opencode config. A prompt
-  injection hidden in an article therefore cannot reach the host.
+  `config/opencode/summarizer.json`, which blocks *every* tool (no shell, no file
+  access, no web fetch) and skips the project's own opencode config. On opencode
+  v2 the run also passes `--standalone`, so a private server loads that config
+  instead of the shared background server, which would ignore it. A prompt
+  injection hidden in an article therefore cannot reach the host. On opencode v2
+  the free tier rejects configs that `deny` `read`/`shell`, so the locked config
+  marks those two as `ask` instead: a non-interactive run declines every ask, so
+  no tool ever runs and the free model is accepted.
 - `opencode` is invoked through `Open3.popen3` with an argument array (never a
   shell string), in its own process group, and killed on timeout.
 - Outbound fetches are limited to `http`/`https`, follow at most 5 redirects, and
@@ -498,7 +503,7 @@ config/
   locales/                          All page copy (pt-BR, en-US)
   environments/production.rb        Hosts, SSL, logging
   queue.yml, recurring.yml          Solid Queue workers and weekly schedule
-  opencode/summarizer.json          Denies every opencode tool
+  opencode/summarizer.json          Denies every opencode tool (v2 `permissions` format)
   initializers/action_mailer.rb     SMTP / file / test delivery selection
 db/
   migrate/                          App schema
