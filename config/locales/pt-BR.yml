@@ -131,14 +131,17 @@ pt-BR:
         linkedin_label: "LinkedIn"
       newsletter:
         prompt: "./subscribe.sh"
-        body: "Receba uma newsletter sobre tecnologia."
-        email_placeholder: "seu@email.com"
-        submit: "Inscrever-se"
-        nickname_label: "Deixe em branco"
+    newsletter:
+      prompt: "./newsletter.sh"
+      back: "← voltar ao site"
   subscribers:
     create:
       success: "Inscrição confirmada! Obrigado por assinar."
       invalid: "Não foi possível concluir a inscrição. Verifique o e-mail informado."
+    form:
+      email_placeholder: "seu@email.com"
+      submit: "Inscrever-se"
+      nickname_label: "Deixe em branco"
   date:
     formats:
       long: "%d/%m/%Y"
@@ -400,6 +403,8 @@ pt-BR:
       create:
         queued: "Edição enfileirada para envio."
   newsletters:
+    title: "Receba uma newsletter sobre tecnologia."
+    presentation: "Toda semana eu escolho os links que valeram a leitura sobre tecnologia e mando um clipping com resumo direto no seu e-mail. Sem spam, cancele quando quiser."
     subject: "Clipping de tecnologia — %{date}"
     email:
       intro:
@@ -410,6 +415,7 @@ pt-BR:
       languages: "idiomas: %{list}"
       footer: "selecionado e resumido por Nielson Rolim."
       sent_to: "Enviado para %{email}."
+      refer: "Indique essa newsletter"
       manage: "gerenciar inscrição"
       unsubscribe: "cancelar inscrição"
   preferences:

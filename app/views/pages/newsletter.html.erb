@@ -1,0 +1,12 @@
+<section class="mt-2 max-w-measure">
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("pages.newsletter.prompt") %></p>
+  <h3 class="mt-[0.1rem] mb-[0.9rem] text-lead font-bold text-ink"><%= t("newsletters.title") %></h3>
+
+  <p class="mt-0 mb-6 text-prompt text-ink-soft"><%= t("newsletters.presentation") %></p>
+
+  <%= render "subscribe_form", source: "newsletter" %>
+
+  <p class="mt-8 text-chrome">
+    <%= link_to t("pages.newsletter.back"), home_path(locale: I18n.locale), class: "text-muted" %>
+  </p>
+</section>

@@ -98,4 +98,26 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal "en-US", Subscriber.find_by(email: "crafty@example.com").language
   end
+
+  test "signing up from the newsletter page returns to that page" do
+    assert_difference("Subscriber.count", 1) do
+      post "/subscribers?locale=pt-BR",
+           params: { subscriber: { email: "referred@example.com", nickname: "" }, from: "newsletter" }
+    end
+
+    assert_redirected_to "/pt-BR/newsletter"
+    follow_redirect!
+    assert_select ".toast--notice"
+  end
+
+  test "a malformed email on the newsletter page stays on that page" do
+    assert_no_difference("Subscriber.count") do
+      post "/subscribers?locale=pt-BR",
+           params: { subscriber: { email: "not-an-email", nickname: "" }, from: "newsletter" }
+    end
+
+    assert_redirected_to "/pt-BR/newsletter"
+    follow_redirect!
+    assert_select ".toast--alert"
+  end
 end

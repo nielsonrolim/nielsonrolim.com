@@ -10,6 +10,7 @@ class NewsletterMailer < ApplicationMailer
     @issue_body = body || newsletter.body_for(subscriber.language)
     @unsubscribe_url = unsubscribe_url(token: subscriber.unsubscribe_token)
     @preferences_url = preferences_url(token: subscriber.unsubscribe_token)
+    @newsletter_url = newsletter_url(locale: subscriber.language)
 
     headers["List-Unsubscribe"] = "<#{@unsubscribe_url}>"
     headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"

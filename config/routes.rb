@@ -12,6 +12,11 @@ Rails.application.routes.draw do
 
   scope "(:locale)", locale: /pt-BR|en-US/ do
     get "/", to: "pages#home", as: :home
+
+    # Public signup page, the destination of the "indique essa newsletter" link
+    # every email footer carries. Locale-scoped like the home page, so the
+    # visitor reads it — and is recorded — in the language they arrived in.
+    get "/newsletter", to: "pages#newsletter", as: :newsletter
   end
 
   resources :subscribers, only: [ :create ]

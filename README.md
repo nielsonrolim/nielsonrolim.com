@@ -137,6 +137,12 @@ confirmation; the page only touches the language. `List-Unsubscribe` keeps
 pointing at the unsubscribe endpoint, since that is the one-click contract mail
 clients rely on.
 
+Every email footer also carries an **"indique essa newsletter"** link to
+`/pt-BR/newsletter` (or `/en-US/newsletter`), a public page that presents the
+newsletter and signs the visitor up through the same endpoint the home page uses.
+The form carries a `from=newsletter` marker so the confirmation lands back on
+that page instead of the home page.
+
 Removal is a **real delete**, not a soft unsubscribe: the subscriber asked to be
 forgotten, so nothing about them is kept (LGPD). The older approach — the public
 unsubscribe link — works the same way, deleting the row.

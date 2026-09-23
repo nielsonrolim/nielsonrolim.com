@@ -74,4 +74,38 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil experience
     assert_operator newsletter, :<, experience
   end
+
+  test "the newsletter page presents the newsletter in pt-BR" do
+    get "/pt-BR/newsletter"
+
+    assert_response :success
+    assert_select "h3", "Receba uma newsletter sobre tecnologia."
+    assert_select "body", /clipping com resumo direto no seu e-mail/
+  end
+
+  test "the newsletter page responds in en-US" do
+    get "/en-US/newsletter"
+
+    assert_response :success
+    assert_select "h3", "Get a newsletter about tech."
+  end
+
+  test "the newsletter page form posts to the signup endpoint in its locale" do
+    get "/en-US/newsletter"
+
+    assert_select "form[action=?]", "/subscribers?locale=en-US"
+    assert_select "form input[name=?]", "subscriber[email]"
+    assert_select "form input[name=?][value=?]", "from", "newsletter"
+    assert_select "form input[name=?]", "subscriber[nickname]"
+  end
+
+  test "home presents the newsletter with a heading and the shared text" do
+    get "/pt-BR"
+    assert_select "h3", "Receba uma newsletter sobre tecnologia."
+    assert_select "body", /Toda semana eu escolho os links/
+
+    get "/en-US"
+    assert_select "h3", "Get a newsletter about tech."
+    assert_select "body", /Every week I pick the tech links/
+  end
 end

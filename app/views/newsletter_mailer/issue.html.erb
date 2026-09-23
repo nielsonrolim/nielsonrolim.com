@@ -7,6 +7,8 @@
           <td style="padding:0 4px;color:#6b6560;font-size:11px;line-height:1.6;">
             <%= t("newsletters.email.sent_to", email: @subscriber.email) %>
             &nbsp;&middot;&nbsp;
+            <a href="<%= @newsletter_url %>" style="color:#6b6560;text-decoration:underline;"><%= t("newsletters.email.refer") %></a>
+            &nbsp;&middot;&nbsp;
             <a href="<%= @preferences_url %>" style="color:#6b6560;text-decoration:underline;"><%= t("newsletters.email.manage") %></a>
             &nbsp;&middot;&nbsp;
             <a href="<%= @unsubscribe_url %>" style="color:#6b6560;text-decoration:underline;"><%= t("newsletters.email.unsubscribe") %></a>

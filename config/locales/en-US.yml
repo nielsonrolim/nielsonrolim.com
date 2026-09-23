@@ -131,14 +131,17 @@ en-US:
         linkedin_label: "LinkedIn"
       newsletter:
         prompt: "./subscribe.sh"
-        body: "Get a newsletter about tech."
-        email_placeholder: "you@email.com"
-        submit: "Subscribe"
-        nickname_label: "Leave blank"
+    newsletter:
+      prompt: "./newsletter.sh"
+      back: "← back to the site"
   subscribers:
     create:
       success: "You're subscribed! Thanks for joining."
       invalid: "We couldn't complete your signup. Please check the email address."
+    form:
+      email_placeholder: "you@email.com"
+      submit: "Subscribe"
+      nickname_label: "Leave blank"
   date:
     formats:
       long: "%Y-%m-%d"
@@ -400,6 +403,8 @@ en-US:
       create:
         queued: "Issue queued for delivery."
   newsletters:
+    title: "Get a newsletter about tech."
+    presentation: "Every week I pick the tech links worth reading and send a clipping with summaries straight to your inbox. No spam, unsubscribe anytime."
     subject: "Tech clipping — %{date}"
     email:
       intro:
@@ -410,6 +415,7 @@ en-US:
       languages: "languages: %{list}"
       footer: "picked and summarized by Nielson Rolim."
       sent_to: "Sent to %{email}."
+      refer: "Refer this newsletter"
       manage: "manage subscription"
       unsubscribe: "unsubscribe"
   preferences:

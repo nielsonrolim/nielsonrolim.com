@@ -52,6 +52,23 @@ class NewsletterMailerTest < ActionMailer::TestCase
     assert_includes @email.html_part.body.to_s, "gerenciar inscrição"
   end
 
+  test "carries a referral link to the newsletter page in both parts" do
+    expected = newsletter_url_for("pt-BR")
+
+    assert_includes @email.html_part.body.to_s, expected
+    assert_includes @email.text_part.body.to_s, expected
+    assert_includes @email.html_part.body.to_s, "Indique essa newsletter"
+  end
+
+  test "writes the referral link in the subscriber's language too" do
+    add_english_body
+
+    email = NewsletterMailer.issue(newsletter: @newsletter, subscriber: subscribers(:second))
+
+    assert_includes email.html_part.body.to_s, newsletter_url_for("en-US")
+    assert_includes email.html_part.body.to_s, "Refer this newsletter"
+  end
+
   test "advertises one-click unsubscribe for bulk-mail filters" do
     assert_equal "<#{unsubscribe_url_for(@subscriber)}>", @email["List-Unsubscribe"].to_s
     assert_equal "List-Unsubscribe=One-Click", @email["List-Unsubscribe-Post"].to_s
@@ -124,5 +141,10 @@ class NewsletterMailerTest < ActionMailer::TestCase
   def preferences_url_for(subscriber)
     options = ActionMailer::Base.default_url_options
     "http://#{options.fetch(:host)}/newsletter/preferences?token=#{subscriber.unsubscribe_token}"
+  end
+
+  def newsletter_url_for(locale)
+    options = ActionMailer::Base.default_url_options
+    "http://#{options.fetch(:host)}/#{locale}/newsletter"
   end
 end
