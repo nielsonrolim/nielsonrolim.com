@@ -1,0 +1,24 @@
+<section class="max-w-measure">
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("auth.sessions.prompt") %></p>
+  <h1 class="mt-[0.1rem] mb-6 text-lead font-bold text-ink"><%= t("auth.sessions.title") %></h1>
+
+  <%= form_with url: session_path, class: "grid gap-6" do |form| %>
+    <div>
+      <%= form.label :email_address, t("auth.sessions.email"), class: "mb-1 block text-chrome text-muted" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username",
+            value: params[:email_address],
+            class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+    </div>
+
+    <div>
+      <%= form.label :password, t("auth.sessions.password"), class: "mb-1 block text-chrome text-muted" %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72,
+            class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <%= form.submit t("auth.sessions.submit"), class: "btn btn--primary" %>
+      <%= link_to t("auth.sessions.forgot"), new_password_path, class: "text-chrome text-muted no-underline hover:text-ink" %>
+    </div>
+  <% end %>
+</section>

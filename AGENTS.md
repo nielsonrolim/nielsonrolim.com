@@ -8,7 +8,7 @@ Personal site + private RSS→newsletter app. **Ruby 4.0.6 / Rails 8.1**, SQLite
 
 ```sh
 mise install && bundle install
-cp .env.example .env        # required: /admin 403s without READER_USERNAME/PASSWORD
+cp .env.example .env        # fill in the mail/SMTP settings you need
 bin/rails db:prepare
 bin/dev                     # Puma + Tailwind watch
 bin/jobs start              # Solid Queue worker + recurring scheduler (needed for feeds/summaries/sends)
@@ -20,9 +20,9 @@ bin/ci                      # full local CI: setup, style, bundler-audit, brakem
 
 ## Gotchas
 
-- **`.env` is loaded only in development** by `dotenv-rails`; `ENV` is read at boot, so restart after editing. The test suite deliberately does *not* load it — tests set credentials via `with_reader_credentials` / `reader_headers` in `test/test_helper.rb`.
+- **`.env` is loaded only in development** by `dotenv-rails`; `ENV` is read at boot, so restart after editing. The test suite deliberately does *not* load it — tests sign in with the fixture user via `sign_in_as` / `sign_in_as_admin` (`test/test_helpers/session_test_helper.rb`, `test/test_helper.rb`).
 - **Tests must stay offline and must never spawn `opencode`.** Production code exposes injectable seams (transport for `FeedFetcher`, CLI for `SummaryGenerator`, collaborators for jobs); fakes live in `test/support/fakes.rb`. Minitest 6 dropped `minitest/mock`/`Object#stub`, so add a seam + fake instead of stubbing.
-- **All `/admin` routes require HTTP Basic Auth and fail closed (403) when `READER_USERNAME`/`READER_PASSWORD` are unset.** The Mission Control dashboard is mounted under it and inherits `Admin::BaseController`; never make it public.
+- **All `/admin` routes require a session login (`/login`, see the `Authentication` concern and `Admin::BaseController`) and fail closed (403) when no admin user exists.** Create the user from the console (`bin/rails runner` or `bin/rails console`). The Mission Control dashboard is mounted under it and inherits `Admin::BaseController`; never make it public.
 - **All user-facing copy lives in `config/locales/`** (`pt-BR` default, `en-US`). No hardcoded view strings. Admin is not locale-scoped and always renders in the default locale. Locale comes from the URL segment (`/` redirects to `/pt-BR`).
 - **Reader controllers use the `Reader::` namespace/helpers even though URLs are nested under `/admin`** (`/admin/reader/...`). Don't assume path == namespace.
 - **Two SQLite databases**: app + a separate `queue` DB (`config/database.yml`, schema in `db/queue_schema.rb`). Solid Queue models are wired to it in `config/application.rb`.

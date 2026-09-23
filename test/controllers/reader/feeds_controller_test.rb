@@ -2,7 +2,7 @@ require "test_helper"
 
 class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    set_reader_credentials!
+    sign_in_as_admin
     @xml = file_fixture("sample_feed.xml").read
     @original_transport = HttpTransport.default
     HttpTransport.default = transport_always(http_response(200, @xml))
@@ -10,11 +10,11 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
   teardown do
     HttpTransport.default = @original_transport
-    restore_reader_credentials!
+    sign_out
   end
 
   test "lists the feeds with their entry counts and last poll" do
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
 
     assert_response :success
     assert_select "body", /Ruby Weekly/
@@ -24,7 +24,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "surfaces a feed that is failing" do
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
 
     assert_response :success
     assert_select ".text-err", /HTTP 503/
@@ -33,8 +33,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "adding a feed learns its title from the feed itself" do
     assert_difference -> { Feed.count }, 1 do
       assert_enqueued_with(job: RefreshFeedsJob) do
-        post reader_feeds_path, params: { feed: { url: "https://example.com/feed.xml", category: "ruby" } },
-                                headers: reader_headers
+        post reader_feeds_path, params: { feed: { url: "https://example.com/feed.xml", category: "ruby" } }
       end
     end
 
@@ -50,7 +49,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     # The import job is enqueued by the create action, so it has to be performed
     # inside the block to be picked up.
     perform_enqueued_jobs(only: RefreshFeedsJob) do
-      post reader_feeds_path, params: { feed: { url: "https://example.com/feed.xml" } }, headers: reader_headers
+      post reader_feeds_path, params: { feed: { url: "https://example.com/feed.xml" } }
     end
 
     assert_equal 3, Feed.find_by(url: "https://example.com/feed.xml").entries.count
@@ -58,10 +57,10 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
   test "adding a feed twice is refused" do
     assert_no_difference -> { Feed.count } do
-      post reader_feeds_path, params: { feed: { url: feeds(:ruby_blog).url } }, headers: reader_headers
+      post reader_feeds_path, params: { feed: { url: feeds(:ruby_blog).url } }
     end
 
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
     assert_select ".toast--alert", /já está cadastrada/
   end
 
@@ -69,10 +68,10 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     HttpTransport.default = transport_always(http_response(503, "unavailable"))
 
     assert_no_difference -> { Feed.count } do
-      post reader_feeds_path, params: { feed: { url: "https://down.example.com/feed" } }, headers: reader_headers
+      post reader_feeds_path, params: { feed: { url: "https://down.example.com/feed" } }
     end
 
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
     assert_select ".toast--alert", /Não foi possível ler o feed/
   end
 
@@ -80,16 +79,16 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     HttpTransport.default = transport_always(http_response(200, "<html>not a feed</html>"))
 
     assert_no_difference -> { Feed.count } do
-      post reader_feeds_path, params: { feed: { url: "https://example.com/" } }, headers: reader_headers
+      post reader_feeds_path, params: { feed: { url: "https://example.com/" } }
     end
 
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
     assert_select ".toast--alert"
   end
 
   test "a missing URL is rejected" do
     assert_no_difference -> { Feed.count } do
-      post reader_feeds_path, params: { feed: { url: "" } }, headers: reader_headers
+      post reader_feeds_path, params: { feed: { url: "" } }
     end
 
     assert_response :redirect
@@ -99,7 +98,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = feeds(:hacker_news)
 
     assert_difference -> { feed.entries.count }, 3 do
-      post refresh_reader_feed_path(feed), headers: reader_headers
+      post refresh_reader_feed_path(feed)
     end
 
     assert_redirected_to reader_feeds_path
@@ -111,20 +110,20 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = feeds(:ruby_blog)
     polled_at = feed.last_fetched_at
 
-    post refresh_reader_feed_path(feed), headers: reader_headers
+    post refresh_reader_feed_path(feed)
 
     assert_redirected_to reader_feeds_path
     feed.reload
     assert_equal polled_at, feed.last_fetched_at
     assert_match(/503/, feed.last_error)
 
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
     assert_select ".toast--alert", /Falha ao atualizar/
   end
 
   test "refresh all queues the job" do
     assert_enqueued_with(job: RefreshFeedsJob) do
-      post refresh_all_reader_feeds_path, headers: reader_headers
+      post refresh_all_reader_feeds_path
     end
 
     assert_redirected_to reader_feeds_path
@@ -136,25 +135,17 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Feed.count }, -1 do
       assert_difference -> { Entry.count }, -entries do
-        delete reader_feed_path(feed), headers: reader_headers
+        delete reader_feed_path(feed)
       end
     end
 
     assert_redirected_to reader_feeds_path
   end
 
-  test "an unconfigured reader is closed rather than open" do
-    without_reader_credentials do
-      get reader_feeds_path
-
-      assert_response :forbidden
-    end
-  end
-
   test "the edit page shows the URL as text, never as an input" do
     feed = feeds(:ruby_blog)
 
-    get edit_reader_feed_path(feed), headers: reader_headers
+    get edit_reader_feed_path(feed)
 
     assert_response :success
     assert_select "p", /#{Regexp.escape(feed.url)}/
@@ -165,7 +156,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "the edit page checks the feed's current categories" do
     feed = feeds(:ruby_blog)
 
-    get edit_reader_feed_path(feed), headers: reader_headers
+    get edit_reader_feed_path(feed)
 
     assert_response :success
     assert_select "input[type=checkbox][name=?][value=?][checked]", "feed[category_ids][]", categories(:ruby).id
@@ -176,7 +167,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "updating sets the display title while keeping the feed's own title" do
     feed = feeds(:hacker_news)
 
-    patch reader_feed_path(feed), params: { feed: { custom_title: "HN" } }, headers: reader_headers
+    patch reader_feed_path(feed), params: { feed: { custom_title: "HN" } }
 
     assert_redirected_to reader_feeds_path
     feed.reload
@@ -189,7 +180,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = feeds(:ruby_blog)
     assert_equal "Ruby Weekly (curadoria)", feed.display_title
 
-    patch reader_feed_path(feed), params: { feed: { custom_title: "" } }, headers: reader_headers
+    patch reader_feed_path(feed), params: { feed: { custom_title: "" } }
 
     assert_equal "Ruby Weekly", feed.reload.display_title
   end
@@ -198,8 +189,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = feeds(:broken)
 
     patch reader_feed_path(feed),
-          params: { feed: { category_ids: [ categories(:ruby).id.to_s, categories(:news).id.to_s ] } },
-          headers: reader_headers
+          params: { feed: { category_ids: [ categories(:ruby).id.to_s, categories(:news).id.to_s ] } }
 
     assert_equal [ "News", "Ruby" ], feed.reload.categories.map(&:name).sort
   end
@@ -209,8 +199,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "Ruby", "Web" ], feed.categories.map(&:name).sort
 
     patch reader_feed_path(feed),
-          params: { feed: { category_ids: [ categories(:ruby).id.to_s ] } },
-          headers: reader_headers
+          params: { feed: { category_ids: [ categories(:ruby).id.to_s ] } }
 
     assert_equal [ "Ruby" ], feed.reload.categories.map(&:name)
   end
@@ -220,8 +209,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Category.count }, 2 do
       patch reader_feed_path(feed),
-            params: { feed: { new_categories: "Linux,  Rust " } },
-            headers: reader_headers
+            params: { feed: { new_categories: "Linux,  Rust " } }
     end
 
     assert_equal [ "Linux", "Rust" ], feed.reload.categories.map(&:name).sort
@@ -232,8 +220,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { Category.count } do
       patch reader_feed_path(feed),
-            params: { feed: { new_categories: "ruby" } },
-            headers: reader_headers
+            params: { feed: { new_categories: "ruby" } }
     end
 
     assert_equal [ categories(:ruby).id ], feed.reload.category_ids
@@ -242,7 +229,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "an unknown category id is ignored rather than raising" do
     feed = feeds(:broken)
 
-    patch reader_feed_path(feed), params: { feed: { category_ids: [ "999999" ] } }, headers: reader_headers
+    patch reader_feed_path(feed), params: { feed: { category_ids: [ "999999" ] } }
 
     assert_redirected_to reader_feeds_path
     assert_empty feed.reload.categories
@@ -252,8 +239,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed = feeds(:hacker_news)
 
     patch reader_feed_path(feed),
-          params: { feed: { url: "https://evil.example.com/feed" } },
-          headers: reader_headers
+          params: { feed: { url: "https://evil.example.com/feed" } }
 
     assert_equal "https://news.ycombinator.com/rss", feed.reload.url
   end
@@ -263,8 +249,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     feed.update_column(:title, "") # bypass validation to leave an invalid row
 
     patch reader_feed_path(feed),
-          params: { feed: { category_ids: [ categories(:news).id.to_s ] } },
-          headers: reader_headers
+          params: { feed: { category_ids: [ categories(:news).id.to_s ] } }
 
     assert_response :unprocessable_content
     assert_select ".toast--alert"
@@ -272,7 +257,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the refresh-all button shows its label, not a raw translation hash" do
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
 
     assert_response :success
     assert_select "form button", /atualizar todas/
@@ -283,7 +268,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "renders the category filter links" do
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
 
     assert_response :success
     assert_select "a[href=?]", reader_feeds_path(category_id: categories(:ruby).id)
@@ -293,7 +278,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filters the list by category" do
-    get reader_feeds_path, params: { category_id: categories(:news).id }, headers: reader_headers
+    get reader_feeds_path, params: { category_id: categories(:news).id }
 
     assert_response :success
     assert_select "body", /Hacker News/
@@ -301,7 +286,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a feed with the category shows up under it" do
-    get reader_feeds_path, params: { category_id: categories(:web).id }, headers: reader_headers
+    get reader_feeds_path, params: { category_id: categories(:web).id }
 
     assert_response :success
     assert_select "body", /Ruby Weekly/
@@ -309,7 +294,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filters to the feeds that carry no category" do
-    get reader_feeds_path, params: { uncategorised: 1 }, headers: reader_headers
+    get reader_feeds_path, params: { uncategorised: 1 }
 
     assert_response :success
     assert_select "body", /Broken Feed/
@@ -318,7 +303,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "an unknown category filter falls back to the full list" do
-    get reader_feeds_path, params: { category_id: -1 }, headers: reader_headers
+    get reader_feeds_path, params: { category_id: -1 }
 
     assert_response :success
     assert_select "body", /Broken Feed/
@@ -329,7 +314,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "says so when a category has no feeds" do
     empty = Category.create!(name: "Vazia")
 
-    get reader_feeds_path, params: { category_id: empty.id }, headers: reader_headers
+    get reader_feeds_path, params: { category_id: empty.id }
 
     assert_response :success
     assert_select "body", /Nenhuma fonte nesta categoria/
@@ -339,7 +324,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
   test "the unfiltered list still says nothing is subscribed when there are no feeds" do
     Feed.destroy_all
 
-    get reader_feeds_path, headers: reader_headers
+    get reader_feeds_path
 
     assert_response :success
     assert_select "body", /Nenhuma fonte cadastrada/

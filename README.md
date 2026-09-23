@@ -13,7 +13,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 - Light/dark theme that follows the operating system by default and remembers the
   visitor's choice (`localStorage`).
 - Small newsletter capture with honeypot spam protection and one-click unsubscribe.
-- **Private admin area** (`/admin`) behind HTTP Basic Auth. Underneath it:
+- **Private admin area** (`/admin`) behind a session login. Underneath it:
   - **RSS reader** (`/admin/reader`): subscribe to feeds, browse entries by feed
     and time window, and clip the ones worth sharing.
   - **Job dashboard** (`/admin/jobs`): Mission Control for Solid Queue — inspect
@@ -57,16 +57,21 @@ articles into a weekly clipping newsletter with AI-written summaries.
 ```sh
 mise install          # or install Ruby 4.0.6 another way
 bundle install
-cp .env.example .env  # fill in READER_USERNAME / READER_PASSWORD, or /admin 403s
+cp .env.example .env  # fill in the SMTP / newsletter settings you need
 bin/rails db:prepare
 bin/rails db:seed     # optional: the starter feeds
 bin/dev               # starts Puma; Tailwind rebuilds automatically in dev
 ```
 
 Open http://localhost:3000 — `/` redirects to `/pt-BR`. The admin area lives at
-http://localhost:3000/admin (the reader at `/admin/reader`) and asks for the
-`READER_*` credentials from `.env` (loaded by `dotenv-rails`; restart after
-editing it).
+http://localhost:3000/admin (the reader at `/admin/reader`) and asks you to sign
+in at `/login`. Create your user once from the console:
+
+```sh
+bin/rails runner 'User.create!(email_address: "you@example.com", password: "a-long-password")'
+```
+
+Until a user exists, `/admin` answers 403 rather than becoming public.
 
 Feed polling, summary generation and the weekly send all run through Solid Queue,
 so start a worker in a second terminal:
@@ -88,9 +93,16 @@ bin/rails tailwindcss:watch
 
 ## Admin area, RSS reader and weekly clipping
 
-`/admin` is the authenticated area (HTTP Basic Auth). Set `READER_USERNAME` and
-`READER_PASSWORD`; **if either is missing the whole area returns 403** rather
-than becoming public. The reader and the job dashboard live underneath it.
+`/admin` is the authenticated area. It uses a session login (`/login`). Create
+your user once from the console:
+
+```sh
+bin/rails runner 'User.create!(email_address: "you@example.com", password: "a-long-password")'
+```
+
+**Without any user the whole area returns 403** rather than becoming public, and
+the password can be reset by email from `/login`. The reader and the job
+dashboard live underneath it.
 
 | Path                   | What it does                                                    |
 | ---------------------- | --------------------------------------------------------------- |
@@ -226,10 +238,10 @@ is why the page counts what will actually go out and how many are stuck.
 `/admin/jobs` is the [Mission Control](https://github.com/rails/mission_control-jobs)
 dashboard (Solid Queue's official UI). It mounts inside the engine and its
 controllers inherit `Admin::BaseController` — the gem's own HTTP Basic Auth is
-switched off in favour of the one credential set — so **the dashboard exposes job
-arguments, which include clipping prompts and subscriber addresses.** It is
-therefore never public: without credentials it answers 401, and if `READER_*` is
-unset it 403s like the rest of the admin area.
+switched off in favour of the app's session login — so **the dashboard exposes
+job arguments, which include clipping prompts and subscriber addresses.** It is
+therefore never public: without a session it redirects to `/login`, and with no
+admin user it 403s like the rest of the admin area.
 
 There you can browse queues and pending/failed/scheduled/finished jobs, inspect
 arguments and backtraces, and retry or discard failures. Workers and recurring
@@ -344,8 +356,6 @@ environment variables are read:
 | `RAILS_HOSTS`             | Comma-separated allowed hosts (default `nielsonrolim.com,www.nielsonrolim.com`). |
 | `WEB_PORT`                | Host port published by Docker Compose (default `3000`).                 |
 | `RAILS_LOG_LEVEL`         | Optional; defaults to `info`.                                           |
-| `READER_USERNAME`         | HTTP Basic user for `/admin`. Required, or the area 403s.               |
-| `READER_PASSWORD`         | HTTP Basic password for `/admin`. Required.                             |
 | `APP_HOST`, `APP_PROTOCOL`| Base URL used to build links inside emails.                             |
 | `NEWSLETTER_FROM`         | `From:` header of the weekly clipping.                                  |
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
@@ -448,8 +458,12 @@ admin area's auth. Send the expected Host header instead:
 
 ```sh
 curl -H "Host: nielsonrolim.com" http://127.0.0.1:3001/pt-BR      # 200
-curl -H "Host: nielsonrolim.com" -u "$READER_USERNAME:$READER_PASSWORD" \
-     http://127.0.0.1:3001/admin                                   # 200
+# /admin needs a session: sign in and reuse the cookie.
+curl -H "Host: nielsonrolim.com" -c /tmp/cookies \
+     -d "email_address=you@example.com&password=your-password" \
+     http://127.0.0.1:3001/login                                  # 302
+curl -H "Host: nielsonrolim.com" -b /tmp/cookies \
+     http://127.0.0.1:3001/admin                                  # 200
 ```
 
 Or add `localhost,127.0.0.1` to `RAILS_HOSTS` — convenient, but it does weaken
@@ -487,20 +501,23 @@ app/
   assets/fonts/                     FiraCode Nerd Font
   controllers/                      PagesController, SubscribersController,
                                     UnsubscribesController,
+                                    SessionsController (login/logout) +
+                                    PasswordsController (reset), Auth::BaseController,
                                     Admin::BaseController (auth) + Admin::Dashboard,
                                     Admin::Subscribers, Reader::* (nested under /admin)
   jobs/                             RefreshFeedsJob, GenerateSummaryJob,
                                     SendNewsletterJob
-  mailers/newsletter_mailer.rb      One issue → one subscriber
-  models/                           Subscriber, Feed, Category, FeedCategory,
-                                    Entry, Clipping, ClippingVariant, Newsletter,
-                                    NewsletterBody
+  mailers/                          NewsletterMailer (issue), PasswordsMailer (reset)
+  models/                           User, Session, Subscriber, Feed, Category,
+                                    FeedCategory, Entry, Clipping, ClippingVariant,
+                                    Newsletter, NewsletterBody
   services/
     feed_fetcher.rb                 HTTP transport + Feedjira parsing + ingest
     opencode_cli.rb                 Locked-down `opencode` process wrapper
     summary_generator.rb            Prompt building and response extraction
     newsletter_composer.rb          Issue HTML/text rendering
   views/layouts/admin.html.erb      Admin chrome + two-level navigation
+  views/layouts/auth.html.erb       Minimal chrome for login / password reset
   views/admin/dashboard/            Admin landing page
   views/reader/                     Reader screens (sub-navigation partial too)
   views/newsletters/email_body.*    Archived issue body (html + text)
