@@ -2,7 +2,7 @@ require "test_helper"
 
 class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    set_reader_credentials!
+    sign_in_as_admin
     @html = file_fixture("article.html").read
     @original_transport = HttpTransport.default
     HttpTransport.default = transport_always(http_response(200, @html))
@@ -10,11 +10,11 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
   teardown do
     HttpTransport.default = @original_transport
-    restore_reader_credentials!
+    sign_out
   end
 
   test "shows only the clippings waiting for the next issue" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /Rails 8\.1 ships with a new queue UI/
@@ -24,7 +24,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the summary and its status" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /O Rails 8\.1 traz um novo painel de filas\./
@@ -33,14 +33,14 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the source feed of each clipping" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /Ruby Weekly/
   end
 
   test "shows both languages of a clipping" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     # Both editions of the bilingual clipping.
@@ -56,7 +56,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping.variants.build(locale: "pt-BR", title: "Título", summary: "Resumo.", origin: :generated)
     clipping.save!
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /publicado/
@@ -64,7 +64,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the languages a summarized clipping is published in" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /en-US/
@@ -77,7 +77,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping.variant_for("pt-BR").destroy
     clipping.update_columns(summary_status: "summarized")
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /tradução pendente/
@@ -87,21 +87,21 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = clippings(:queued)
 
     assert_difference -> { Clipping.count }, -1 do
-      delete reader_clipping_path(clipping), headers: reader_headers
+      delete reader_clipping_path(clipping)
     end
 
     assert_redirected_to reader_clippings_path
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
     assert_select ".toast--notice", /Removido da fila/
   end
 
   test "removing a clipping lets the same entry be clipped again" do
     clipping = clippings(:queued)
-    delete reader_clipping_path(clipping), headers: reader_headers
+    delete reader_clipping_path(clipping)
 
     assert_difference -> { Clipping.count }, 1 do
-      post clip_reader_entry_path(clipping.entry), headers: reader_headers
+      post clip_reader_entry_path(clipping.entry)
     end
   end
 
@@ -110,7 +110,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping.update!(summary_status: :failed, summary_error: "boom")
 
     assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
-      post generate_summary_reader_clipping_path(clipping), headers: reader_headers
+      post generate_summary_reader_clipping_path(clipping)
     end
 
     clipping.reload
@@ -122,14 +122,14 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   test "an empty queue says so" do
     Clipping.unsent.destroy_all
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /Nenhum recorte na fila/
   end
 
   test "links to the sent issues" do
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_select "a[href=?]", reader_newsletters_path
   end
@@ -138,8 +138,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { Clipping.count }, 1 do
       assert_enqueued_with(job: GenerateSummaryJob) do
         post reader_clippings_path,
-             params: { clipping: { url: "https://example.com/post" } },
-             headers: reader_headers
+             params: { clipping: { url: "https://example.com/post" } }
       end
     end
 
@@ -159,20 +158,18 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     HttpTransport.default = transport_returning(http_response(200, oembed), http_response(200, @html))
 
     post reader_clippings_path,
-         params: { clipping: { url: "https://www.youtube.com/watch?v=abc123" } },
-         headers: reader_headers
+         params: { clipping: { url: "https://www.youtube.com/watch?v=abc123" } }
 
     clipping = Clipping.order(:id).last
     assert_equal "Canal Exemplo", clipping.source_name
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
     assert_select "body", /Canal Exemplo/
   end
 
   test "a title typed by hand wins over the fetched one" do
     post reader_clippings_path,
-         params: { clipping: { url: "https://example.com/post", title: "Meu título" } },
-         headers: reader_headers
+         params: { clipping: { url: "https://example.com/post", title: "Meu título" } }
 
     assert_equal "Meu título", Clipping.order(:id).last.display_title
   end
@@ -183,8 +180,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { Clipping.count }, 1 do
       assert_no_enqueued_jobs(only: GenerateSummaryJob) do
         post reader_clippings_path,
-             params: { clipping: { url: "https://example.com/post" } },
-             headers: reader_headers
+             params: { clipping: { url: "https://example.com/post" } }
       end
     end
 
@@ -203,29 +199,27 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { Clipping.count } do
       post reader_clippings_path,
-           params: { clipping: { url: existing } },
-           headers: reader_headers
+           params: { clipping: { url: existing } }
     end
 
     assert_redirected_to reader_clippings_path
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
     assert_select ".toast--alert", /já está na fila/
   end
 
   test "refuses something that is not a URL" do
     assert_no_difference -> { Clipping.count } do
       post reader_clippings_path,
-           params: { clipping: { url: "not-a-url" } },
-           headers: reader_headers
+           params: { clipping: { url: "not-a-url" } }
     end
 
     assert_redirected_to reader_clippings_path
   end
 
   test "shows the source of a manual clipping in the list" do
-    post reader_clippings_path, params: { clipping: { url: "https://example.com/post" } }, headers: reader_headers
+    post reader_clippings_path, params: { clipping: { url: "https://example.com/post" } }
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_select "body", /example\.com/
   end
@@ -235,7 +229,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping.variants.build(url: "https://example.org/sem-fonte", title: "Sem fonte")
     clipping.save!
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_select "body", /manual/
   end
@@ -243,7 +237,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   test "shows a failed clipping and says it stays out of the issue" do
     clippings(:pending).update!(summary_status: :failed, summary_error: "sem fonte")
 
-    get reader_clippings_path, headers: reader_headers
+    get reader_clippings_path
 
     assert_response :success
     assert_select "body", /resumo falhou/
@@ -254,7 +248,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   test "the edit page shows the URL and content per language" do
     clipping = clippings(:queued) # written in en-US, with a pt-BR edition
 
-    get edit_reader_clipping_path(clipping), headers: reader_headers
+    get edit_reader_clipping_path(clipping)
 
     assert_response :success
     assert_select "input[name=?][value=?]", "clipping[url_en_us]", clipping.variant_for("en-US").url
@@ -275,8 +269,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
             source_text: "novo texto",
             url_en_us: "https://example.com/en", title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "https://example.com/pt", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
-          } },
-          headers: reader_headers
+          } }
 
     clipping.reload
     assert_equal "Title EN", clipping.title_for("en-US")
@@ -297,8 +290,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
           params: { clipping: {
             url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "", title_pt_br: "Título PT", summary_pt_br: "Resumo PT"
-          } },
-          headers: reader_headers
+          } }
 
     clipping.reload
     assert_equal "https://example.com/rails-8-1", clipping.variant_for("en-US").url
@@ -314,8 +306,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
           params: { clipping: {
             url_en_us: clipping.variant_for("en-US").url, title_en_us: "Title EN", summary_en_us: "Summary EN",
             url_pt_br: "", title_pt_br: "", summary_pt_br: ""
-          } },
-          headers: reader_headers
+          } }
 
     clipping.reload
     assert_equal "Title EN", clipping.title_for("en-US")
@@ -325,18 +316,16 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
   test "a manual clipping can be completed by hand and generated" do
     post reader_clippings_path,
-         params: { clipping: { url: "https://example.com/post", title: "Título" } },
-         headers: reader_headers
+         params: { clipping: { url: "https://example.com/post", title: "Título" } }
     clipping = Clipping.order(:id).last
 
     patch reader_clipping_path(clipping),
-          params: { clipping: { source_text: "Texto colado à mão." } },
-          headers: reader_headers
+          params: { clipping: { source_text: "Texto colado à mão." } }
 
     assert_equal "Texto colado à mão.", clipping.reload.source_text
 
     assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
-      post generate_summary_reader_clipping_path(clipping), headers: reader_headers
+      post generate_summary_reader_clipping_path(clipping)
     end
 
     assert clipping.reload.pending?

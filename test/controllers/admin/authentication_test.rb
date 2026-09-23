@@ -13,62 +13,77 @@ class Admin::AuthenticationTest < ActionDispatch::IntegrationTest
     /admin/reader/newsletters
   ].freeze
 
-  test "asks for credentials when none are sent" do
-    with_reader_credentials do
-      get admin_root_path
+  test "redirects to the login page when there is no session" do
+    get admin_root_path
 
-      assert_response :unauthorized
-      assert_match(/Basic realm/, response.headers["WWW-Authenticate"].to_s)
-    end
+    assert_redirected_to new_session_path
   end
 
   test "rejects the wrong password" do
-    with_reader_credentials do
-      get admin_root_path, headers: reader_headers("reader", "wrong")
+    post session_path, params: { email_address: users(:admin).email_address, password: "wrong" }
 
-      assert_response :unauthorized
-    end
+    assert_redirected_to new_session_path
+    assert_nil cookies[:session_id]
   end
 
-  test "rejects the wrong username" do
-    with_reader_credentials do
-      get admin_root_path, headers: reader_headers("intruder", "s3cret")
+  test "rejects an unknown email address" do
+    post session_path, params: { email_address: "intruder@example.com", password: "password" }
 
-      assert_response :unauthorized
-    end
+    assert_redirected_to new_session_path
+    assert_nil cookies[:session_id]
   end
 
-  test "grants access with the right credentials" do
-    with_reader_credentials do
-      get admin_root_path, headers: reader_headers
+  test "signs in with the right credentials" do
+    post session_path, params: { email_address: users(:admin).email_address, password: "password" }
 
-      assert_response :success
-    end
+    assert_redirected_to admin_root_path
+    assert cookies[:session_id]
+
+    get admin_root_path
+    assert_response :success
+  end
+
+  test "returns to the intercepted admin page after signing in" do
+    get reader_feeds_path
+    assert_redirected_to new_session_path
+
+    post session_path, params: { email_address: users(:admin).email_address, password: "password" }
+
+    assert_redirected_to reader_feeds_path
+  end
+
+  test "signs out" do
+    sign_in_as_admin
+
+    delete logout_path
+
+    assert_redirected_to new_session_path
+
+    get admin_root_path
+    assert_redirected_to new_session_path
   end
 
   test "every admin route is protected, including the nested reader" do
-    with_reader_credentials do
-      ADMIN_PATHS.each do |path|
-        get path
-        assert_response :unauthorized, "expected #{path} to require auth"
-      end
+    ADMIN_PATHS.each do |path|
+      get path
+      # The literal path, not new_session_path: inside the mounted Mission
+      # Control engine the helper picks up the engine's script_name.
+      assert_redirected_to "/login", "expected #{path} to require a session"
     end
   end
 
-  test "fails closed when credentials are not configured" do
-    without_reader_credentials do
-      ADMIN_PATHS.each do |path|
-        get path, headers: reader_headers
-        assert_response :forbidden, "expected #{path} to be closed when unconfigured"
-      end
+  test "fails closed when no admin user exists" do
+    User.destroy_all
+
+    ADMIN_PATHS.each do |path|
+      get path
+      assert_response :forbidden, "expected #{path} to be closed when no user exists"
     end
   end
 
   test "the public site stays open" do
-    without_reader_credentials do
-      get "/pt-BR"
+    get "/pt-BR"
 
-      assert_response :success
-    end
+    assert_response :success
   end
 end

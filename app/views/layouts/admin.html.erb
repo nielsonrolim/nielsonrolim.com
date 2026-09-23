@@ -47,7 +47,13 @@
                   class: "no-underline text-muted hover:text-ink #{'text-ink font-bold' if active}",
                   aria: { current: active ? "page" : nil } %>
           <% end %>
-          <%= link_to t("admin.nav.back_to_site"), home_path(locale: I18n.locale), class: "ml-auto text-chrome text-muted no-underline hover:text-ink" %>
+          <span class="ml-auto flex items-center gap-x-4">
+            <span class="text-chrome text-muted"><%= t("admin.nav.signed_in_as", email: Current.user&.email_address) %></span>
+            <%= link_to t("admin.nav.back_to_site"), home_path(locale: I18n.locale), class: "text-chrome text-muted no-underline hover:text-ink" %>
+            <%= button_to t("admin.nav.logout"), logout_path, method: :delete,
+                  form_class: "m-0",
+                  class: "cursor-pointer border-0 bg-transparent p-0 font-mono text-chrome text-muted hover:text-ink" %>
+          </span>
         </nav>
 
         <%# Second level, only inside a section that has one. %>

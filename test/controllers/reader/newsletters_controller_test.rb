@@ -2,15 +2,15 @@ require "test_helper"
 
 class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
   setup do
-    set_reader_credentials!
+    sign_in_as_admin
   end
 
   teardown do
-    restore_reader_credentials!
+    sign_out
   end
 
   test "lists past issues with their stats" do
-    get reader_newsletters_path, headers: reader_headers
+    get reader_newsletters_path
 
     assert_response :success
     assert_select "body", /Clipping de tecnologia — 2026-09-07/
@@ -22,7 +22,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
 
   test "triggering a send queues the weekly job" do
     assert_enqueued_with(job: SendNewsletterJob) do
-      post reader_newsletters_path, headers: reader_headers
+      post reader_newsletters_path
     end
 
     assert_redirected_to reader_newsletters_path
@@ -31,7 +31,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
   test "shows an archived issue exactly as it was stored" do
     newsletter = newsletters(:last_week)
 
-    get reader_newsletter_path(newsletter), headers: reader_headers
+    get reader_newsletter_path(newsletter)
 
     assert_response :success
     assert_select "h1", newsletter.subject
@@ -40,7 +40,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a missing issue is a 404" do
-    get reader_newsletter_path(-1), headers: reader_headers
+    get reader_newsletter_path(-1)
 
     assert_response :not_found
   end
@@ -49,7 +49,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
     newsletter = newsletters(:last_week)
     add_english_body(newsletter)
 
-    get reader_newsletter_path(newsletter), headers: reader_headers
+    get reader_newsletter_path(newsletter)
 
     assert_response :success
     assert_select "a[href*=?]", "issue_locale=pt-BR"
@@ -59,7 +59,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
   test "lists the languages each issue went out in" do
     add_english_body(newsletters(:last_week))
 
-    get reader_newsletters_path, headers: reader_headers
+    get reader_newsletters_path
 
     assert_response :success
     assert_select "body", /idiomas: (en-US · pt-BR|pt-BR · en-US)/
@@ -69,7 +69,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
     newsletter = newsletters(:last_week)
     add_english_body(newsletter)
 
-    get reader_newsletter_path(newsletter, issue_locale: "en-US"), headers: reader_headers
+    get reader_newsletter_path(newsletter, issue_locale: "en-US")
 
     assert_response :success
     assert_select "iframe[srcdoc*=?]", "English body"
@@ -77,7 +77,7 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "hides the language tabs for a single-language issue" do
-    get reader_newsletter_path(newsletters(:last_week)), headers: reader_headers
+    get reader_newsletter_path(newsletters(:last_week))
 
     assert_response :success
     assert_select "a[href*=?]", "issue_locale=", count: 0

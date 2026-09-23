@@ -3,25 +3,11 @@ require "test_helper"
 class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   include ActionMailer::TestHelper
 
-  setup { set_reader_credentials! }
-  teardown { restore_reader_credentials! }
-
-  test "requires credentials" do
-    get admin_subscribers_path
-
-    assert_response :unauthorized
-  end
-
-  test "fails closed when the area is not configured" do
-    without_reader_credentials do
-      get admin_subscribers_path, headers: reader_headers
-
-      assert_response :forbidden
-    end
-  end
+  setup { sign_in_as_admin }
+  teardown { sign_out }
 
   test "lists the subscribers with their language and join date" do
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
 
     assert_response :success
     assert_select "body", /clipping-fan@example\.org/
@@ -38,8 +24,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     subscriber = subscribers(:first)
 
     patch admin_subscriber_path(subscriber),
-          params: { subscriber: { language: "en-US" } },
-          headers: reader_headers
+          params: { subscriber: { language: "en-US" } }
 
     assert_equal "en-US", subscriber.reload.language
     assert_redirected_to admin_subscribers_path
@@ -49,19 +34,18 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     subscriber = subscribers(:first)
 
     patch admin_subscriber_path(subscriber),
-          params: { subscriber: { language: "de-DE" } },
-          headers: reader_headers
+          params: { subscriber: { language: "de-DE" } }
 
     assert_equal "pt-BR", subscriber.reload.language
     assert_response :redirect
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
     assert_select ".toast--alert"
   end
 
   test "shows the copyable unsubscribe link for a subscriber" do
     subscriber = subscribers(:first)
 
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
 
     assert_response :success
     assert_select "input[readonly][value*=?]", subscriber.unsubscribe_token
@@ -69,7 +53,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "searches by email fragment" do
-    get admin_subscribers_path, params: { q: "reader" }, headers: reader_headers
+    get admin_subscribers_path, params: { q: "reader" }
 
     assert_response :success
     assert_select "body", /clipping-reader@example\.org/
@@ -77,7 +61,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "says so when the search matches nobody" do
-    get admin_subscribers_path, params: { q: "nobody" }, headers: reader_headers
+    get admin_subscribers_path, params: { q: "nobody" }
 
     assert_response :success
     assert_select "body", /Nenhum inscrito para/
@@ -87,14 +71,14 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     31.times { |index| Subscriber.create!(email: "bulk#{index}@example.com") }
     total = Subscriber.count
 
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
 
     assert_response :success
     assert_select "ol li", count: 30
     assert_select "body", /página 1 de 2/
     assert_select "body", /#{total} inscritos/
 
-    get admin_subscribers_path, params: { page: 2 }, headers: reader_headers
+    get admin_subscribers_path, params: { page: 2 }
 
     assert_response :success
     assert_select "ol li", count: total - 30
@@ -103,8 +87,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   test "adding a subscriber records the chosen language" do
     assert_difference -> { Subscriber.count }, 1 do
       post admin_subscribers_path,
-           params: { subscriber: { email: "added@example.com", language: "en-US" } },
-           headers: reader_headers
+           params: { subscriber: { email: "added@example.com", language: "en-US" } }
     end
 
     assert_equal "en-US", Subscriber.find_by(email: "added@example.com").language
@@ -114,24 +97,22 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   test "adding a duplicate email is reported" do
     assert_no_difference -> { Subscriber.count } do
       post admin_subscribers_path,
-           params: { subscriber: { email: subscribers(:first).email, language: "pt-BR" } },
-           headers: reader_headers
+           params: { subscriber: { email: subscribers(:first).email, language: "pt-BR" } }
     end
 
     assert_response :redirect
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
     assert_select ".toast--alert"
   end
 
   test "adding a malformed email is reported" do
     assert_no_difference -> { Subscriber.count } do
       post admin_subscribers_path,
-           params: { subscriber: { email: "not-an-email", language: "pt-BR" } },
-           headers: reader_headers
+           params: { subscriber: { email: "not-an-email", language: "pt-BR" } }
     end
 
     assert_response :redirect
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
     assert_select ".toast--alert"
   end
 
@@ -139,7 +120,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     subscriber = subscribers(:first)
 
     assert_difference -> { Subscriber.count }, -1 do
-      delete admin_subscriber_path(subscriber), headers: reader_headers
+      delete admin_subscriber_path(subscriber)
     end
 
     assert_nil Subscriber.find_by(id: subscriber.id)
@@ -152,8 +133,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Subscriber.count }, -2 do
       delete bulk_destroy_admin_subscribers_path,
-             params: { subscriber_ids: remove_ids.map(&:to_s) },
-             headers: reader_headers
+             params: { subscriber_ids: remove_ids.map(&:to_s) }
     end
 
     assert_not_nil Subscriber.find_by(id: keep.id)
@@ -162,14 +142,14 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
 
   test "bulk removal with nothing selected is harmless" do
     assert_no_difference -> { Subscriber.count } do
-      delete bulk_destroy_admin_subscribers_path, params: { subscriber_ids: [ "" ] }, headers: reader_headers
+      delete bulk_destroy_admin_subscribers_path, params: { subscriber_ids: [ "" ] }
     end
 
     assert_redirected_to admin_subscribers_path
   end
 
   test "exports the subscribers as CSV" do
-    get export_admin_subscribers_path, headers: reader_headers
+    get export_admin_subscribers_path
 
     assert_response :success
     assert_equal "text/csv", response.media_type
@@ -181,7 +161,7 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "the export follows the current search" do
-    get export_admin_subscribers_path, params: { q: "reader" }, headers: reader_headers
+    get export_admin_subscribers_path, params: { q: "reader" }
 
     assert_includes response.body, "clipping-reader@example.org"
     assert_not_includes response.body, "clipping-fan@example.org"
@@ -192,15 +172,14 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_emails 1 do
       post resend_admin_subscriber_path(subscriber),
-           params: { newsletter_id: newsletters(:last_week).id },
-           headers: reader_headers
+           params: { newsletter_id: newsletters(:last_week).id }
     end
 
     assert_redirected_to admin_subscribers_path
   end
 
   test "offers a resend picker with the recent sent issues" do
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
 
     assert_response :success
     assert_select "select[name=?]", "newsletter_id"
@@ -210,14 +189,14 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
   test "offers no resend picker when nothing has been sent" do
     Newsletter.destroy_all
 
-    get admin_subscribers_path, headers: reader_headers
+    get admin_subscribers_path
 
     assert_response :success
     assert_select "select[name=?]", "newsletter_id", count: 0
   end
 
   test "the admin navigation links to the subscribers page" do
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_select "nav a[href=?]", admin_subscribers_path
     assert_select "nav", /\[inscritos\]/

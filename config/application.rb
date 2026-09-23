@@ -47,9 +47,9 @@ module NielsonrolimCom
     config.solid_queue.connects_to = { database: { writing: :queue } }
 
     # The job dashboard (Mission Control) exposes job arguments — prompts and
-    # subscriber addresses — so it inherits the admin area's HTTP Basic Auth. Its
-    # own basic auth is turned off because Admin::BaseController already enforces
-    # one credential set, and fails closed if it is not configured.
+    # subscriber addresses — so it inherits the admin area's session login. Its
+    # own basic auth is turned off because Admin::BaseController already requires
+    # a session and fails closed when no admin user exists.
     config.mission_control.jobs.base_controller_class = "Admin::BaseController"
     config.mission_control.jobs.http_basic_auth_enabled = false
 

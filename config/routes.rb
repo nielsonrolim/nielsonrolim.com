@@ -28,13 +28,22 @@ Rails.application.routes.draw do
   get "newsletter/preferences", to: "preferences#show", as: :preferences
   patch "newsletter/preferences", to: "preferences#update"
 
-  # Private admin area (HTTP Basic Auth). The RSS reader and the job dashboard
+  # Session login for the private admin area. Short, explicit URLs; the reader
+  # and the job dashboard live under /admin and require a session.
+  get    "login",  to: "sessions#new",     as: :new_session
+  post   "login",  to: "sessions#create",  as: :session
+  delete "logout", to: "sessions#destroy", as: :logout
+
+  # Password reset by email. Only the four actions the controller implements.
+  resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
+
+  # Private admin area (session auth). The RSS reader and the job dashboard
   # both live underneath it.
   namespace :admin do
     root to: "dashboard#index"
 
     # Job dashboard. Mission Control's controllers inherit Admin::BaseController
-    # (see config/application.rb), so this is behind the same credentials.
+    # (see config/application.rb), so this is behind the same login.
     mount MissionControl::Jobs::Engine, at: "/jobs"
 
     # Newsletter list. Removal is a hard delete (see the controller).

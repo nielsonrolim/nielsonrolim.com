@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_16_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_192148) do
   create_table "categories", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -113,6 +113,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_140000) do
     t.index ["status"], name: "index_newsletters_on_status"
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
   create_table "subscribers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
@@ -123,6 +132,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_140000) do
     t.index ["unsubscribe_token"], name: "index_subscribers_on_unsubscribe_token", unique: true
   end
 
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
   add_foreign_key "clipping_variants", "clippings"
   add_foreign_key "clippings", "entries"
   add_foreign_key "clippings", "newsletters"
@@ -130,4 +147,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_140000) do
   add_foreign_key "feed_categories", "categories"
   add_foreign_key "feed_categories", "feeds"
   add_foreign_key "newsletter_bodies", "newsletters"
+  add_foreign_key "sessions", "users"
 end

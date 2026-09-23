@@ -2,15 +2,15 @@ require "test_helper"
 
 class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    set_reader_credentials!
+    sign_in_as_admin
   end
 
   teardown do
-    restore_reader_credentials!
+    sign_out
   end
 
   test "lists entries newest first with their feed" do
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_response :success
     assert_select "body", /Solid Queue internals/
@@ -22,7 +22,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filters by feed" do
-    get reader_entries_path, params: { feed_id: feeds(:hacker_news).id }, headers: reader_headers
+    get reader_entries_path, params: { feed_id: feeds(:hacker_news).id }
 
     assert_response :success
     assert_select "body", /Show HN/
@@ -30,7 +30,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "filters by publication window" do
-    get reader_entries_path, params: { since: 1 }, headers: reader_headers
+    get reader_entries_path, params: { since: 1 }
 
     assert_response :success
     assert_select "body", /Show HN/                          # 3 hours ago
@@ -39,7 +39,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "ignores a nonsense window filter" do
-    get reader_entries_path, params: { since: "abc" }, headers: reader_headers
+    get reader_entries_path, params: { since: "abc" }
 
     assert_response :success
     assert_select "body", /Rails 8\.1 ships/
@@ -52,19 +52,19 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
                     url: "https://example.com/bulk/#{i}", published_at: i.minutes.ago)
     end
 
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
     assert_response :success
     assert_select "body", /página 1 de 2/
     assert_select "a", /próxima/
 
-    get reader_entries_path, params: { page: 2 }, headers: reader_headers
+    get reader_entries_path, params: { page: 2 }
     assert_response :success
     assert_select "body", /página 2 de 2/
   end
 
   test "shows the clipped state for an entry already in the queue" do
     entry = entries(:rails_eight)
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_response :success
     assert_select "body", /na próxima edição/
@@ -73,7 +73,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "links to the job dashboard from the reader navigation" do
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_response :success
     assert_select "nav a[href=?]", admin_mission_control_jobs_path
@@ -81,7 +81,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "renders both navigation levels" do
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_response :success
     # Top level: the admin sections.
@@ -98,7 +98,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Clipping.count }, 1 do
       assert_enqueued_with(job: GenerateSummaryJob) do
-        post clip_reader_entry_path(entry), headers: reader_headers
+        post clip_reader_entry_path(entry)
       end
     end
 
@@ -111,15 +111,15 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "clipping the same entry twice is refused with a friendly message" do
-    post clip_reader_entry_path(entries(:rails_eight)), headers: reader_headers
+    post clip_reader_entry_path(entries(:rails_eight))
 
     assert_redirected_to reader_entries_path
 
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
     assert_select ".toast--alert"
 
     assert_no_difference -> { Clipping.count } do
-      post clip_reader_entry_path(entries(:rails_eight)), headers: reader_headers
+      post clip_reader_entry_path(entries(:rails_eight))
     end
   end
 
@@ -128,7 +128,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Clipping.count }, 1 do
       post clip_reader_entry_path(entry),
-           headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+           headers: { "Accept" => Mime[:turbo_stream].to_s }
     end
 
     assert_turbo_stream action: "replace", target: "clip_entry_#{entry.id}" do
@@ -146,7 +146,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { Clipping.count } do
       post clip_reader_entry_path(entry),
-           headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+           headers: { "Accept" => Mime[:turbo_stream].to_s }
     end
 
     assert_turbo_stream action: "append", target: "toasts" do
@@ -160,7 +160,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference -> { Clipping.count }, -1 do
       delete unclip_reader_entry_path(entry),
-             headers: reader_headers.merge("Accept" => Mime[:turbo_stream].to_s)
+             headers: { "Accept" => Mime[:turbo_stream].to_s }
     end
 
     assert_not entry.reload.clipped?
@@ -178,7 +178,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     entry = entries(:rails_eight)
 
     assert_difference -> { Clipping.count }, -1 do
-      delete unclip_reader_entry_path(entry), headers: reader_headers
+      delete unclip_reader_entry_path(entry)
     end
 
     assert_redirected_to reader_entries_path
@@ -187,7 +187,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   test "clipping returns to the filtered list the reader came from" do
     referer = "http://www.example.com#{reader_entries_path(feed_id: feeds(:hacker_news).id, since: 7)}"
 
-    post clip_reader_entry_path(entries(:front_page)), headers: reader_headers.merge("Referer" => referer)
+    post clip_reader_entry_path(entries(:front_page)), headers: { "Referer" => referer }
 
     assert_response :redirect
     assert_includes response.location, "feed_id=#{feeds(:hacker_news).id}"
@@ -195,13 +195,13 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "clipping a missing entry is a 404" do
-    post clip_reader_entry_path(-1), headers: reader_headers
+    post clip_reader_entry_path(-1)
 
     assert_response :not_found
   end
 
   test "the feed picker is grouped by category and shows display titles" do
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_response :success
     picker = css_select("details").map(&:text).join
@@ -213,13 +213,13 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a feed with two categories appears under each of them" do
-    get reader_entries_path, headers: reader_headers
+    get reader_entries_path
 
     assert_equal 2, css_select("details").text.scan("Ruby Weekly (curadoria)").size
   end
 
   test "filters entries by category" do
-    get reader_entries_path, params: { category_id: categories(:ruby).id }, headers: reader_headers
+    get reader_entries_path, params: { category_id: categories(:ruby).id }
 
     assert_response :success
     assert_select "body", /Solid Queue internals/
@@ -227,7 +227,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "combines the category filter with a time window" do
-    get reader_entries_path, params: { category_id: categories(:ruby).id, since: 1 }, headers: reader_headers
+    get reader_entries_path, params: { category_id: categories(:ruby).id, since: 1 }
 
     assert_response :success
     assert_select "body", /Solid Queue internals/          # 20 hours ago
@@ -235,7 +235,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a filter link keeps the other active filters" do
-    get reader_entries_path, params: { feed_id: feeds(:ruby_blog).id, since: 7 }, headers: reader_headers
+    get reader_entries_path, params: { feed_id: feeds(:ruby_blog).id, since: 7 }
 
     assert_response :success
     assert_select "a[href*=?][href*=?]", "category_id=#{categories(:ruby).id}", "feed_id=#{feeds(:ruby_blog).id}"
@@ -243,7 +243,7 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "an unknown category filter is ignored" do
-    get reader_entries_path, params: { category_id: -1 }, headers: reader_headers
+    get reader_entries_path, params: { category_id: -1 }
 
     assert_response :success
     assert_select "body", /Solid Queue internals/

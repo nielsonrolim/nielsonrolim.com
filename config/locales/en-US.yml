@@ -148,7 +148,6 @@ en-US:
       long: "%Y-%m-%d %H:%M"
       short: "%H:%M"
   admin:
-    realm: "Admin area"
     title: "Admin"
     theme_toggle: "Toggle light/dark theme"
     nav:
@@ -158,6 +157,8 @@ en-US:
       subscribers: "[subscribers]"
       jobs: "[jobs]"
       back_to_site: "← back to site"
+      signed_in_as: "signed in as %{email}"
+      logout: "sign out"
     dashboard:
       prompt: "cat admin.md"
       title: "Dashboard"
@@ -444,3 +445,39 @@ en-US:
       back: "← back to the site"
     destroy:
       success: "Unsubscribed. You will not receive the clipping anymore."
+  auth:
+    title: "Sign in"
+    sessions:
+      prompt: "./login.sh"
+      title: "Sign in"
+      email: "email"
+      password: "password"
+      submit: "sign in"
+      forgot: "forgot password?"
+      invalid_credentials: "Invalid email or password."
+      rate_limited: "Too many attempts. Try again in a few minutes."
+      signed_out: "You have been signed out."
+    passwords:
+      new:
+        prompt: "./reset.sh"
+        title: "Reset password"
+        instructions: "Enter the account email and we will send a link to set a new password."
+        email: "email"
+        submit: "send instructions"
+        back: "← back to sign in"
+      edit:
+        prompt: "./new-password.sh"
+        title: "Set a new password"
+        password: "new password"
+        password_confirmation: "repeat the new password"
+        submit: "save"
+      reset_sent: "Password reset instructions sent (if an account with that email exists)."
+      reset_done: "Password has been reset. Sign in with the new password."
+      mismatch: "Passwords do not match."
+      invalid_token: "The reset link is invalid or has expired."
+      rate_limited: "Too many attempts. Try again in a few minutes."
+      mailer:
+        subject: "Reset your password"
+        intro: "We received a request to reset your account password."
+        link: "set a new password"
+        expiry: "The link expires in %{duration}."

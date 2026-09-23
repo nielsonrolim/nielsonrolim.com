@@ -1,11 +1,12 @@
 module Admin
   # Base class for the private admin area.
   #
-  # Every route under /admin is behind HTTP Basic Auth. Credentials come from the
-  # environment, and the area fails closed: if either is missing, requests get a
-  # 403 rather than becoming world-readable.
+  # Every route under /admin requires a session (see the Authentication concern
+  # and SessionsController). The area fails closed: if no admin user exists yet,
+  # requests get a 403 rather than a login page that cannot possibly succeed.
   class BaseController < ApplicationController
-    before_action :require_admin_credentials
+    before_action :deny_when_no_admin_user
+    before_action :require_authentication
 
     layout "admin"
 
@@ -17,21 +18,11 @@ module Admin
       {}
     end
 
-    def require_admin_credentials
-      username = ENV["READER_USERNAME"].presence
-      password = ENV["READER_PASSWORD"].presence
+    def deny_when_no_admin_user
+      return if User.exists?
 
-      if username.blank? || password.blank?
-        Rails.logger.error("[admin] READER_USERNAME/READER_PASSWORD are not set; denying access")
-        head :forbidden
-        return
-      end
-
-      authenticate_or_request_with_http_basic(t("admin.realm")) do |name, given_password|
-        # Non-short-circuiting & so both comparisons always run.
-        ActiveSupport::SecurityUtils.secure_compare(name.to_s, username) &
-          ActiveSupport::SecurityUtils.secure_compare(given_password.to_s, password)
-      end
+      Rails.logger.error("[admin] no admin user exists; denying access")
+      head :forbidden
     end
   end
 end

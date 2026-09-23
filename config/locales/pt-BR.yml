@@ -148,7 +148,6 @@ pt-BR:
       long: "%d/%m/%Y %H:%M"
       short: "%H:%M"
   admin:
-    realm: "Área administrativa"
     title: "Admin"
     theme_toggle: "Alternar tema claro/escuro"
     nav:
@@ -158,6 +157,8 @@ pt-BR:
       subscribers: "[inscritos]"
       jobs: "[jobs]"
       back_to_site: "← voltar ao site"
+      signed_in_as: "conectado como %{email}"
+      logout: "sair"
     dashboard:
       prompt: "cat admin.md"
       title: "Painel"
@@ -444,3 +445,39 @@ pt-BR:
       back: "← voltar ao site"
     destroy:
       success: "Inscrição cancelada. Você não receberá mais o clipping."
+  auth:
+    title: "Entrar"
+    sessions:
+      prompt: "./login.sh"
+      title: "Entrar"
+      email: "e-mail"
+      password: "senha"
+      submit: "entrar"
+      forgot: "esqueci a senha"
+      invalid_credentials: "E-mail ou senha inválidos."
+      rate_limited: "Muitas tentativas. Tente novamente em alguns minutos."
+      signed_out: "Você saiu."
+    passwords:
+      new:
+        prompt: "./reset.sh"
+        title: "Recuperar senha"
+        instructions: "Informe o e-mail da conta e enviaremos um link para definir uma nova senha."
+        email: "e-mail"
+        submit: "enviar instruções"
+        back: "← voltar ao login"
+      edit:
+        prompt: "./new-password.sh"
+        title: "Definir nova senha"
+        password: "nova senha"
+        password_confirmation: "repita a nova senha"
+        submit: "salvar"
+      reset_sent: "Instruções de recuperação enviadas (se existir uma conta com esse e-mail)."
+      reset_done: "Senha redefinida. Entre com a nova senha."
+      mismatch: "As senhas não conferem."
+      invalid_token: "O link de recuperação é inválido ou expirou."
+      rate_limited: "Muitas tentativas. Tente novamente em alguns minutos."
+      mailer:
+        subject: "Redefinir sua senha"
+        intro: "Recebemos um pedido para redefinir a senha da sua conta."
+        link: "definir nova senha"
+        expiry: "O link expira em %{duration}."

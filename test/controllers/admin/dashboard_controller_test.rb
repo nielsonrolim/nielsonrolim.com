@@ -1,17 +1,11 @@
 require "test_helper"
 
 class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
-  setup { set_reader_credentials! }
-  teardown { restore_reader_credentials! }
-
-  test "requires credentials" do
-    get admin_root_path
-
-    assert_response :unauthorized
-  end
+  setup { sign_in_as_admin }
+  teardown { sign_out }
 
   test "shows the totals" do
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_response :success
     assert_select "dt", /fontes/
@@ -27,7 +21,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the top-level navigation with the section links" do
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_response :success
     assert_select "nav a[href=?]", admin_root_path
@@ -41,13 +35,13 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "does not render the reader sub-navigation outside the reader" do
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_select "nav", text: /\[entradas\]/, count: 0
   end
 
   test "summarises the latest issue" do
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_response :success
     assert_select "body", /Última edição: #{Regexp.escape(newsletters(:last_week).subject)}/
@@ -56,7 +50,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
   test "says so when no issue has been sent" do
     Newsletter.destroy_all
 
-    get admin_root_path, headers: reader_headers
+    get admin_root_path
 
     assert_response :success
     assert_select "body", /Nenhuma edição enviada ainda/

@@ -1,0 +1,22 @@
+<section class="max-w-measure">
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("auth.passwords.edit.prompt") %></p>
+  <h1 class="mt-[0.1rem] mb-6 text-lead font-bold text-ink"><%= t("auth.passwords.edit.title") %></h1>
+
+  <%= form_with url: password_path(params[:token]), method: :put, class: "grid gap-6" do |form| %>
+    <div>
+      <%= form.label :password, t("auth.passwords.edit.password"), class: "mb-1 block text-chrome text-muted" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72,
+            class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+    </div>
+
+    <div>
+      <%= form.label :password_confirmation, t("auth.passwords.edit.password_confirmation"), class: "mb-1 block text-chrome text-muted" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72,
+            class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <%= form.submit t("auth.passwords.edit.submit"), class: "btn btn--primary" %>
+    </div>
+  <% end %>
+</section>
