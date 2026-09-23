@@ -104,6 +104,26 @@ class FakeSummaryGenerator
   end
 end
 
+# Stands in for ArticleFetcher inside jobs. Returns the same Result shape the
+# real fetcher builds from the page.
+class FakeArticleFetcher
+  attr_reader :calls
+
+  def initialize(title: "Fetched title", text: "Fetched article body.", error: nil)
+    @title = title
+    @text = text
+    @error = error
+    @calls = []
+  end
+
+  def call(url)
+    @calls << url
+    raise @error if @error
+
+    ArticleFetcher::Result.new(title: @title, text: @text)
+  end
+end
+
 # Wraps a JSON event stream the way `opencode run --format json` emits it.
 module OpencodeEventHelpers
   def opencode_json_output(text, session_id: "ses_test")

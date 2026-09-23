@@ -255,15 +255,19 @@ local workers — the Docker `jobs` container writes to the production queue.
 
 1. **Clip** an entry → a `Clipping` is created (unique per entry while unsent) and
    `GenerateSummaryJob` is enqueued.
-2. **Summarize** — the job shells out to
+2. **Summarize** — the job first makes sure it has the article text: a feed
+   clipping arrives with only the RSS excerpt, so its page is fetched once and
+   the text kept (a failed fetch falls back to the excerpt). It then shells out
+   to
    `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free --standalone`
    and asks for a single JSON object: the article's language, its title
-   translated into the other language, and a summary in *both* languages. The
-   detected language moves the source variant to that language; the title and the
-   summary in the article's own language stay on it, and the other language's
-   title and summary land on the generated variant beside it. A manual variant is
-   left alone. Up to 3 attempts; a clipping whose summary keeps failing is marked
-   `failed` and still ships, with its source title and no summary.
+   translated into the other language, and a complete ~100–150 word summary in
+   *both* languages. The detected language moves the source variant to that
+   language; the title and the summary in the article's own language stay on it,
+   and the other language's title and summary land on the generated variant
+   beside it. A manual variant is left alone. Up to 3 attempts; a clipping whose
+   summary keeps failing is marked `failed` and still ships, with its source
+   title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is

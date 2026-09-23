@@ -6,8 +6,8 @@
 class ArticleFetcher
   Error = Class.new(StandardError)
 
-  # Bound on what we keep as the generation source; the generator truncates
-  # further anyway.
+  # Bound on what we keep as the generation source. SummaryGenerator allows as
+  # many characters, so the whole stored article reaches the model.
   MAX_TEXT_CHARS = 20_000
 
   # Never part of an article's text.

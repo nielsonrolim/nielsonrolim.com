@@ -182,6 +182,17 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes prompt, '"The article"'
   end
 
+  test "asks for a complete summary of about 100 to 150 words" do
+    cli = cli_returning(payload)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
+
+    prompt = cli.prompt
+    assert_match(/complete summary/, prompt)
+    assert_includes prompt, "100 to 150 words"
+    assert_match(/cover the whole article/i, prompt)
+  end
+
   test "truncates an oversized body" do
     cli = cli_returning(payload)
 

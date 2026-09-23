@@ -55,7 +55,7 @@
               <div>
                 <%= label_tag "clipping_summary_#{suffix}", t("reader.clippings.edit.summary"),
                       class: "mb-1 block text-meta text-muted" %>
-                <%= text_area_tag "clipping[summary_#{suffix}]", variant&.summary, rows: 4,
+                <%= text_area_tag "clipping[summary_#{suffix}]", variant&.summary, rows: 8,
                       class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
               </div>
             </div>

@@ -35,10 +35,11 @@ class Clipping < ApplicationRecord
   # off a generation run.
   after_create_commit :enqueue_summary_generation, if: :pending?
 
-  # The text the summary is generated from: the feed entry's own summary, or the
-  # article text stored when the clipping was added by hand.
+  # The text the summary is generated from: the article text stored when the
+  # clipping was added or fetched (the whole page), falling back to the feed
+  # entry's own summary when no full text could be fetched.
   def summary_source
-    entry&.summary.presence || source_text
+    source_text.presence || entry&.summary
   end
 
   # Added by hand from a URL, with no feed entry behind it.

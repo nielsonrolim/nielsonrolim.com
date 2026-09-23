@@ -259,11 +259,18 @@ class ClippingTest < ActiveSupport::TestCase
     assert_equal "Rails 8.1 ships with a new queue UI", clippings(:queued).display_title
   end
 
-  test "summary_source is the entry summary when there is one" do
+  test "summary_source falls back to the entry summary when no text is stored" do
     assert_equal entries(:rails_eight).summary, clippings(:queued).summary_source
   end
 
-  test "summary_source falls back to the stored article text" do
+  test "summary_source prefers the stored article text over the entry summary" do
+    clipping = clippings(:queued)
+    clipping.source_text = "texto completo do artigo"
+
+    assert_equal "texto completo do artigo", clipping.summary_source
+  end
+
+  test "summary_source uses the stored article text when there is no entry" do
     clipping = build_clipping(source_text: "texto colado à mão")
 
     assert_equal "texto colado à mão", clipping.summary_source
