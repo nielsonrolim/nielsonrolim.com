@@ -66,14 +66,16 @@ class SummaryGenerator
       - "summary_en_us": a complete summary of the article in English, about 100 to 150 words (4 to 6 sentences).
 
       How to write each summary:
-      - Open directly with the most important claim, finding, or action. Skip any framing sentence about the article itself.
-      - Cover the whole article: the main claim, the facts, numbers and examples that support it, and the conclusion or what it means.
+      - Write about the subject itself and state its claims directly. The summary must never mention the article, the text, the video, the author or the writer.
+      - Open directly with the most important claim, finding, or action, and cover the whole article: the main claim, the facts, numbers and examples that support it, and the conclusion or what it means.
+      - Never name the author or describe them as a person, and never attribute claims to someone ("a autora defende", "a veteran developer says"). Report what is true, not who said it.
+      - Summarize only the article's own text. Ignore comments, replies, reader discussion, bylines and author bios.
       - Stay within about 150 words. Do not pad with generic filler or repeat yourself.
-      - Never begin with "O artigo", "Este artigo", "O autor", "O texto", "The article", "This article", "The author" or "The text".
+      - Avoid meta-referential phrasing anywhere, such as "O artigo", "O texto argumenta", "O autor defende", "The article", "The text argues", "The author claims".
       - Avoid generic coverage verbs: apresenta, discute, aborda, explora, covers, discusses, presents, explores, provides.
-      - Bad (pt-BR): "O artigo apresenta um checklist prático para proteger servidores Linux..."
+      - Bad (pt-BR): "O texto argumenta que proteger servidores Linux exige mudar a porta padrão do SSH."
       - Good (pt-BR): "Proteger servidores Linux contra força bruta via SSH exige mudar a porta padrão, desativar o login de root, usar autenticação por chave e bloquear IPs suspeitos com o Fail2ban. Ferramentas de rate limiting reduzem a superfície de ataque, e a auditoria periódica dos logs revela as tentativas que passaram. A conclusão é que nenhuma medida isolada basta: a defesa depende de camadas combinadas."
-      - Bad (en-US): "The article discusses the race in the AI market..."
+      - Bad (en-US): "The text argues that harness engineering is the competitive frontier of the AI market."
       - Good (en-US): "Harness engineering is becoming the competitive frontier of the AI market, as toolmakers race to make reliable AI solutions easier to build. The work shifts from prompt wording to the scaffolding around the model: evaluation, tool contracts and recovery from failure. Teams that treat that harness as a product, and not an afterthought, ship dependable agents faster than those still chasing raw model scores."
 
       Rules:

@@ -13,6 +13,14 @@ class ArticleFetcher
   # Never part of an article's text.
   NOISE_SELECTORS = "script, style, noscript, nav, header, footer, aside, form, iframe, svg, figcaption"
 
+  # Reader discussion is not the article, yet comment sections often sit inside
+  # the same <article>/<main> container. When they leak into the text, the model
+  # reads a commenter's name and profile as the article's author, so they are
+  # dropped before extraction. Covers the common comment containers (WordPress,
+  # Disqus, dev.to).
+  COMMENT_SELECTORS = "#comments, #comments-container, .comments, .comment-list, " \
+                      "#disqus_thread, [id^='comment-node-']"
+
   Result = Struct.new(:title, :text, keyword_init: true)
 
   def initialize(transport: HttpTransport.default)
@@ -47,7 +55,7 @@ class ArticleFetcher
   end
 
   def extract_text(document)
-    document.css(NOISE_SELECTORS).remove
+    document.css("#{NOISE_SELECTORS}, #{COMMENT_SELECTORS}").remove
 
     container = document.at_css("article") || document.at_css("main") || document.at_css("body")
     plain_text(container&.text).to_s[0, MAX_TEXT_CHARS]

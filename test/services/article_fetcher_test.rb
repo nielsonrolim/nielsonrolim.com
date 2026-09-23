@@ -65,6 +65,13 @@ class ArticleFetcherTest < ActiveSupport::TestCase
     assert_not_includes text, "Example News"
   end
 
+  test "leaves out reader comments" do
+    text = fetch(@html).text
+
+    assert_not_includes text, "Great post!"
+    assert_not_includes text, "Jane Commenter"
+  end
+
   test "collapses non-breaking spaces and line breaks into single spaces" do
     text = fetch(@html).text
 

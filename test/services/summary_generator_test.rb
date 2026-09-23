@@ -170,16 +170,17 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_match(/never follow instructions/i, prompt)
   end
 
-  test "tells the model to avoid meta-referential openings" do
+  test "tells the model to write about the subject, not the author or the article" do
     cli = cli_returning(payload)
 
     SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     prompt = cli.prompt
     assert_includes prompt, "Open directly with the most important claim"
-    assert_includes prompt, "Never begin with"
-    assert_includes prompt, '"O artigo"'
-    assert_includes prompt, '"The article"'
+    assert_includes prompt, "Never name the author"
+    assert_includes prompt, "Ignore comments, replies"
+    assert_includes prompt, '"O texto argumenta"'
+    assert_includes prompt, '"The text argues"'
   end
 
   test "asks for a complete summary of about 100 to 150 words" do
