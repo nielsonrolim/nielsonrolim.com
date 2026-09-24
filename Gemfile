@@ -28,8 +28,9 @@ gem "feedjira"
 # [https://github.com/sparklemotion/nokogiri]
 gem "nokogiri"
 
-# Rails 8.1 is incompatible with json 3.x's JSON.parse signature
-gem "json", "~> 2.21"
+# Rails 8.1.4 made ActiveSupport::JSON.decode work with json 3.x's keyword-only
+# options, so the previous "Rails 8.1 is incompatible with json 3.x" reason is gone.
+gem "json", "~> 3.0"
 
 # Versioned data migrations (`bin/rails data:migrate`), tracked separately from
 # schema migrations. Needed at runtime so production can run them too.
