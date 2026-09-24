@@ -1,4 +1,4 @@
-FROM ruby:4.0.6-slim AS build
+FROM ruby:4.0.7-slim AS build
 
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     build-essential git libsqlite3-dev pkg-config \
@@ -17,7 +17,7 @@ COPY . .
 # at runtime via env_file). Precompiling assets needs no real credentials.
 RUN SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile
 
-FROM ruby:4.0.6-slim
+FROM ruby:4.0.7-slim
 
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libsqlite3-0 curl ca-certificates unzip sqlite3 \

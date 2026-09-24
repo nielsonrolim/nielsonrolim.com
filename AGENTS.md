@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal site + private RSS→newsletter app. **Ruby 4.0.6 / Rails 8.1**, SQLite, no Node/npm (Tailwind and Hotwire run without a JS build step).
+Personal site + private RSS→newsletter app. **Ruby 4.0.7 / Rails 8.1**, SQLite, no Node/npm (Tailwind and Hotwire run without a JS build step).
 
 `README.md` is the detailed source of truth — read it before large changes. `docs/superpowers/specs/2026-09-13-personal-website-design.md` holds the original design intent.
 
