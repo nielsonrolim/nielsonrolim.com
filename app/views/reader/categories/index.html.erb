@@ -26,20 +26,25 @@
       <% @categories.each do |category| %>
         <li class="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line py-[0.7rem] last:border-b">
           <%= form_with model: category, url: reader_category_path(category), method: :patch,
-                class: "flex min-w-[16rem] flex-1 items-center gap-2" do |form| %>
+                id: dom_id(category, :rename), class: "flex min-w-[16rem] flex-1 items-center" do |form| %>
             <%= form.text_field :name,
-                  class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
-            <%= form.submit t("reader.categories.actions.rename"), class: "btn btn--sm btn--neutral" %>
+                  class: "w-full min-w-0 rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
           <% end %>
 
-          <span class="text-meta text-muted">
+          <%# Fixed width so the count column lines up regardless of digit count. %>
+          <span class="w-[5rem] shrink-0 text-right text-meta text-muted">
             <%= t("reader.categories.feed_count", count: @feed_counts[category.id].to_i) %>
           </span>
+
+          <%# Submit lives outside the form but points at it, so the order reads
+              "count, save, remove" while the button still submits the rename. %>
+          <%= submit_tag t("reader.categories.actions.rename"),
+                form: dom_id(category, :rename), class: "btn btn--sm btn--neutral shrink-0" %>
 
           <%= button_to t("reader.categories.actions.remove"), reader_category_path(category), method: :delete,
                 data: { confirm: t("reader.categories.actions.confirm_remove",
                                    name: category.name, count: @feed_counts[category.id].to_i) },
-                class: "btn btn--sm btn--danger",
+                class: "btn btn--sm btn--danger shrink-0",
                 form: { class: "m-0" } %>
         </li>
       <% end %>
