@@ -218,6 +218,16 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, css_select("details").text.scan("Ruby Weekly (curadoria)").size
   end
 
+  test "the picker shows how many feeds each category has" do
+    get reader_entries_path
+
+    assert_select "details p", text: "Ruby (1)"
+    assert_select "details p", text: "News (1)"
+    assert_select "details p", text: "Web (1)"
+    assert_select "details p", text: "sem categoria"
+    assert_select "details p", text: /sem categoria \(/, count: 0
+  end
+
   test "filters entries by category" do
     get reader_entries_path, params: { category_id: categories(:ruby).id }
 

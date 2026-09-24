@@ -21,11 +21,15 @@
           [+ <%= t("reader.entries.filters.choose") %>]
         </summary>
 
-        <div class="mt-2 grid grid-cols-1 gap-x-6 gap-y-3 border-l border-line pl-4 narrow:grid-cols-2">
+        <div class="mt-2 columns-1 gap-x-6 border-l border-line pl-4 narrow:columns-2">
           <% @feed_groups.each do |category, feeds| %>
-            <div>
+            <div class="mb-3 break-inside-avoid">
               <p class="m-0 text-meta text-ruby">
-                <%= category&.name || t("reader.entries.filters.uncategorized") %>
+                <% if category %>
+                  <%= t("reader.entries.filters.category_with_count", name: category.name, count: feeds.size) %>
+                <% else %>
+                  <%= t("reader.entries.filters.uncategorized") %>
+                <% end %>
               </p>
               <ul class="m-0 list-none p-0 text-meta">
                 <% feeds.each do |feed| %>
@@ -45,7 +49,9 @@
       <span class="text-ruby"><%= t("reader.entries.filters.category") %>:</span>
       <%= link_to t("reader.entries.filters.all_categories"), reader_entries_path(filters.except(:category_id)),
             class: "no-underline #{@category ? 'text-muted hover:text-ink' : 'font-bold text-ink'}" %>
-      <% @categories.each do |category| %>
+      <% if @categories.any? %><span>·</span><% end %>
+      <% @categories.each_with_index do |category, index| %>
+        <%= "·" unless index.zero? %>
         <%= link_to category.name, reader_entries_path(filters.merge(category_id: category.id)),
               class: "no-underline #{@category&.id == category.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
       <% end %>

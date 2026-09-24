@@ -246,6 +246,7 @@ en-US:
         all_feeds: "all"
         choose: "choose"
         category: "category"
+        category_with_count: "%{name} (%{count})"
         all_categories: "all"
         uncategorized: "uncategorised"
         since: "range"
