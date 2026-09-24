@@ -368,9 +368,15 @@ en-US:
         invalid: "Could not save: %{error}"
       generate_summary:
         queued: "Summary and translation queued: %{title}"
+      refetch_source:
+        success: "Text refreshed: %{title}"
+        failure: "Could not fetch the page: %{error}"
+        no_url: "This clipping has no URL to fetch."
       actions:
         edit: "edit"
         generate_summary: "generate summary and translation"
+        refetch_source: "fetch text again"
+        confirm_overwrite_summary: "This will replace the hand-edited summary. Continue?"
         remove: "remove"
         confirm_remove: "Remove '%{title}' from the next issue?"
       destroy:

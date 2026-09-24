@@ -211,6 +211,26 @@ class ClippingTest < ActiveSupport::TestCase
     assert_equal "Summary new.", clipping.summary_for("en-US")
   end
 
+  test "apply_summary overwrites a manual edition when forced" do
+    clipping = clippings(:queued)
+    clipping.variant_for("pt-BR").update!(origin: :manual, title: "Meu título", summary: "Meu resumo")
+
+    clipping.apply_summary(
+      SummaryGenerator::Result.new(
+        language: "en-US",
+        title_translated: "Novo título",
+        summaries: { "pt-BR" => "Resumo novo.", "en-US" => "Summary new." }
+      ),
+      overwrite: true
+    )
+    clipping.save!
+
+    # The forced run refreshes the summary but keeps the hand-written title.
+    assert_equal "Meu título", clipping.title_for("pt-BR")
+    assert_equal "Resumo novo.", clipping.summary_for("pt-BR")
+    assert clipping.variant_for("pt-BR").manual?
+  end
+
   test "apply_summary moves the source edition to the detected language" do
     clipping = clippings(:pending)
 

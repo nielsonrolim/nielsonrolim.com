@@ -121,11 +121,32 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
   end
 
   test "retries with an incremented attempt when generation fails" do
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2 ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2, false ]) do
       job_with(FakeSummaryGenerator.new(error: SummaryGenerator::Error.new("boom")), attempt: 1).perform_now
     end
 
     assert_not @clipping.reload.failed?
+  end
+
+  test "the retry carries the overwrite flag" do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2, true ]) do
+      job = GenerateSummaryJob.new(@clipping.id, 1, true)
+      job.summary_generator = FakeSummaryGenerator.new(error: SummaryGenerator::Error.new("boom"))
+      job.article_fetcher = FakeArticleFetcher.new
+      job.perform_now
+    end
+  end
+
+  test "overwrites a hand-edited summary when asked to" do
+    clipping = clippings(:queued)
+    clipping.variant_for("en-US").update!(origin: :manual, summary: "Resumo antigo.")
+
+    job = GenerateSummaryJob.new(clipping.id, 1, true)
+    job.summary_generator = FakeSummaryGenerator.new(result: result)
+    job.article_fetcher = FakeArticleFetcher.new
+    job.perform_now
+
+    assert_equal "Summary in English.", clipping.reload.summary_for("en-US")
   end
 
   test "marks the clipping failed once the attempts run out" do
@@ -151,7 +172,7 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
   test "a CLI timeout is retried like any other generation failure" do
     generator = FakeSummaryGenerator.new(error: OpencodeCli::TimeoutError.new("too slow"))
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2 ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2, false ]) do
       job_with(generator, attempt: 1).perform_now
     end
   end

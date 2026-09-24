@@ -10,11 +10,23 @@
       <span class="text-err"><%= @clipping.summary_error %></span>
     <% end %>
 
-    <%# Runs the summary and the translation on demand, from whatever source the
-        clipping has now (pasted text included). %>
-    <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(@clipping), method: :post,
-          class: "ml-auto btn btn--sm btn--primary",
-          form: { class: "m-0 inline" } %>
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      <%# Re-fetches the page to refresh the stored text, useful after an
+          extraction fix or when the first fetch came in incomplete. %>
+      <% if @clipping.primary_variant&.url.present? %>
+        <%= button_to t("reader.clippings.actions.refetch_source"), refetch_source_reader_clipping_path(@clipping), method: :post,
+              class: "btn btn--sm btn--neutral",
+              form: { class: "m-0 inline" } %>
+      <% end %>
+
+      <%# Runs the summary and the translation on demand, from whatever source the
+          clipping has now (pasted text included). Overwrites a hand-edited
+          summary, so it asks first when there is one. %>
+      <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(@clipping), method: :post,
+            class: "btn btn--sm btn--primary",
+            form: { class: "m-0 inline" },
+            data: (@clipping.variants.any?(&:manual?) ? { confirm: t("reader.clippings.actions.confirm_overwrite_summary") } : {}) %>
+    </div>
   </div>
 
   <div class="max-w-measure">

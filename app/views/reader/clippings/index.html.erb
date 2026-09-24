@@ -94,7 +94,8 @@
             <% if clipping.failed? %>
               <%= button_to t("reader.clippings.actions.generate_summary"), generate_summary_reader_clipping_path(clipping), method: :post,
                     class: "btn btn--sm btn--primary",
-                    form: { class: "m-0 inline" } %>
+                    form: { class: "m-0 inline" },
+                    data: (clipping.variants.any?(&:manual?) ? { confirm: t("reader.clippings.actions.confirm_overwrite_summary") } : {}) %>
             <% end %>
 
             <%= button_to t("reader.clippings.actions.remove"), reader_clipping_path(clipping), method: :delete,

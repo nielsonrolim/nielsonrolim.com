@@ -368,9 +368,15 @@ pt-BR:
         invalid: "Não foi possível salvar: %{error}"
       generate_summary:
         queued: "Sumário e tradução enfileirados: %{title}"
+      refetch_source:
+        success: "Texto atualizado: %{title}"
+        failure: "Não foi possível buscar a página: %{error}"
+        no_url: "Este recorte não tem URL para buscar."
       actions:
         edit: "editar"
         generate_summary: "gerar sumário e tradução"
+        refetch_source: "buscar texto novamente"
+        confirm_overwrite_summary: "Isso vai substituir o resumo editado à mão. Continuar?"
         remove: "remover"
         confirm_remove: "Remover '%{title}' da próxima edição?"
       destroy:

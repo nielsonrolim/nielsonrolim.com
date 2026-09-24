@@ -6,6 +6,9 @@
 # opencode run is slow and can fail transiently, so it is retried a few times;
 # once the attempts run out the clipping is marked failed and still ships in the
 # newsletter, just without a summary.
+#
+# `overwrite` is set by the explicit "generate" button: it refreshes summaries
+# that a person edited by hand, which an automatic run leaves alone.
 class GenerateSummaryJob < ApplicationJob
   queue_as :summaries
 
@@ -16,7 +19,7 @@ class GenerateSummaryJob < ApplicationJob
   # network. Real runs (perform_later) always build the defaults.
   attr_writer :summary_generator, :article_fetcher
 
-  def perform(clipping_id, attempt = 1)
+  def perform(clipping_id, attempt = 1, overwrite = false)
     clipping = Clipping.find_by(id: clipping_id)
     return if clipping.nil?
 
@@ -29,14 +32,14 @@ class GenerateSummaryJob < ApplicationJob
       source: clipping.summary_source
     )
 
-    clipping.apply_summary(result)
+    clipping.apply_summary(result, overwrite: overwrite)
     clipping.save!
   rescue SummaryGenerator::Error, OpencodeCli::TimeoutError => e
     if attempt < MAX_ATTEMPTS
       Rails.logger.info(
         "[GenerateSummaryJob] clipping=#{clipping_id} attempt=#{attempt} failed: #{e.message}; retrying"
       )
-      self.class.set(wait: attempt * RETRY_WAIT).perform_later(clipping_id, attempt + 1)
+      self.class.set(wait: attempt * RETRY_WAIT).perform_later(clipping_id, attempt + 1, overwrite)
     else
       Rails.logger.warn(
         "[GenerateSummaryJob] clipping=#{clipping_id} failed after #{attempt} attempts: #{e.message}"

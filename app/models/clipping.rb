@@ -107,16 +107,17 @@ class Clipping < ApplicationRecord
   end
 
   # Stores one generation result: the translated title and the summary in each
-  # language. A variant the reader wrote or corrected by hand is left untouched;
-  # the source edition is moved to the detected language. The URL is never written
-  # here, so a published edition keeps its own address and a regeneration cannot
-  # overwrite one.
-  def apply_summary(result)
+  # language. A variant the reader wrote or corrected by hand is left untouched,
+  # unless `overwrite` is set — the explicit "generate" run, which refreshes the
+  # summaries but keeps a hand-written title. The source edition is moved to the
+  # detected language. The URL is never written here, so a published edition keeps
+  # its own address and a regeneration cannot overwrite one.
+  def apply_summary(result, overwrite: false)
     source = adopt_source_variant(result)
-    source.summary = result.summary_for(result.language) unless source.manual?
+    source.summary = result.summary_for(result.language) if overwrite || !source.manual?
 
     other = SupportedLanguages.other(result.language)
-    apply_translation(result, other) if other
+    apply_translation(result, other, overwrite: overwrite) if other
 
     self.summary_status = :summarized
     self.summary_error = nil
@@ -137,16 +138,19 @@ class Clipping < ApplicationRecord
   end
 
   # Fills the edition for the other language — the model's translated title and
-  # the summary in that language. Skips a manual edition, so a run never
-  # overwrites what a person wrote, and never touches the URL, so a translation
-  # without a page of its own falls back to the source edition's URL.
-  def apply_translation(result, locale)
+  # the summary in that language. Skips a manual edition unless `overwrite` is
+  # set, so an automatic run never overwrites what a person wrote; a forced run
+  # refreshes its summary but keeps the title it was given. Never touches the URL,
+  # so a translation without a page of its own falls back to the source edition's.
+  def apply_translation(result, locale, overwrite: false)
     variant = variant_for(locale)
-    return if variant&.manual?
+    return if variant&.manual? && !overwrite
 
     variant ||= variants.build(locale: locale)
-    variant.origin = :generated
-    variant.title = result.title_translated
+    unless variant.manual?
+      variant.origin = :generated
+      variant.title = result.title_translated
+    end
     variant.summary = result.summary_for(locale)
   end
 

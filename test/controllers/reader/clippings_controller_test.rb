@@ -109,7 +109,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = clippings(:pending)
     clipping.update!(summary_status: :failed, summary_error: "boom")
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id, 1, true ]) do
       post generate_summary_reader_clipping_path(clipping)
     end
 
@@ -324,10 +324,55 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal "Texto colado à mão.", clipping.reload.source_text
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id, 1, true ]) do
       post generate_summary_reader_clipping_path(clipping)
     end
 
     assert clipping.reload.pending?
+  end
+
+  test "refetching the source updates the stored text" do
+    clipping = clippings(:queued)
+
+    post refetch_source_reader_clipping_path(clipping)
+
+    assert_redirected_to edit_reader_clipping_path(clipping)
+    assert_includes clipping.reload.source_text, "Solid Queue replaces Redis"
+  end
+
+  test "refetching keeps the old text and reports a failed fetch" do
+    clipping = clippings(:queued)
+    clipping.update!(source_text: "texto antigo")
+    HttpTransport.default = transport_always(http_response(404, "gone"))
+
+    post refetch_source_reader_clipping_path(clipping)
+
+    assert_redirected_to edit_reader_clipping_path(clipping)
+    assert_equal "texto antigo", clipping.reload.source_text
+    follow_redirect!
+    assert_select ".toast--alert"
+  end
+
+  test "refetching without a URL reports it" do
+    clipping = Clipping.new(summary_status: :summarized)
+    clipping.variants.build(locale: "en-US", title: "Sem URL", summary: "Resumo.", origin: :generated)
+    clipping.save!
+
+    post refetch_source_reader_clipping_path(clipping)
+
+    assert_redirected_to edit_reader_clipping_path(clipping)
+    follow_redirect!
+    assert_select ".toast--alert"
+  end
+
+  test "the edit page offers to re-fetch the text and warns before overwriting a manual summary" do
+    clipping = clippings(:queued)
+    clipping.variant_for("pt-BR").update!(origin: :manual)
+
+    get edit_reader_clipping_path(clipping)
+
+    assert_response :success
+    assert_select "form[action=?]", refetch_source_reader_clipping_path(clipping)
+    assert_select "button[data-confirm=?]", I18n.t("reader.clippings.actions.confirm_overwrite_summary")
   end
 end

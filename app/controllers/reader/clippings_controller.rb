@@ -64,13 +64,42 @@ module Reader
 
     # Runs the summary and the translation for a clipping, on demand. Also how a
     # clipping added without a source gets one, once its text has been pasted in.
+    # This is an explicit request, so it overwrites a summary edited by hand; an
+    # automatic run leaves those alone (see Clipping#apply_summary).
     def generate_summary
       clipping = Clipping.find(params[:id])
       clipping.update!(summary_status: :pending, summary_error: nil)
-      GenerateSummaryJob.perform_later(clipping.id)
+      GenerateSummaryJob.perform_later(clipping.id, 1, true)
 
       redirect_back fallback_location: reader_clippings_path,
                     notice: t("reader.clippings.generate_summary.queued", title: clipping.display_title),
+                    status: :see_other
+    end
+
+    # Re-fetches the article and replaces the stored text, so a page whose
+    # extraction was fixed (or that came in incomplete) can be summarized again
+    # without deleting the clipping. Text pasted by hand is only replaced when
+    # this is asked for on purpose.
+    def refetch_source
+      clipping = Clipping.find(params[:id])
+      url = clipping.primary_variant&.url
+
+      if url.blank?
+        redirect_back fallback_location: edit_reader_clipping_path(clipping),
+                      alert: t("reader.clippings.refetch_source.no_url"),
+                      status: :see_other
+        return
+      end
+
+      article = ArticleFetcher.new.call(url)
+      clipping.update!(source_text: article.text)
+
+      redirect_back fallback_location: edit_reader_clipping_path(clipping),
+                    notice: t("reader.clippings.refetch_source.success", title: clipping.display_title),
+                    status: :see_other
+    rescue ArticleFetcher::Error => e
+      redirect_back fallback_location: edit_reader_clipping_path(clipping),
+                    alert: t("reader.clippings.refetch_source.failure", error: e.message),
                     status: :see_other
     end
 

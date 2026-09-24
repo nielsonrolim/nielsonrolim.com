@@ -81,7 +81,10 @@ Rails.application.routes.draw do
       end
 
       resources :clippings, only: [ :index, :create, :edit, :update, :destroy ] do
-        member { post :generate_summary }
+        member do
+          post :generate_summary
+          post :refetch_source
+        end
       end
 
       resources :newsletters, only: [ :index, :show, :create ]

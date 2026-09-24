@@ -186,9 +186,11 @@ edition when a language has no variant. The detection is not editable: it is wha
 places the model's summary, and the per-language content is what the reader edits.
 
 A variant is either `generated` by the model or `manual` when the reader wrote or
-corrected it. A manual edition is **never overwritten** by a later summary run, and
+corrected it. An automatic summary run **never overwrites** a manual edition, and
 no generation ever touches a URL, so typing the real translated URL and title
-(instead of the machine translation) is safe.
+(instead of the machine translation) is safe. The explicit **"gerar sumário e
+tradução"** button does overwrite it — that is a deliberate request — but keeps the
+hand-written title and asks for confirmation first.
 
 `/admin/reader/clippings` shows **both languages side by side**, labelled
 `publicado` for an edition with a URL and `tradução` for one without, plus a badge
@@ -210,7 +212,10 @@ When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping i
 **still created**, marked `failed` with the reason and with the host as its title,
 and the page sends you to `/admin/reader/clippings/:id/edit`. There you can paste
 the article text and press **"gerar sumário e tradução"**, which runs the summary
-and the translation on demand. The edit page exposes **one title, summary and
+and the translation on demand. **"buscar texto novamente"** re-fetches the page and
+replaces the stored source text, so a page whose extraction was fixed — or that came
+in incomplete — can be summarized again without deleting the clipping. The edit page
+exposes **one title, summary and
 optional URL per language**, plus the source text — so a story published in more
 than one language can be pointed at each edition by hand (fill the URL only for
 the languages that have a published page), a bad translation can be corrected, and
@@ -283,7 +288,7 @@ local workers — the Docker `jobs` container writes to the production queue.
    *both* languages. The detected language moves the source variant to that
    language; the title and the summary in the article's own language stay on it,
    and the other language's title and summary land on the generated variant
-   beside it. A manual variant is left alone. Up to 3 attempts; a clipping whose
+   beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts; a clipping whose
    summary keeps failing is marked `failed` and still ships, with its source
    title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
