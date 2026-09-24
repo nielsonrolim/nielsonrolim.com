@@ -1,8 +1,9 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-# 8.1.3.1 is the patch release fixing CVE-2026-66066 (activestorage).
-gem "rails", "8.1.3.1"
+# 8.1.4 is the current 8.1-series patch and includes the CVE-2026-66066
+# (activestorage) fix shipped in 8.1.3.1.
+gem "rails", "8.1.4"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use sqlite3 as the database for Active Record

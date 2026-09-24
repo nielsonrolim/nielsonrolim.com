@@ -32,7 +32,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 | Layer      | Choice                                              |
 | ---------- | --------------------------------------------------- |
 | Language   | Ruby 4.0.7                                          |
-| Framework  | Rails 8.1.3.1                                       |
+| Framework  | Rails 8.1.4                                         |
 | Database   | SQLite (file-based), separate DB for the queue       |
 | Server     | Puma                                                |
 | Jobs       | Solid Queue (workers + recurring schedule)           |
