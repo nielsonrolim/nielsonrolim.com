@@ -52,7 +52,9 @@ class FakeOpencodeCli
   attr_reader :calls
 
   def initialize(stdout: "", stderr: "", success: true, exitstatus: 0, error: nil)
-    @stdout = stdout
+    # An Array of stdouts replays one per call, so a test can drive the
+    # corrective retry (bad answer, then good) through the same fake.
+    @stdout = stdout.is_a?(Array) ? stdout.dup : stdout
     @stderr = stderr
     @status = FakeStatus.new(success, exitstatus)
     @error = error
@@ -63,7 +65,7 @@ class FakeOpencodeCli
     @calls << { args: args, timeout: timeout }
     raise @error if @error
 
-    [ @stdout, @stderr, @status ]
+    [ next_stdout, @stderr, @status ]
   end
 
   def last_args
@@ -72,6 +74,12 @@ class FakeOpencodeCli
 
   def prompt
     last_args&.at(1)
+  end
+
+  private
+
+  def next_stdout
+    @stdout.is_a?(Array) ? @stdout.shift.to_s : @stdout
   end
 end
 

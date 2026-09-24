@@ -1,5 +1,7 @@
 # Generates, in a single opencode call: the language an article is written in,
 # its title translated into the other language, and a summary in both languages.
+# A summary that still frames the piece around its author is retried once and,
+# if it persists, rejected (see META_PATTERNS).
 #
 # The article text comes from a third-party feed, so it is treated as untrusted
 # data in the prompt and the run itself is tool-free (see OpencodeCli).
@@ -15,6 +17,25 @@ class SummaryGenerator
   # Bounds the body sent to the model. Matches ArticleFetcher's own ceiling so a
   # fetched article is summarized whole, with no second truncation here.
   MAX_SOURCE_CHARS = 20_000
+
+  # Deterministic backstop for the prompt's "write about the subject, not the
+  # article or its author" rule. The free model keeps slipping into report
+  # framing ("It argues that…", "Ele defende que…", "O autor comprova…"), so a
+  # summary that still does it is regenerated once and rejected if it persists.
+  # The patterns are deliberately high precision: a false positive only costs a
+  # retry, but too many would turn clean summaries into failures.
+  META_PATTERNS = [
+    # An explicit reference to the article or its author.
+    /\b(?:the|an?|this)\s+(?:article|text|piece|video|author|writer)\b/i,
+    /\b(?:o|a|um|uma|este|esta|esse|essa)\s+(?:artigo|texto|peça|vídeo|autor|autora)\b/i,
+    # A pronoun or stand-in for the article/author followed by a reporting verb.
+    /\b(?:it|the author|the piece|the text|the article)\s+(?:argues|describes|proposes|contends|suggests|claims|states|advocates|recounts|explains)\b/i,
+    /\b(?:ele|ela|o autor|a autora|o texto|o artigo)\s+(?:defende|argumenta|descreve|propõe|sugere|afirma|sustenta|comprova|relata|explica)\b/i,
+    # A reporting verb whose subject is the author described as a person.
+    /\b(?:developer|professional|engineer|veteran|author|writer|desenvolvedor|profissional|engenheiro|veterano)\b[^.]{0,40}\b(?:describes|argues|advocates|descreve|defende|argumenta)\b/i,
+    # Portuguese null subject: a sentence that opens with a reporting verb.
+    /(?:\A|[.!?]\s+)(?:Propõe|Sugere|Defende|Argumenta|Afirma|Sustenta|Descreve|Relata|Explica|Comprova)\b/
+  ].freeze
 
   # What the model returned, once parsed and validated. `summaries` is keyed by
   # the locale strings the app uses ("pt-BR", "en-US").
@@ -35,11 +56,28 @@ class SummaryGenerator
   attr_reader :model, :timeout, :cli
 
   def call(title:, url:, source: nil)
+    result = generate(build_prompt(title: title, url: url, source: source))
+    return result unless meta_framing?(result)
+
+    # The prompt forbids report framing, but the free model still slips into it
+    # ("It argues that…", "Ele defende que…"). One corrective retry that quotes
+    # what it wrote; if it does it again, fail so the clipping is flagged for a
+    # manual pass instead of shipping a summary that reads like a book report.
+    corrected = generate(
+      build_prompt(title: title, url: url, source: source, correction: correction_section(result))
+    )
+    return corrected unless meta_framing?(corrected)
+
+    raise Error, "model kept framing the summary around the article or its author"
+  end
+
+  private
+
+  def generate(prompt)
     # `--standalone` starts a private opencode server for this run so the locked
     # config actually applies; without it the run attaches to the shared
     # background server, which owns its own config and ignores ours.
-    args = [ "run", build_prompt(title: title, url: url, source: source),
-             "--format", "json", "--model", model, "--standalone" ]
+    args = [ "run", prompt, "--format", "json", "--model", model, "--standalone" ]
 
     stdout, stderr, status = cli.exec(*args, timeout: timeout)
 
@@ -53,9 +91,27 @@ class SummaryGenerator
     build_result(extract_payload(text))
   end
 
-  private
+  # True when either summary still refers to the article or its author.
+  def meta_framing?(result)
+    META_PATTERNS.any? do |pattern|
+      result.summaries.values.any? { |summary| summary.to_s.match?(pattern) }
+    end
+  end
 
-  def build_prompt(title:, url:, source:)
+  # Appended to the prompt of the corrective retry: it quotes the framing the
+  # model just used so the second attempt knows exactly what to avoid.
+  def correction_section(result)
+    <<~SECTION
+      CORRECTION
+      Your previous answer framed the summary around the article or its author, which is forbidden. Rewrite BOTH summaries from scratch, stating the claims directly as facts about the subject. Every sentence's subject must be a real-world thing or idea, never the article or a person.
+
+      Previous answer (do not repeat its framing):
+      pt-BR: #{result.summary_for("pt-BR")}
+      en-US: #{result.summary_for("en-US")}
+    SECTION
+  end
+
+  def build_prompt(title:, url:, source:, correction: nil)
     <<~PROMPT
       You are a translation and summarization service. Reply with a single JSON object and nothing else.
 
@@ -66,17 +122,18 @@ class SummaryGenerator
       - "summary_en_us": a complete summary of the article in English, about 100 to 150 words (4 to 6 sentences).
 
       How to write each summary:
-      - Write about the subject itself and state its claims directly. The summary must never mention the article, the text, the video, the author or the writer.
+      - Write about the subject itself and state its claims directly, as facts. Every sentence's subject must be a real-world thing or idea, never the article or a person.
       - Open directly with the most important claim, finding, or action, and cover the whole article: the main claim, the facts, numbers and examples that support it, and the conclusion or what it means.
-      - Never name the author or describe them as a person, and never attribute claims to someone ("a autora defende", "a veteran developer says"). Report what is true, not who said it.
+      - Never name the author or describe them as a person, and never attribute claims to someone. Do not use pronouns or stand-ins for the article or the author ("it", "the piece", "the text", "ele", "ela", "o autor", "a autora").
+      - Do not use reporting verbs that turn the summary into a book report: describes, argues, advocates, contends, proposes, suggests, claims, states, recounts, explains, descreve, defende, argumenta, propõe, sugere, afirma, sustenta, comprova, relata, explica.
       - Summarize only the article's own text. Ignore comments, replies, reader discussion, bylines and author bios.
       - Stay within about 150 words. Do not pad with generic filler or repeat yourself.
-      - Avoid meta-referential phrasing anywhere, such as "O artigo", "O texto argumenta", "O autor defende", "The article", "The text argues", "The author claims".
       - Avoid generic coverage verbs: apresenta, discute, aborda, explora, covers, discusses, presents, explores, provides.
-      - Bad (pt-BR): "O texto argumenta que proteger servidores Linux exige mudar a porta padrão do SSH."
+      - Bad (pt-BR): "O texto argumenta que proteger servidores Linux exige mudar a porta padrão do SSH." and "Ele defende que acompanhar cada novidade é impossível."
       - Good (pt-BR): "Proteger servidores Linux contra força bruta via SSH exige mudar a porta padrão, desativar o login de root, usar autenticação por chave e bloquear IPs suspeitos com o Fail2ban. Ferramentas de rate limiting reduzem a superfície de ataque, e a auditoria periódica dos logs revela as tentativas que passaram. A conclusão é que nenhuma medida isolada basta: a defesa depende de camadas combinadas."
-      - Bad (en-US): "The text argues that harness engineering is the competitive frontier of the AI market."
+      - Bad (en-US): "The text argues that harness engineering is the competitive frontier of the AI market." and "It argues that staying current with every release is impossible."
       - Good (en-US): "Harness engineering is becoming the competitive frontier of the AI market, as toolmakers race to make reliable AI solutions easier to build. The work shifts from prompt wording to the scaffolding around the model: evaluation, tool contracts and recovery from failure. Teams that treat that harness as a product, and not an afterthought, ship dependable agents faster than those still chasing raw model scores."
+      #{correction}
 
       Rules:
       - Values are plain text: no markdown, no line breaks inside a value.

@@ -11,7 +11,15 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   end
 
   def cli_returning(data, **options)
-    FakeOpencodeCli.new(stdout: opencode_json_output(data.is_a?(String) ? data : JSON.generate(data)), **options)
+    stdout =
+      if data.is_a?(Array)
+        # One event stream per call, so a test can drive the corrective retry.
+        data.map { |item| opencode_json_output(item.is_a?(String) ? item : JSON.generate(item)) }
+      else
+        opencode_json_output(data.is_a?(String) ? data : JSON.generate(data))
+      end
+
+    FakeOpencodeCli.new(stdout: stdout, **options)
   end
 
   test "returns the detected language, the translated title and both summaries" do
@@ -179,8 +187,89 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes prompt, "Open directly with the most important claim"
     assert_includes prompt, "Never name the author"
     assert_includes prompt, "Ignore comments, replies"
-    assert_includes prompt, '"O texto argumenta"'
-    assert_includes prompt, '"The text argues"'
+    assert_includes prompt, "Do not use pronouns or stand-ins"
+    assert_includes prompt, "reporting verbs"
+    assert_includes prompt, "O texto argumenta"
+    assert_includes prompt, "The text argues"
+  end
+
+  test "does not retry a clean summary" do
+    cli = cli_returning(payload)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+
+    assert_equal 1, cli.calls.size
+  end
+
+  test "accepts a summary that states the claims directly" do
+    clean = payload(
+      pt: "Proteger servidores Linux exige camadas combinadas de defesa.",
+      en: "Harness engineering is becoming the competitive frontier of the AI market."
+    )
+    cli = cli_returning(clean)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+
+    assert_equal 1, cli.calls.size
+  end
+
+  test "retries once when the summary frames the article or its author" do
+    bad = payload(pt: "Ele defende que acompanhar cada novidade é impossível.",
+                  en: "It argues that keeping up with every release is impossible.")
+    good = payload(pt: "Acompanhar cada novidade é impossível.",
+                   en: "Keeping up with every release is impossible.")
+    cli = cli_returning([ bad, good ])
+
+    result = SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+
+    assert_equal 2, cli.calls.size
+    assert_equal "Acompanhar cada novidade é impossível.", result.summary_for("pt-BR")
+    assert_equal "Keeping up with every release is impossible.", result.summary_for("en-US")
+  end
+
+  test "the corrective retry quotes the framing it must avoid" do
+    bad = payload(pt: "Ele defende que X.", en: "It argues that Y.")
+    cli = cli_returning([ bad, payload ])
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+
+    prompt = cli.prompt
+    assert_includes prompt, "CORRECTION"
+    assert_includes prompt, "Ele defende que X."
+    assert_includes prompt, "It argues that Y."
+  end
+
+  test "fails when the model keeps framing the summary around the article" do
+    bad = payload(pt: "O autor comprova a tese.", en: "The article describes the exhaustion.")
+    cli = cli_returning([ bad, bad ])
+
+    error = assert_raises(SummaryGenerator::Error) do
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    end
+
+    assert_match(/kept framing/, error.message)
+    assert_equal 2, cli.calls.size
+  end
+
+  test "recognises the report framing the prompt forbids" do
+    framings = [
+      "An article describes the exhaustion.",
+      "It argues that staying current is impossible.",
+      "The author advocates choosing fewer areas.",
+      "the piece contends that pacing matters.",
+      "Ele defende que acompanhar é impossível.",
+      "O autor comprova a tese.",
+      "Um profissional com 45 anos descreve o esgotamento.",
+      "Propõe que fazer pausas é produtivo."
+    ]
+
+    framings.each do |framing|
+      cli = cli_returning([ payload(pt: framing, en: framing), payload ])
+
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+
+      assert_equal 2, cli.calls.size, "expected a retry for: #{framing}"
+    end
   end
 
   test "asks for a complete summary of about 100 to 150 words" do
