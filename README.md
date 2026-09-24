@@ -282,7 +282,7 @@ local workers — the Docker `jobs` container writes to the production queue.
    clipping arrives with only the RSS excerpt, so its page is fetched once and
    the text kept (a failed fetch falls back to the excerpt). It then shells out
    to
-   `opencode run <prompt> --format json --model opencode/ling-3.0-flash-fin-free --standalone`
+   `opencode run <prompt> --format json --model opencode/muse-spark-1.3-contributor-free --standalone`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a complete ~100–150 word summary in
    *both* languages. The detected language moves the source variant to that
@@ -372,7 +372,7 @@ environment variables are read:
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
-| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/ling-3.0-flash-fin-free`).   |
+| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/muse-spark-1.3-contributor-free`).   |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |

@@ -12,7 +12,7 @@ class SummaryGenerator
   # shell outright, so the locked config marks those two as `ask` instead: the
   # non-interactive run declines every ask, so no tool ever executes and the
   # free model is accepted.
-  DEFAULT_MODEL = "opencode/ling-3.0-flash-fin-free"
+  DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
 
   # Bounds the body sent to the model. Matches ArticleFetcher's own ceiling so a
   # fetched article is summarized whole, with no second truncation here.
