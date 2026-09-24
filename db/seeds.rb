@@ -17,7 +17,9 @@ FEEDS = {
     [ "Julia Evans", "https://jvns.ca/atom.xml" ],
     [ "overreacted (Dan Abramov)", "https://overreacted.io/rss.xml" ],
     [ "Kent C. Dodds", "https://kentcdodds.com/blog/rss.xml" ],
-    [ "Pragmatic Engineer", "https://blog.pragmaticengineer.com/rss/" ]
+    [ "Pragmatic Engineer", "https://blog.pragmaticengineer.com/rss/" ],
+    [ "Full Cycle", "https://fullcycle.com.br/feed/" ],
+    [ "iMasters", "https://imasters.com.br/feed/" ]
   ],
   "Frontend" => [
     [ "CSS-Tricks", "https://css-tricks.com/feed/" ],
@@ -35,7 +37,15 @@ FEEDS = {
     [ "Canaltech", "https://canaltech.com.br/rss/" ],
     [ "Diolinux", "https://diolinux.com.br/rss" ],
     [ "Alura — Artigos", "https://www.alura.com.br/artigos/rss" ],
-    [ "Mercado de TI", "https://mercadodeti.com.br/feed" ]
+    [ "Mercado de TI", "https://mercadodeti.com.br/feed" ],
+    [ "Manual do Usuário", "https://manualdousuario.net/feed/" ],
+    [ "Meio Bit", "https://meiobit.com/feed/" ],
+    [ "Olhar Digital", "https://olhardigital.com.br/feed/" ],
+    [ "SempreUpdate", "https://sempreupdate.com.br/feed/" ],
+    [ "Linux Kamarada", "https://kamarada.github.io/pt/feed.xml" ]
+  ],
+  "Podcasts" => [
+    [ "Hipsters Ponto Tech", "https://hipsters.tech/feed/podcast/" ]
   ],
   "Segurança e Infra" => [
     [ "Krebs on Security", "https://krebsonsecurity.com/feed/" ],
