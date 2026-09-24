@@ -231,6 +231,7 @@ pt-BR:
       entries: "[entradas]"
       clippings: "[recortes]"
       feeds: "[fontes]"
+      categories: "[categorias]"
       newsletters: "[arquivo]"
     entries:
       prompt: "cat entries.log"
@@ -318,6 +319,35 @@ pt-BR:
         failure: "Falha ao atualizar '%{title}': %{error}"
       refresh_all:
         queued: "Atualização de todas as fontes enfileirada."
+    categories:
+      prompt: "cat categories.conf"
+      hint:
+        one: "Uma categoria. Uma fonte pode ter várias."
+        other: "%{count} categorias. Uma fonte pode ter várias."
+      empty: "Nenhuma categoria ainda. Crie uma acima ou direto na edição de uma fonte."
+      form:
+        name: "nome"
+        name_placeholder: "ex.: Rust"
+        submit: "adicionar"
+        hint: "Criar uma categoria aqui é o mesmo que digitá-la ao editar uma fonte."
+      feed_count:
+        one: "%{count} fonte"
+        other: "%{count} fontes"
+      actions:
+        rename: "salvar"
+        remove: "remover"
+        confirm_remove:
+          one: "Remover a categoria '%{name}'? A %{count} fonte continua cadastrada, sem ela."
+          other: "Remover a categoria '%{name}'? As %{count} fontes continuam cadastradas, sem ela."
+      create:
+        success: "Categoria criada: %{name}"
+        exists: "Essa categoria já existe: %{name}"
+        invalid: "Informe um nome para a categoria."
+      update:
+        success: "Categoria renomeada: %{name}"
+        invalid: "Não foi possível salvar: %{error}"
+      destroy:
+        success: "Categoria removida: %{name}"
     clippings:
       prompt: "cat clipping-queue.md"
       view_issues: "ver edições enviadas"

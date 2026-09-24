@@ -73,6 +73,10 @@ Rails.application.routes.draw do
         collection { post :refresh_all }
       end
 
+      # Category management. The list doubles as the edit screen, so there is no
+      # show/edit route: rename happens inline, delete unlinks the feeds.
+      resources :categories, only: [ :index, :create, :update, :destroy ]
+
       resources :entries, only: [ :index ] do
         member do
           post :clip

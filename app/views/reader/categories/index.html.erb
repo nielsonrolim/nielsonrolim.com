@@ -1,0 +1,48 @@
+<section>
+  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.categories.prompt") %></p>
+
+  <p class="mb-6 max-w-measure border-y border-line py-3 text-chrome text-muted">
+    <%= t("reader.categories.hint", count: @categories.size) %>
+  </p>
+
+  <div class="mb-8 border border-line bg-surface p-4">
+    <%= form_with model: @category, url: reader_categories_path, class: "flex flex-wrap items-end gap-3" do |form| %>
+      <div class="min-w-[16rem] flex-1">
+        <%= form.label :name, t("reader.categories.form.name"), class: "mb-1 block text-chrome text-muted" %>
+        <%= form.text_field :name, required: true, placeholder: t("reader.categories.form.name_placeholder"),
+              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+      </div>
+      <%= form.submit t("reader.categories.form.submit"),
+            class: "btn btn--primary" %>
+    <% end %>
+
+    <p class="mt-3 mb-0 text-meta text-muted"><%= t("reader.categories.form.hint") %></p>
+  </div>
+
+  <% if @categories.empty? %>
+    <p class="text-prompt text-muted"><%= t("reader.categories.empty") %></p>
+  <% else %>
+    <ol class="m-0 list-none p-0">
+      <% @categories.each do |category| %>
+        <li class="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line py-[0.7rem] last:border-b">
+          <%= form_with model: category, url: reader_category_path(category), method: :patch,
+                class: "flex min-w-[16rem] flex-1 items-center gap-2" do |form| %>
+            <%= form.text_field :name,
+                  class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+            <%= form.submit t("reader.categories.actions.rename"), class: "btn btn--sm btn--neutral" %>
+          <% end %>
+
+          <span class="text-meta text-muted">
+            <%= t("reader.categories.feed_count", count: @feed_counts[category.id].to_i) %>
+          </span>
+
+          <%= button_to t("reader.categories.actions.remove"), reader_category_path(category), method: :delete,
+                data: { confirm: t("reader.categories.actions.confirm_remove",
+                                   name: category.name, count: @feed_counts[category.id].to_i) },
+                class: "btn btn--sm btn--danger",
+                form: { class: "m-0" } %>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>

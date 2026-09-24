@@ -231,6 +231,7 @@ en-US:
       entries: "[entries]"
       clippings: "[clippings]"
       feeds: "[feeds]"
+      categories: "[categories]"
       newsletters: "[archive]"
     entries:
       prompt: "cat entries.log"
@@ -318,6 +319,35 @@ en-US:
         failure: "Failed to refresh '%{title}': %{error}"
       refresh_all:
         queued: "Refresh of all feeds queued."
+    categories:
+      prompt: "cat categories.conf"
+      hint:
+        one: "One category. A feed can have several."
+        other: "%{count} categories. A feed can have several."
+      empty: "No categories yet. Create one above, or straight from a feed's edit page."
+      form:
+        name: "name"
+        name_placeholder: "e.g. Rust"
+        submit: "add"
+        hint: "Creating a category here is the same as typing it while editing a feed."
+      feed_count:
+        one: "%{count} feed"
+        other: "%{count} feeds"
+      actions:
+        rename: "save"
+        remove: "remove"
+        confirm_remove:
+          one: "Remove the category '%{name}'? Its %{count} feed stays, just without it."
+          other: "Remove the category '%{name}'? Its %{count} feeds stay, just without it."
+      create:
+        success: "Category created: %{name}"
+        exists: "That category already exists: %{name}"
+        invalid: "Give the category a name."
+      update:
+        success: "Category renamed: %{name}"
+        invalid: "Could not save: %{error}"
+      destroy:
+        success: "Category removed: %{name}"
     clippings:
       prompt: "cat clipping-queue.md"
       view_issues: "view sent issues"
