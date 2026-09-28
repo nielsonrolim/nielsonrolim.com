@@ -315,9 +315,18 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   end
 
   test "the default model is the free effort-dialed one, with a distinct fallback" do
-    assert_equal "opencode-go/space-bunny-free#high", SummaryGenerator::DEFAULT_MODEL
+    assert_equal "opencode/space-bunny-free#high", SummaryGenerator::DEFAULT_MODEL
     assert_equal "opencode-go/glm-5.3-flash", SummaryGenerator::FALLBACK_MODEL
     # The ladder only earns its keep if the retry is not a repeat of the first try.
     assert_not_equal SummaryGenerator::DEFAULT_MODEL, SummaryGenerator::FALLBACK_MODEL
+  end
+
+  test "the fallback sits on a different provider than the primary" do
+    # The point of the fallback is to survive the primary's provider being down or
+    # rate limited. Sharing a provider would leave that failure mode uncovered.
+    providers = [ SummaryGenerator::DEFAULT_MODEL, SummaryGenerator::FALLBACK_MODEL ]
+               .map { |model| model.split("/").first }
+
+    assert_equal 2, providers.uniq.size
   end
 end

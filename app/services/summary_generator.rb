@@ -8,8 +8,8 @@
 class SummaryGenerator
   Error = Class.new(StandardError)
 
-  # opencode's free tier refuses agents whose permissions `deny` read or shell
-  # outright, so the locked config marks those two as `ask` instead: the
+  # opencode's free Zen tier refuses agents whose permissions `deny` read or
+  # shell outright, so the locked config marks those two as `ask` instead: the
   # non-interactive run declines every ask, so no tool ever executes and the
   # free model is accepted.
   #
@@ -17,13 +17,14 @@ class SummaryGenerator
   # prompt actually needs: it is a long list of negative examples and the free
   # models keep drifting into report framing (see META_PATTERNS). Asking for
   # more effort buys rule adherence far more cheaply than a retry does.
-  DEFAULT_MODEL = "opencode-go/space-bunny-free#high"
+  DEFAULT_MODEL = "opencode/space-bunny-free#high"
 
   # Used by callers that can retry (see GenerateSummaryJob) after the primary
   # fails. A clipping is ~13k tokens in and ~600 out, so one summary costs well
   # under a cent here: paying only on the failure path buys a different model
-  # instead of failing the clipping. Shared with the primary's provider, so it
-  # covers rate limits and framing failures but not a provider-wide outage.
+  # instead of failing the clipping. Deliberately on the *other* provider than
+  # the primary (opencode-go), so a Zen outage or a Zen-side rate limit still
+  # gets a summary rather than a failed clipping.
   FALLBACK_MODEL = "opencode-go/glm-5.3-flash"
 
   # The configured model, or DEFAULT_MODEL. Callers that walk a ladder of models
