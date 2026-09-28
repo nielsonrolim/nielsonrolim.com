@@ -7,8 +7,17 @@ class ArticleFetcher
   Error = Class.new(StandardError)
 
   # Bound on what we keep as the generation source. SummaryGenerator allows as
-  # many characters, so the whole stored article reaches the model.
-  MAX_TEXT_CHARS = 20_000
+  # many characters, so the whole stored article reaches the model, and the two
+  # must stay equal — a lower ceiling here would clip an article this already
+  # fetched, and a higher one would store text the summary never sees.
+  #
+  # Sized against real articles rather than a round guess: a 31k-character
+  # technical post was being cut at 20k, mid-sentence and mid-section, losing
+  # the conclusion — and the conclusion is what the prompt asks the summary to
+  # open on. 40k covers that whole with headroom and still leaves the models
+  # (and the 180s timeout) comfortable. Past this, longer input starts costing
+  # latency and diluting the middle rather than improving the summary.
+  MAX_TEXT_CHARS = 40_000
 
   # Never part of an article's text.
   NOISE_SELECTORS = "script, style, noscript, nav, header, footer, aside, form, iframe, svg, figcaption"

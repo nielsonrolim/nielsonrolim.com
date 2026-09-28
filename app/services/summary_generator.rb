@@ -35,8 +35,10 @@ class SummaryGenerator
   end
 
   # Bounds the body sent to the model. Matches ArticleFetcher's own ceiling so a
-  # fetched article is summarized whole, with no second truncation here.
-  MAX_SOURCE_CHARS = 20_000
+  # fetched article is summarized whole, with no second truncation here; keep the
+  # two equal, since this is the one that would silently clip text the fetcher had
+  # already stored.
+  MAX_SOURCE_CHARS = 40_000
 
   # Deterministic backstop for the prompt's "write about the subject, not the
   # article or its author" rule. The free model keeps slipping into report

@@ -206,7 +206,10 @@ A clipping does not have to come from a feed: the form at the top of the page
 takes a URL and an optional title. `ArticleFetcher` fetches the page through the
 same `HttpTransport` feeds use, and pulls out a title (`og:title` → `twitter:title`
 → `<title>` → `<h1>`) and the body text (dropping scripts, chrome and asides),
-which becomes `source_text` — the text the summary is generated from.
+which becomes `source_text` — the text the summary is generated from. Both
+`ArticleFetcher` and `SummaryGenerator` cap it at 40 000 characters, so a fetched
+article reaches the model whole; the cap exists only because some pages are
+endless, not to shorten normal articles.
 
 When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping is
 **still created**, marked `failed` with the reason and with the host as its title,

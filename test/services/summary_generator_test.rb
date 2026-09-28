@@ -283,6 +283,25 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_match(/cover the whole article/i, prompt)
   end
 
+  test "keeps a body that fits the ceiling whole" do
+    cli = cli_returning(payload)
+    body = "x" * ArticleFetcher::MAX_TEXT_CHARS
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: body)
+
+    # No ellipsis: a fetched article at exactly the fetcher's ceiling must reach
+    # the model whole. This is the case that was silently losing the end of
+    # articles before the two ceilings were raised together.
+    assert_includes cli.prompt, body
+    assert_not_includes cli.prompt, "#{body}..."
+  end
+
+  test "the body ceiling matches the fetcher's, so nothing is clipped twice" do
+    # If these drift apart, the lower one silently truncates what the other
+    # already stored: the article is fetched whole and then summarized short.
+    assert_equal ArticleFetcher::MAX_TEXT_CHARS, SummaryGenerator::MAX_SOURCE_CHARS
+  end
+
   test "truncates an oversized body" do
     cli = cli_returning(payload)
 
