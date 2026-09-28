@@ -333,11 +333,17 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     original.nil? ? ENV.delete("OPENCODE_SUMMARY_MODEL") : ENV["OPENCODE_SUMMARY_MODEL"] = original
   end
 
-  test "the default model is the free effort-dialed one, with a distinct fallback" do
-    assert_equal "opencode/space-bunny-free#high", SummaryGenerator::DEFAULT_MODEL
+  test "the default model is the strongest one at high effort, with a distinct fallback" do
+    assert_equal "opencode/gpt-5.6-terra#xhigh", SummaryGenerator::DEFAULT_MODEL
     assert_equal "opencode-go/glm-5.3-flash", SummaryGenerator::FALLBACK_MODEL
     # The ladder only earns its keep if the retry is not a repeat of the first try.
     assert_not_equal SummaryGenerator::DEFAULT_MODEL, SummaryGenerator::FALLBACK_MODEL
+  end
+
+  test "the primary asks for high effort, since the prompt is mostly constraints" do
+    # Effort is the dial that buys adherence to a long list of negative examples,
+    # and unlike the corrective retry it does not cost a second call to do it.
+    assert_includes SummaryGenerator::DEFAULT_MODEL, "#xhigh"
   end
 
   test "the fallback sits on a different provider than the primary" do

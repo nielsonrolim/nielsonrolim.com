@@ -285,7 +285,7 @@ local workers — the Docker `jobs` container writes to the production queue.
    clipping arrives with only the RSS excerpt, so its page is fetched once and
    the text kept (a failed fetch falls back to the excerpt). It then shells out
    to
-   `opencode run <prompt> --format json --model opencode/space-bunny-free#high --standalone`
+   `opencode run <prompt> --format json --model opencode/gpt-5.6-terra#xhigh --standalone`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a complete ~100–150 word summary in
    *both* languages. The detected language moves the source variant to that
@@ -293,13 +293,16 @@ local workers — the Docker `jobs` container writes to the production queue.
    and the other language's title and summary land on the generated variant
    beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts, and the
    attempts double as a model ladder: the first run uses
-   `OPENCODE_SUMMARY_MODEL` (free, `opencode/space-bunny-free#high`), a retry
-   drops to the paid `SummaryGenerator::FALLBACK_MODEL` on the `opencode-go`
-   provider, so a free tier that is rate limited or keeps failing the framing
-   rule costs a fraction of a cent instead of failing the clipping — and because
-   the two sit on different providers, an outage on one does not take the
-   summaries down with it. A clipping whose summary keeps failing is marked
-   `failed` and still ships, with its source title and no summary.
+   `OPENCODE_SUMMARY_MODEL` (the strongest model whose price still suits a
+   newsletter this size, `opencode/gpt-5.6-terra#xhigh`), and a retry drops to
+   the much cheaper `SummaryGenerator::FALLBACK_MODEL` on the `opencode-go`
+   provider. Since the primary is strong the fallback is a safety net rather
+   than a second opinion — it runs when something failed, not to improve an
+   answer — and the two sit on different providers, so an outage or rate limit on
+   one does not take the summaries down with it. Both are paid: a clipping is
+   ~15k tokens in and ~600 out, so this runs a few dollars a month. A clipping
+   whose summary keeps failing is marked `failed` and still ships, with its source
+   title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is
@@ -321,7 +324,9 @@ queue or an empty subscriber list means no issue is created at all.
   injection hidden in an article therefore cannot reach the host. On opencode v2
   the free tier rejects configs that `deny` `read`/`shell`, so the locked config
   marks those two as `ask` instead: a non-interactive run declines every ask, so
-  no tool ever runs and the free model is accepted.
+  no tool ever runs. The default model is no longer a free one, but the setting
+  is harmless and keeps every model selectable — do not "tighten" it to `deny`
+  without checking that the model you intend to use accepts it.
 - `opencode` is invoked through `Open3.popen3` with an argument array (never a
   shell string), in its own process group, and killed on timeout.
 - Outbound fetches are limited to `http`/`https`, follow at most 5 redirects, and
@@ -381,7 +386,7 @@ environment variables are read:
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
-| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/space-bunny-free#high`). A failed run retries on the constant `SummaryGenerator::FALLBACK_MODEL`, on a different provider. |
+| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/gpt-5.6-terra#xhigh`, paid). A failed run retries on the constant `SummaryGenerator::FALLBACK_MODEL`, on a different provider. |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |

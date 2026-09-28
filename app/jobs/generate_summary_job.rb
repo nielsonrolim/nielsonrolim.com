@@ -54,11 +54,12 @@ class GenerateSummaryJob < ApplicationJob
   private
 
   # The job's own attempts double as a model ladder: the first run uses the
-  # configured model and a retry drops to the paid fallback. A free tier that is
-  # rate limited or keeps tripping the framing rule then costs a fraction of a
-  # cent instead of failing the clipping. Once the ladder is exhausted the last
-  # attempt stays on the fallback, so the remaining retries still buy a
-  # different model rather than repeating the same one.
+  # configured model, and a retry drops to the fallback. Since the primary is a
+  # strong model the fallback is a safety net rather than a second opinion, so it
+  # is picked for being cheap and on another provider, not for being clever.
+  # Once the ladder is exhausted the last attempt stays on the fallback, so the
+  # remaining retries still buy a different model rather than repeating the same
+  # one.
   def model_for_attempt(attempt = 1)
     ladder = [ SummaryGenerator.configured_model, SummaryGenerator::FALLBACK_MODEL ]
     ladder[[ attempt - 1, ladder.length - 1 ].min]

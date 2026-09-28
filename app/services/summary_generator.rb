@@ -8,23 +8,30 @@
 class SummaryGenerator
   Error = Class.new(StandardError)
 
-  # opencode's free Zen tier refuses agents whose permissions `deny` read or
-  # shell outright, so the locked config marks those two as `ask` instead: the
-  # non-interactive run declines every ask, so no tool ever executes and the
-  # free model is accepted.
+  # Note for anyone editing config/opencode/summarizer.json: it marks read and
+  # shell as "ask" rather than "deny" because opencode's free tier refuses
+  # agents that deny them outright. The non-interactive run declines every ask,
+  # so no tool ever runs either way, but a hard deny costs us model acceptance.
   #
-  # The primary is free but has an effort dial (`#high`), which is what this
-  # prompt actually needs: it is a long list of negative examples and the free
-  # models keep drifting into report framing (see META_PATTERNS). Asking for
-  # more effort buys rule adherence far more cheaply than a retry does.
-  DEFAULT_MODEL = "opencode/space-bunny-free#high"
+  # The primary is the strongest model whose price still makes sense for a
+  # newsletter that runs a few dozen clippings a month, at high effort: this
+  # prompt is mostly a long list of negative examples, and effort is what buys
+  # adherence to them. A clipping is ~15k tokens in and ~600 out, so one summary
+  # costs a few cents and a full month well under two.
+  #
+  # Deliberately not the most capable model in the catalog: gpt-5.5-pro costs
+  # ~8x more per summary for, as far as is measured here, no measured gain on a
+  # 150-word summary. That gap is a judgement, not a measurement.
+  DEFAULT_MODEL = "opencode/gpt-5.6-terra#xhigh"
 
-  # Used by callers that can retry (see GenerateSummaryJob) after the primary
-  # fails. A clipping is ~13k tokens in and ~600 out, so one summary costs well
-  # under a cent here: paying only on the failure path buys a different model
-  # instead of failing the clipping. Deliberately on the *other* provider than
-  # the primary (opencode-go), so a Zen outage or a Zen-side rate limit still
-  # gets a summary rather than a failed clipping.
+  # The safety net for a failed primary, not a second opinion on quality: with a
+  # strong model first, this only runs when something actually went wrong, so it
+  # is picked for being cheap and available rather than clever. A few tenths of a
+  # cent against a primary that costs cents.
+  #
+  # Deliberately on the *other* provider than the primary (opencode-go), so a Zen
+  # outage or a Zen-side rate limit still gets a summary rather than a failed
+  # clipping.
   FALLBACK_MODEL = "opencode-go/glm-5.3-flash"
 
   # The configured model, or DEFAULT_MODEL. Callers that walk a ladder of models
