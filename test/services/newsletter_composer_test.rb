@@ -24,6 +24,28 @@ class NewsletterComposerTest < ActiveSupport::TestCase
     assert_not_includes html, "O Rails 8.1 traz uma nova interface de filas"
   end
 
+  test "labels RSS-only summaries in both email formats and languages" do
+    clipping = clippings(:queued)
+
+    portuguese = NewsletterComposer.new([ clipping ], date: @date)
+    english = NewsletterComposer.new([ clipping ], date: @date, locale: :"en-US")
+
+    assert_includes portuguese.to_html, "apenas no trecho do RSS"
+    assert_includes portuguese.to_text, "apenas no trecho do RSS"
+    assert_includes english.to_html, "RSS excerpt only"
+    assert_includes english.to_text, "RSS excerpt only"
+  end
+
+  test "does not label a summary backed by stored article text as partial" do
+    clipping = clippings(:queued)
+    clipping.update!(source_text: "Full article.")
+
+    composer = NewsletterComposer.new([ clipping ], date: @date)
+
+    assert_not_includes composer.to_html, "apenas no trecho do RSS"
+    assert_not_includes composer.to_text, "apenas no trecho do RSS"
+  end
+
   test "renders a plain-text twin without markup" do
     text = NewsletterComposer.new(@clippings, date: @date).to_text
 

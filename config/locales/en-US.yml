@@ -358,6 +358,7 @@ en-US:
       published: "published"
       translation: "translation"
       translation_pending: "translation pending"
+      partial_summary_source: "summary based on RSS excerpt only"
       hint:
         one: "%{count} clipping will go out in the next weekly issue."
         other: "%{count} clippings will go out in the next weekly issue."
@@ -450,6 +451,7 @@ en-US:
       empty: "Nothing was selected for this issue."
       source: "source: %{feed}"
       languages: "languages: %{list}"
+      partial_summary_source: "Summary based on RSS excerpt only; the full article was not consulted."
       footer: "picked and summarized by Nielson Rolim."
       sent_to: "Sent to %{email}."
       refer: "Refer this newsletter"

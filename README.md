@@ -283,12 +283,17 @@ local workers — the Docker `jobs` container writes to the production queue.
    `GenerateSummaryJob` is enqueued.
 2. **Summarize** — the job first makes sure it has the article text: a feed
    clipping arrives with only the RSS excerpt, so its page is fetched once and
-   the text kept (a failed fetch falls back to the excerpt). It then shells out
+   the text kept (a failed fetch falls back to the excerpt). An excerpt-only
+   summary is constrained to what that excerpt supports and labelled as partial
+   in the queue and in both email formats. Opinions, uncertainty and forecasts
+   must not be recast as established facts. See
+   [the manual summary-quality review rubric](docs/summary-quality-review.md)
+   for evaluating real clippings. It then shells out
    to
    `opencode run <prompt> --format json --model opencode/gpt-5.6-terra#xhigh --standalone`
    and asks for a single JSON object: the article's language, its title
-   translated into the other language, and a complete ~100–150 word summary in
-   *both* languages. The detected language moves the source variant to that
+   translated into the other language, and a ~100–150 word summary in
+   *both* languages (shorter when only an RSS excerpt is available). The detected language moves the source variant to that
    language; the title and the summary in the article's own language stay on it,
    and the other language's title and summary land on the generated variant
    beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts, and the

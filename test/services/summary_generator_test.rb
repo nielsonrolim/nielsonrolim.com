@@ -184,13 +184,34 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     prompt = cli.prompt
-    assert_includes prompt, "Open directly with the most important claim"
+    assert_includes prompt, "Open directly with the most important supported claim"
     assert_includes prompt, "Never name the author"
     assert_includes prompt, "Ignore comments, replies"
     assert_includes prompt, "Do not use pronouns or stand-ins"
     assert_includes prompt, "reporting verbs"
     assert_includes prompt, "O texto argumenta"
     assert_includes prompt, "The text argues"
+  end
+
+  test "asks the model to preserve opinions, forecasts and uncertainty" do
+    cli = cli_returning(payload)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
+
+    assert_match(/opinion.*fact/i, cli.prompt)
+    assert_match(/uncertainty/i, cli.prompt)
+    assert_match(/forecast/i, cli.prompt)
+  end
+
+  test "limits claims to the available RSS excerpt when the source is partial" do
+    cli = cli_returning(payload)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a",
+                                        source: "Short excerpt.", source_partial: true)
+
+    assert_match(/RSS excerpt/i, cli.prompt)
+    assert_match(/do not infer.*missing/i, cli.prompt)
+    assert_no_match(/cover the whole article/i, cli.prompt)
   end
 
   test "does not retry a clean summary" do
@@ -237,6 +258,18 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes prompt, "CORRECTION"
     assert_includes prompt, "Ele defende que X."
     assert_includes prompt, "It argues that Y."
+  end
+
+  test "the corrective retry still preserves uncertainty and partial-source limits" do
+    bad = payload(pt: "O artigo sugere que X.", en: "The article suggests that X.")
+    cli = cli_returning([ bad, payload ])
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a",
+                                        source: "Excerpt.", source_partial: true)
+
+    assert_match(/RSS excerpt only/i, cli.prompt)
+    assert_no_match(/claims directly as facts/i, cli.prompt)
+    assert_match(/preserve uncertainty/i, cli.prompt)
   end
 
   test "fails when the model keeps framing the summary around the article" do

@@ -358,6 +358,7 @@ pt-BR:
       published: "publicado"
       translation: "tradução"
       translation_pending: "tradução pendente"
+      partial_summary_source: "resumo baseado apenas no trecho do RSS"
       hint:
         one: "%{count} recorte vai na próxima edição semanal."
         other: "%{count} recortes vão na próxima edição semanal."
@@ -450,6 +451,7 @@ pt-BR:
       empty: "Nada foi selecionado para esta edição."
       source: "fonte: %{feed}"
       languages: "idiomas: %{list}"
+      partial_summary_source: "Resumo baseado apenas no trecho do RSS; o artigo completo não foi consultado."
       footer: "selecionado e resumido por Nielson Rolim."
       sent_to: "Enviado para %{email}."
       refer: "Indique essa newsletter"

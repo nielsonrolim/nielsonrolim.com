@@ -99,6 +99,14 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_equal entries(:solid_queue).summary, generator.calls.first[:source]
     assert_nil @clipping.reload.source_text
     assert @clipping.summarized?
+    assert_equal true, generator.calls.first[:source_partial]
+  end
+
+  test "passes a full fetched article as a complete source" do
+    generator = FakeSummaryGenerator.new
+    perform_with(generator, fetcher: FakeArticleFetcher.new(text: "Full article."))
+
+    assert_equal false, generator.calls.first[:source_partial]
   end
 
   test "does not fetch again when the text is already stored" do

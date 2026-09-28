@@ -42,6 +42,11 @@ class Clipping < ApplicationRecord
     source_text.presence || entry&.summary
   end
 
+  # A fetched or pasted article takes precedence; only a feed excerpt is partial.
+  def partial_summary_source?
+    source_text.blank? && entry&.summary.present?
+  end
+
   # Added by hand from a URL, with no feed entry behind it.
   def manual?
     entry_id.blank?

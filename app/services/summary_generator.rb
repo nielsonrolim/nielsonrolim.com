@@ -84,8 +84,8 @@ class SummaryGenerator
 
   attr_reader :model, :timeout, :cli
 
-  def call(title:, url:, source: nil)
-    result = generate(build_prompt(title: title, url: url, source: source))
+  def call(title:, url:, source: nil, source_partial: false)
+    result = generate(build_prompt(title: title, url: url, source: source, source_partial: source_partial))
     return result unless meta_framing?(result)
 
     # The prompt forbids report framing, but the free model still slips into it
@@ -93,7 +93,8 @@ class SummaryGenerator
     # what it wrote; if it does it again, fail so the clipping is flagged for a
     # manual pass instead of shipping a summary that reads like a book report.
     corrected = generate(
-      build_prompt(title: title, url: url, source: source, correction: correction_section(result))
+      build_prompt(title: title, url: url, source: source, source_partial: source_partial,
+                   correction: correction_section(result))
     )
     return corrected unless meta_framing?(corrected)
 
@@ -132,7 +133,7 @@ class SummaryGenerator
   def correction_section(result)
     <<~SECTION
       CORRECTION
-      Your previous answer framed the summary around the article or its author, which is forbidden. Rewrite BOTH summaries from scratch, stating the claims directly as facts about the subject. Every sentence's subject must be a real-world thing or idea, never the article or a person.
+      Your previous answer framed the summary around the article or its author, which is forbidden. Rewrite BOTH summaries from scratch, speaking directly about the subject while preserving uncertainty and distinguishing opinions from evidence. Every sentence's subject must be a real-world thing or idea, never the article or a person.
 
       Previous answer (do not repeat its framing):
       pt-BR: #{result.summary_for("pt-BR")}
@@ -140,24 +141,26 @@ class SummaryGenerator
     SECTION
   end
 
-  def build_prompt(title:, url:, source:, correction: nil)
+  def build_prompt(title:, url:, source:, source_partial: false, correction: nil)
     <<~PROMPT
       You are a translation and summarization service. Reply with a single JSON object and nothing else.
 
       Return exactly these keys:
       - "language": the language the article is written in, either "pt-BR" or "en-US".
       - "title_translated": the article title translated into the OTHER language (article in pt-BR -> en-US, and vice versa). Faithful and concise.
-      - "summary_pt_br": a complete summary of the article in Brazilian Portuguese, about 100 to 150 words (4 to 6 sentences).
-      - "summary_en_us": a complete summary of the article in English, about 100 to 150 words (4 to 6 sentences).
+      - "summary_pt_br": a #{source_partial ? "concise summary of the available excerpt" : "complete summary of the article"} in Brazilian Portuguese#{source_partial ? "" : ", about 100 to 150 words (4 to 6 sentences)"}.
+      - "summary_en_us": a #{source_partial ? "concise summary of the available excerpt" : "complete summary of the article"} in English#{source_partial ? "" : ", about 100 to 150 words (4 to 6 sentences)"}.
 
       How to write each summary:
-      - Write about the subject itself and state its claims directly, as facts. Every sentence's subject must be a real-world thing or idea, never the article or a person.
-      - Open directly with the most important claim, finding, or action, and cover the whole article: the main claim, the facts, numbers and examples that support it, and the conclusion or what it means.
-      - Never name the author or describe them as a person, and never attribute claims to someone. Do not use pronouns or stand-ins for the article or the author ("it", "the piece", "the text", "ele", "ela", "o autor", "a autora").
+      - Write directly about the subject. Every sentence's subject must be a real-world thing or idea, never the article or a person.
+      - Do not turn an opinion into a proven fact. Preserve uncertainty, limitations, conditions and forecasts as such, in both languages; do not add confidence the source does not support.
+      - Open directly with the most important supported claim, finding, or action#{source_partial ? " in the excerpt" : ""}, and #{source_partial ? "cover only the available excerpt" : "cover the whole article: the main claim, the facts, numbers and examples that support it, and the conclusion or what it means"}.
+      - Never name the author or describe them as a person. Do not use pronouns or stand-ins for the article or the author ("it", "the piece", "the text", "ele", "ela", "o autor", "a autora"). When a claim is an assessment rather than established evidence, keep that distinction without book-report framing.
       - Do not use reporting verbs that turn the summary into a book report: describes, argues, advocates, contends, proposes, suggests, claims, states, recounts, explains, descreve, defende, argumenta, propõe, sugere, afirma, sustenta, comprova, relata, explica.
       - Summarize only the article's own text. Ignore comments, replies, reader discussion, bylines and author bios.
-      - Stay within about 150 words. Do not pad with generic filler or repeat yourself.
+      - #{source_partial ? "Use only the length the excerpt supports" : "Stay within about 150 words"}. Do not pad with generic filler or repeat yourself.
       - Avoid generic coverage verbs: apresenta, discute, aborda, explora, covers, discusses, presents, explores, provides.
+      #{source_partial ? "- The body is an RSS excerpt only, NOT the full article. Do not infer missing details, conclusions, evidence or context." : ""}
       - Bad (pt-BR): "O texto argumenta que proteger servidores Linux exige mudar a porta padrão do SSH." and "Ele defende que acompanhar cada novidade é impossível."
       - Good (pt-BR): "Proteger servidores Linux contra força bruta via SSH exige mudar a porta padrão, desativar o login de root, usar autenticação por chave e bloquear IPs suspeitos com o Fail2ban. Ferramentas de rate limiting reduzem a superfície de ataque, e a auditoria periódica dos logs revela as tentativas que passaram. A conclusão é que nenhuma medida isolada basta: a defesa depende de camadas combinadas."
       - Bad (en-US): "The text argues that harness engineering is the competitive frontier of the AI market." and "It argues that staying current with every release is impossible."

@@ -283,6 +283,18 @@ class ClippingTest < ActiveSupport::TestCase
     assert_equal entries(:rails_eight).summary, clippings(:queued).summary_source
   end
 
+  test "identifies a summary sourced only from an RSS excerpt" do
+    assert clippings(:queued).partial_summary_source?
+
+    clipping = clippings(:queued)
+    clipping.source_text = "Complete article"
+    assert_not clipping.partial_summary_source?
+  end
+
+  test "does not call an empty manual source a partial RSS excerpt" do
+    assert_not build_clipping.partial_summary_source?
+  end
+
   test "summary_source prefers the stored article text over the entry summary" do
     clipping = clippings(:queued)
     clipping.source_text = "texto completo do artigo"

@@ -44,6 +44,10 @@
             <span><%= t("reader.clippings.marked_at", time: l(clipping.created_at, format: :long)) %></span>
             <%= render "reader/clippings/summary_status", clipping: clipping %>
 
+            <% if clipping.partial_summary_source? && clipping.summarized? %>
+              <span class="chip chip--err"><%= t("reader.clippings.partial_summary_source") %></span>
+            <% end %>
+
             <%# The languages the story is published in, one or both. A translation
                 without a URL of its own does not count. %>
             <% if clipping.languages.any? %>

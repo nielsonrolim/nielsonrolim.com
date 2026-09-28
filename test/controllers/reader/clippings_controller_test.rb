@@ -39,6 +39,12 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Ruby Weekly/
   end
 
+  test "warns when a clipping has only the RSS excerpt" do
+    get reader_clippings_path
+
+    assert_select "body", /apenas no trecho do RSS/
+  end
+
   test "shows both languages of a clipping" do
     get reader_clippings_path
 

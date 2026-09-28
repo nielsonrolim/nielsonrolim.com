@@ -30,7 +30,8 @@ class GenerateSummaryJob < ApplicationJob
     result = summary_generator.call(
       title: clipping.display_title,
       url: clipping.primary_variant.url,
-      source: clipping.summary_source
+      source: clipping.summary_source,
+      source_partial: clipping.partial_summary_source?
     )
 
     clipping.apply_summary(result, overwrite: overwrite)

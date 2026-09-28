@@ -11,6 +11,7 @@
 <%= "    #{t('newsletters.email.source', feed: clipping.display_source)}" if clipping.display_source.present? %>
 <%= "    #{t('newsletters.email.languages', list: clipping.languages.join(', '))}" if clipping.languages.any? %>
 <% localized_summary = clipping.summary_for(@locale) %><%= "    #{localized_summary}" if localized_summary.present? %>
+<%= "    #{t('newsletters.email.partial_summary_source')}" if localized_summary.present? && clipping.partial_summary_source? %>
     <%= clipping.url_for(@locale) %>
 
 <% end %>
