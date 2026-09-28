@@ -282,15 +282,19 @@ local workers — the Docker `jobs` container writes to the production queue.
    clipping arrives with only the RSS excerpt, so its page is fetched once and
    the text kept (a failed fetch falls back to the excerpt). It then shells out
    to
-   `opencode run <prompt> --format json --model opencode/muse-spark-1.3-contributor-free --standalone`
+   `opencode run <prompt> --format json --model opencode-go/space-bunny-free#high --standalone`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a complete ~100–150 word summary in
    *both* languages. The detected language moves the source variant to that
    language; the title and the summary in the article's own language stay on it,
    and the other language's title and summary land on the generated variant
-   beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts; a clipping whose
-   summary keeps failing is marked `failed` and still ships, with its source
-   title and no summary.
+   beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts, and the
+   attempts double as a model ladder: the first run uses
+   `OPENCODE_SUMMARY_MODEL`, a retry drops to the paid
+   `SummaryGenerator::FALLBACK_MODEL`, so a free tier that is rate limited or
+   keeps failing the framing rule costs a fraction of a cent instead of failing
+   the clipping. A clipping whose summary keeps failing is marked `failed` and
+   still ships, with its source title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is
@@ -372,7 +376,7 @@ environment variables are read:
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
-| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/muse-spark-1.3-contributor-free`).   |
+| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode-go/space-bunny-free#high`). A failed run retries on the constant `SummaryGenerator::FALLBACK_MODEL`. |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |

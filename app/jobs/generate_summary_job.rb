@@ -20,6 +20,7 @@ class GenerateSummaryJob < ApplicationJob
   attr_writer :summary_generator, :article_fetcher
 
   def perform(clipping_id, attempt = 1, overwrite = false)
+    @model = model_for_attempt(attempt)
     clipping = Clipping.find_by(id: clipping_id)
     return if clipping.nil?
 
@@ -37,18 +38,31 @@ class GenerateSummaryJob < ApplicationJob
   rescue SummaryGenerator::Error, OpencodeCli::TimeoutError => e
     if attempt < MAX_ATTEMPTS
       Rails.logger.info(
-        "[GenerateSummaryJob] clipping=#{clipping_id} attempt=#{attempt} failed: #{e.message}; retrying"
+        "[GenerateSummaryJob] clipping=#{clipping_id} model=#{@model} attempt=#{attempt} " \
+        "failed: #{e.message}; retrying with #{model_for_attempt(attempt + 1)}"
       )
       self.class.set(wait: attempt * RETRY_WAIT).perform_later(clipping_id, attempt + 1, overwrite)
     else
       Rails.logger.warn(
-        "[GenerateSummaryJob] clipping=#{clipping_id} failed after #{attempt} attempts: #{e.message}"
+        "[GenerateSummaryJob] clipping=#{clipping_id} model=#{@model} failed after " \
+        "#{attempt} attempts: #{e.message}"
       )
       clipping.update(summary_status: :failed, summary_error: e.message.to_s.first(500))
     end
   end
 
   private
+
+  # The job's own attempts double as a model ladder: the first run uses the
+  # configured model and a retry drops to the paid fallback. A free tier that is
+  # rate limited or keeps tripping the framing rule then costs a fraction of a
+  # cent instead of failing the clipping. Once the ladder is exhausted the last
+  # attempt stays on the fallback, so the remaining retries still buy a
+  # different model rather than repeating the same one.
+  def model_for_attempt(attempt = 1)
+    ladder = [ SummaryGenerator.configured_model, SummaryGenerator::FALLBACK_MODEL ]
+    ladder[[ attempt - 1, ladder.length - 1 ].min]
+  end
 
   # A feed clipping arrives with only the RSS excerpt as its source. Fetch the
   # page once and keep the text, so the summary covers the whole article and a
@@ -66,7 +80,7 @@ class GenerateSummaryJob < ApplicationJob
   end
 
   def summary_generator
-    @summary_generator ||= SummaryGenerator.new
+    @summary_generator ||= SummaryGenerator.new(model: @model)
   end
 
   def article_fetcher

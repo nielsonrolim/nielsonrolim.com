@@ -8,11 +8,30 @@
 class SummaryGenerator
   Error = Class.new(StandardError)
 
-  # opencode's free Zen tier refuses agents whose permissions `deny` read or
-  # shell outright, so the locked config marks those two as `ask` instead: the
+  # opencode's free tier refuses agents whose permissions `deny` read or shell
+  # outright, so the locked config marks those two as `ask` instead: the
   # non-interactive run declines every ask, so no tool ever executes and the
   # free model is accepted.
-  DEFAULT_MODEL = "opencode/muse-spark-1.3-contributor-free"
+  #
+  # The primary is free but has an effort dial (`#high`), which is what this
+  # prompt actually needs: it is a long list of negative examples and the free
+  # models keep drifting into report framing (see META_PATTERNS). Asking for
+  # more effort buys rule adherence far more cheaply than a retry does.
+  DEFAULT_MODEL = "opencode-go/space-bunny-free#high"
+
+  # Used by callers that can retry (see GenerateSummaryJob) after the primary
+  # fails. A clipping is ~13k tokens in and ~600 out, so one summary costs well
+  # under a cent here: paying only on the failure path buys a different model
+  # instead of failing the clipping. Shared with the primary's provider, so it
+  # covers rate limits and framing failures but not a provider-wide outage.
+  FALLBACK_MODEL = "opencode-go/glm-5.3-flash"
+
+  # The configured model, or DEFAULT_MODEL. Callers that walk a ladder of models
+  # read the head of it from here so an `OPENCODE_SUMMARY_MODEL` override
+  # applies to the whole ladder rather than only the first try.
+  def self.configured_model
+    ENV.fetch("OPENCODE_SUMMARY_MODEL", DEFAULT_MODEL)
+  end
 
   # Bounds the body sent to the model. Matches ArticleFetcher's own ceiling so a
   # fetched article is summarized whole, with no second truncation here.
@@ -48,7 +67,7 @@ class SummaryGenerator
   # `cli` is injectable so tests can drive it without spawning a process. It
   # must respond to `exec(*args, timeout:)` returning [stdout, stderr, status].
   def initialize(model: nil, timeout: OpencodeCli::DEFAULT_TIMEOUT, cli: OpencodeCli)
-    @model = model || ENV.fetch("OPENCODE_SUMMARY_MODEL", DEFAULT_MODEL)
+    @model = model || self.class.configured_model
     @timeout = timeout
     @cli = cli
   end

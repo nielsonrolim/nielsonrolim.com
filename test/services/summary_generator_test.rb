@@ -309,7 +309,15 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     ENV["OPENCODE_SUMMARY_MODEL"] = "opencode/gemini-3.5-flash-lite"
 
     assert_equal "opencode/gemini-3.5-flash-lite", SummaryGenerator.new.model
+    assert_equal "opencode/gemini-3.5-flash-lite", SummaryGenerator.configured_model
   ensure
     original.nil? ? ENV.delete("OPENCODE_SUMMARY_MODEL") : ENV["OPENCODE_SUMMARY_MODEL"] = original
+  end
+
+  test "the default model is the free effort-dialed one, with a distinct fallback" do
+    assert_equal "opencode-go/space-bunny-free#high", SummaryGenerator::DEFAULT_MODEL
+    assert_equal "opencode-go/glm-5.3-flash", SummaryGenerator::FALLBACK_MODEL
+    # The ladder only earns its keep if the retry is not a repeat of the first try.
+    assert_not_equal SummaryGenerator::DEFAULT_MODEL, SummaryGenerator::FALLBACK_MODEL
   end
 end

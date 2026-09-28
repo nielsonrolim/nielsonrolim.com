@@ -177,6 +177,15 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     end
   end
 
+  test "the log names the model that failed and the one the retry will use" do
+    logged = capture_log do
+      job_with(FakeSummaryGenerator.new(error: SummaryGenerator::Error.new("boom")), attempt: 1).perform_now
+    end
+
+    assert_match(/model=#{Regexp.escape(SummaryGenerator.configured_model)}/, logged)
+    assert_match(/retrying with #{Regexp.escape(SummaryGenerator::FALLBACK_MODEL)}/, logged)
+  end
+
   test "ignores a clipping that no longer exists" do
     generator = FakeSummaryGenerator.new
 
@@ -184,7 +193,49 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_empty generator.calls
   end
 
+  test "the first attempt uses the configured model" do
+    assert_equal SummaryGenerator.configured_model, model_used_by(attempt: 1)
+  end
+
+  test "a retry drops to the fallback model" do
+    assert_equal SummaryGenerator::FALLBACK_MODEL, model_used_by(attempt: 2)
+  end
+
+  test "the last attempt stays on the fallback rather than repeating a model" do
+    assert_equal SummaryGenerator::FALLBACK_MODEL, model_used_by(attempt: GenerateSummaryJob::MAX_ATTEMPTS)
+  end
+
+  test "an environment override moves the head of the ladder" do
+    original = ENV["OPENCODE_SUMMARY_MODEL"]
+    ENV["OPENCODE_SUMMARY_MODEL"] = "opencode/big-pickle"
+
+    assert_equal "opencode/big-pickle", model_used_by(attempt: 1)
+    # The fallback is a deliberate constant, not part of the override.
+    assert_equal SummaryGenerator::FALLBACK_MODEL, model_used_by(attempt: 2)
+  ensure
+    original.nil? ? ENV.delete("OPENCODE_SUMMARY_MODEL") : ENV["OPENCODE_SUMMARY_MODEL"] = original
+  end
+
   private
+
+  # The model a real (uninjected) run would build for this attempt. The seam is
+  # bypassed on purpose: the ladder is built before the generator is, and the
+  # point of the assertion is the real default.
+  def model_used_by(attempt:)
+    GenerateSummaryJob.new(@clipping.id, attempt).send(:model_for_attempt, attempt)
+  end
+
+  # Swaps in a collector for the duration of the block and returns what was
+  # written to it, so the retry log can be asserted without a real logger.
+  def capture_log
+    buffer = StringIO.new
+    original = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(buffer)
+    yield
+    buffer.string
+  ensure
+    Rails.logger = original
+  end
 
   # Rails 8.1: job arguments go to `new`, and the instance `perform_now` takes none.
   def perform_with(generator, attempt: 1, fetcher: FakeArticleFetcher.new)
