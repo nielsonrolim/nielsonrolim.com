@@ -290,7 +290,7 @@ local workers — the Docker `jobs` container writes to the production queue.
    [the manual summary-quality review rubric](docs/summary-quality-review.md)
    for evaluating real clippings. It then shells out
    to
-   `opencode run <prompt> --format json --model opencode/gpt-5.6-terra#xhigh --standalone`
+   `opencode run <prompt> --format json --model opencode/nemotron-3-ultra-free --standalone`
    and asks for a single JSON object: the article's language, its title
    translated into the other language, and a ~100–150 word summary in
    *both* languages (shorter when only an RSS excerpt is available). The detected language moves the source variant to that
@@ -298,15 +298,12 @@ local workers — the Docker `jobs` container writes to the production queue.
    and the other language's title and summary land on the generated variant
    beside it. A manual variant is left alone by an automatic run; the explicit "gerar sumário e tradução" overwrites its summary (keeping its title). Up to 3 attempts, and the
    attempts double as a model ladder: the first run uses
-   `OPENCODE_SUMMARY_MODEL` (the strongest model whose price still suits a
-   newsletter this size, `opencode/gpt-5.6-terra#xhigh`), and a retry drops to
-   the much cheaper `SummaryGenerator::FALLBACK_MODEL` on the `opencode-go`
-   provider. Since the primary is strong the fallback is a safety net rather
-   than a second opinion — it runs when something failed, not to improve an
-   answer — and the two sit on different providers, so an outage or rate limit on
-   one does not take the summaries down with it. Both are paid: a clipping is
-   ~15k tokens in and ~600 out, so this runs a few dollars a month. A clipping
-   whose summary keeps failing is marked `failed` and still ships, with its source
+   `OPENCODE_SUMMARY_MODEL` (default `opencode/nemotron-3-ultra-free`), and a
+   retry uses paid Terra (`SummaryGenerator::FALLBACK_MODEL`). The fallback runs
+   only after a failure or timeout, not to review a valid summary. Both models
+   use Zen, so a Zen-wide outage can affect both. Free-model availability is
+   temporary; review summary quality on real clippings before relying on it.
+   A clipping whose summary keeps failing is marked `failed` and still ships, with its source
    title and no summary.
 3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
@@ -391,7 +388,7 @@ environment variables are read:
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
-| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/gpt-5.6-terra#xhigh`, paid). A failed run retries on the constant `SummaryGenerator::FALLBACK_MODEL`, on a different provider. |
+| `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/nemotron-3-ultra-free`, temporarily free). A failed run retries on paid Terra (`SummaryGenerator::FALLBACK_MODEL`); both use Zen. Existing environment overrides must be changed and the app restarted to use the new default. |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |

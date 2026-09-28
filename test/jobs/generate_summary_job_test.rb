@@ -201,16 +201,16 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_empty generator.calls
   end
 
-  test "the first attempt uses the configured model" do
-    assert_equal SummaryGenerator.configured_model, model_used_by(attempt: 1)
+  test "the first attempt uses free Nemotron by default" do
+    assert_equal "opencode/nemotron-3-ultra-free", model_used_by(attempt: 1)
   end
 
-  test "a retry drops to the fallback model" do
-    assert_equal SummaryGenerator::FALLBACK_MODEL, model_used_by(attempt: 2)
+  test "a retry uses paid Terra" do
+    assert_equal "opencode/gpt-5.6-terra#xhigh", model_used_by(attempt: 2)
   end
 
-  test "the last attempt stays on the fallback rather than repeating a model" do
-    assert_equal SummaryGenerator::FALLBACK_MODEL, model_used_by(attempt: GenerateSummaryJob::MAX_ATTEMPTS)
+  test "the last attempt stays on Terra" do
+    assert_equal "opencode/gpt-5.6-terra#xhigh", model_used_by(attempt: GenerateSummaryJob::MAX_ATTEMPTS)
   end
 
   test "an environment override moves the head of the ladder" do

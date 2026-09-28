@@ -13,26 +13,13 @@ class SummaryGenerator
   # agents that deny them outright. The non-interactive run declines every ask,
   # so no tool ever runs either way, but a hard deny costs us model acceptance.
   #
-  # The primary is the strongest model whose price still makes sense for a
-  # newsletter that runs a few dozen clippings a month, at high effort: this
-  # prompt is mostly a long list of negative examples, and effort is what buys
-  # adherence to them. A clipping is ~15k tokens in and ~600 out, so one summary
-  # costs a few cents and a full month well under two.
-  #
-  # Deliberately not the most capable model in the catalog: gpt-5.5-pro costs
-  # ~8x more per summary for, as far as is measured here, no measured gain on a
-  # 150-word summary. That gap is a judgement, not a measurement.
-  DEFAULT_MODEL = "opencode/gpt-5.6-terra#xhigh"
+  # Try the free Nemotron first. Its quality for this bilingual editorial task
+  # still needs evaluation against real clippings before treating it as proven.
+  DEFAULT_MODEL = "opencode/nemotron-3-ultra-free"
 
-  # The safety net for a failed primary, not a second opinion on quality: with a
-  # strong model first, this only runs when something actually went wrong, so it
-  # is picked for being cheap and available rather than clever. A few tenths of a
-  # cent against a primary that costs cents.
-  #
-  # Deliberately on the *other* provider than the primary (opencode-go), so a Zen
-  # outage or a Zen-side rate limit still gets a summary rather than a failed
-  # clipping.
-  FALLBACK_MODEL = "opencode-go/glm-5.3-flash"
+  # Paid safety net for an error or timeout, not a second opinion on a valid
+  # summary. Both models use Zen: a provider-wide outage can affect both.
+  FALLBACK_MODEL = "opencode/gpt-5.6-terra#xhigh"
 
   # The configured model, or DEFAULT_MODEL. Callers that walk a ladder of models
   # read the head of it from here so an `OPENCODE_SUMMARY_MODEL` override

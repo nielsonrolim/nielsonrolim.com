@@ -55,12 +55,10 @@ class GenerateSummaryJob < ApplicationJob
   private
 
   # The job's own attempts double as a model ladder: the first run uses the
-  # configured model, and a retry drops to the fallback. Since the primary is a
-  # strong model the fallback is a safety net rather than a second opinion, so it
-  # is picked for being cheap and on another provider, not for being clever.
-  # Once the ladder is exhausted the last attempt stays on the fallback, so the
-  # remaining retries still buy a different model rather than repeating the same
-  # one.
+  # configured free model, and a retry uses paid Terra. The fallback is a safety
+  # net for failed runs, not a second opinion on the quality of a valid summary.
+  # Both use Zen, so a provider-wide failure can affect both. The final attempt
+  # stays on Terra rather than returning to the failed primary.
   def model_for_attempt(attempt = 1)
     ladder = [ SummaryGenerator.configured_model, SummaryGenerator::FALLBACK_MODEL ]
     ladder[[ attempt - 1, ladder.length - 1 ].min]
