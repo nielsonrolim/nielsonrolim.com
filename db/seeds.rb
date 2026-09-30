@@ -16,8 +16,27 @@ FEEDS = [
   [ "Lobsters", "https://lobste.rs/rss", [ "Engenharia de Software", "Agregadores" ] ],
   [ "dev.to", "https://dev.to/feed", [ "Engenharia de Software", "Agregadores" ] ],
   [ "TabNews", "https://www.tabnews.com.br/recentes/rss", [ "Engenharia de Software", "pt-BR", "Agregadores" ] ],
+  [ "InfoQ", "https://feed.infoq.com/", [ "Engenharia de Software", "Agregadores" ] ],
 
   # Engenharia de Software
+  [ "Simon Willison's Weblog", "https://simonwillison.net/atom/everything/", [ "Engenharia de Software" ] ],
+  [ "antirez", "http://antirez.com/rss", [ "Engenharia de Software" ] ],
+  [ "Charity Majors", "https://charity.wtf/feed/", [ "Engenharia de Software" ] ],
+  [ "Irrational Exuberance (Will Larson)", "https://lethain.com/feeds/", [ "Engenharia de Software" ] ],
+  [ "Netflix Tech Blog", "https://netflixtechblog.com/feed", [ "Engenharia de Software" ] ],
+  [ "Building Nubank", "https://building.nubank.com.br/feed/", [ "Engenharia de Software", "pt-BR" ] ],
+  [ "Codeminer42", "https://blog.codeminer42.com/feed/", [ "Engenharia de Software", "pt-BR" ] ],
+  [ "diegoeis.com", "https://diegoeis.com/feed/", [ "Engenharia de Software", "pt-BR" ] ],
+  [ "Elton Minetto", "https://eltonminetto.dev/index.xml", [ "Engenharia de Software", "pt-BR" ] ],
+  [ "Hillel Wayne", "https://buttondown.com/hillelwayne/rss", [ "Engenharia de Software" ] ],
+  [ "Dan McKinley", "https://mcfunley.com/feed.xml", [ "Engenharia de Software" ] ],
+  [ "Armin Ronacher", "https://lucumr.pocoo.org/feed.atom", [ "Engenharia de Software" ] ],
+  [ "The Old New Thing (Raymond Chen)", "https://devblogs.microsoft.com/oldnewthing/feed", [ "Engenharia de Software" ] ],
+  [ "Alex Ewerlöf", "https://blog.alexewerlof.com/feed", [ "Engenharia de Software" ] ],
+  [ "Thorsten Ball", "https://registerspill.thorstenball.com/feed", [ "Engenharia de Software" ] ],
+  [ "CodeOpinion (Derek Comartin)", "https://codeopinion.com/feed/", [ "Engenharia de Software" ] ],
+  [ "Andrew Lock", "https://andrewlock.net/rss.xml", [ "Engenharia de Software" ] ],
+  [ "Steve Klabnik", "https://steveklabnik.com/feed.xml", [ "Engenharia de Software" ] ],
   [ "Martin Fowler", "https://martinfowler.com/feed.atom", [ "Engenharia de Software" ] ],
   [ "Coding Horror", "https://blog.codinghorror.com/rss/", [ "Engenharia de Software" ] ],
   [ "Julia Evans", "https://jvns.ca/atom.xml", [ "Engenharia de Software", "Linux" ] ],
@@ -32,11 +51,15 @@ FEEDS = [
   [ "Smashing Magazine", "https://www.smashingmagazine.com/feed/", [ "Frontend" ] ],
   [ "A List Apart", "https://alistapart.com/main/feed/", [ "Frontend" ] ],
   [ "Josh W. Comeau", "https://www.joshwcomeau.com/rss.xml", [ "Frontend" ] ],
+  [ "Jim Nielsen", "https://blog.jim-nielsen.com/feed.xml", [ "Frontend" ] ],
+  [ "Nikita Prokopov (tonsky)", "https://tonsky.me/blog/atom.xml", [ "Frontend" ] ],
   [ "BrazilJS", "https://www.braziljs.org/feed/", [ "Frontend", "pt-BR" ] ],
+  [ "Felipe Fialho", "https://www.felipefialho.com/feed.xml", [ "Frontend", "pt-BR" ] ],
 
   # Ruby
   [ "Ruby on Rails", "https://rubyonrails.org/feed.xml", [ "Ruby" ] ],
   [ "Ruby Weekly", "https://rubyweekly.com/rss/", [ "Ruby" ] ],
+  [ "Lucas Caton", "https://lucascaton.com.br/feed.xml", [ "Ruby", "pt-BR" ] ],
 
   # pt-BR
   [ "Tecnoblog", "https://tecnoblog.net/feed/", [ "pt-BR" ] ],
@@ -55,7 +78,11 @@ FEEDS = [
 
   # Segurança e Infra
   [ "Krebs on Security", "https://krebsonsecurity.com/feed/", [ "Segurança e Infra" ] ],
-  [ "Cloudflare Blog", "https://blog.cloudflare.com/rss/", [ "Segurança e Infra" ] ]
+  [ "Cloudflare Blog", "https://blog.cloudflare.com/rss/", [ "Segurança e Infra" ] ],
+  [ "Bruce Schneier", "https://www.schneier.com/blog/atom.xml", [ "Segurança e Infra" ] ],
+
+  # Linux
+  [ "Jeff Geerling", "https://www.jeffgeerling.com/blog.xml", [ "Linux" ] ]
 ].freeze
 
 created = 0
