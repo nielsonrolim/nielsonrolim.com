@@ -88,6 +88,26 @@ class FeedFetcherTest < ActiveSupport::TestCase
     end
   end
 
+  test "polls an Atom feed that declares the YouTube namespace" do
+    with_body(file_fixture("youtube_namespaced_atom.xml").read) do
+      result = fetch
+
+      assert result.success?, "expected success, got: #{result.error}"
+      assert_equal 1, result.new_entries
+    end
+
+    entry = @feed.entries.find_by(guid: "tag:example.com,2026:video-post")
+    assert_equal "Building a keyboard from scratch", entry.title
+    assert_equal "A talk about custom keyboards, with an embedded video.", entry.summary
+    assert_equal Time.utc(2026, 9, 13, 11, 31, 24), entry.published_at
+
+    @feed.reload
+    assert_nil @feed.last_error
+    # AtomYoutube exposes no `description`, so the stored one is kept instead of
+    # the poll blowing up.
+    assert_nil @feed.description
+  end
+
   test "survives an unparseable body" do
     with_body("<html><body>not a feed</body></html>") do
       result = fetch
@@ -122,6 +142,16 @@ class FeedFetcherTest < ActiveSupport::TestCase
         assert_equal [ "Ruby" ], feed.categories.map(&:name)
         assert_nil feed.last_fetched_at
       end
+    end
+  end
+
+  test "create_from_url tolerates a parser without a description" do
+    with_body(file_fixture("youtube_namespaced_atom.xml").read) do
+      feed = FeedFetcher.create_from_url("https://tonsky.example/atom.xml", transport: @transport)
+
+      assert_equal "tonsky.me", feed.title
+      assert_equal "https://tonsky.example/", feed.site_url
+      assert_nil feed.description
     end
   end
 

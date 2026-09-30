@@ -30,7 +30,7 @@ class FeedFetcher
       url: url,
       title: plain_text(parsed.title).presence || URI.parse(url).host.to_s,
       site_url: parsed.url,
-      description: truncate_text(plain_text(parsed.description), 1_000)
+      description: truncate_text(plain_text(feed_description(parsed)), 1_000).presence
     )
 
     feed.categories << Category.find_or_create_by_name(category) if category.present?
@@ -70,6 +70,15 @@ class FeedFetcher
   end
   private_class_method :decode_entities
 
+  # Feedjira picks its parser from the document, and not every parser carries
+  # the same attributes. Any Atom feed that merely declares the YouTube
+  # namespace is handed to AtomYoutube, which has no `description` (it ignores
+  # the Atom `subtitle`), so a blog that embeds a video would fail the whole
+  # poll. Treat a missing description as absent.
+  def self.feed_description(parsed)
+    parsed.description if parsed.respond_to?(:description)
+  end
+
   def initialize(feed, transport: HttpTransport.default)
     @feed = feed
     @transport = transport
@@ -88,7 +97,7 @@ class FeedFetcher
       last_error: nil,
       title: self.class.plain_text(parsed.title).presence || feed.title,
       site_url: parsed.url.presence || feed.site_url,
-      description: self.class.truncate_text(self.class.plain_text(parsed.description), 1_000).presence || feed.description
+      description: self.class.truncate_text(self.class.plain_text(self.class.feed_description(parsed)), 1_000).presence || feed.description
     )
 
     Result.new(feed: feed, new_entries: new_count, error: nil)

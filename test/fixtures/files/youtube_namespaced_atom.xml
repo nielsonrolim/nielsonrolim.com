@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shaped after a real blog feed that declares the YouTube namespace at the
+     root (tonsky.me): Feedjira classifies any Atom document carrying
+     xmlns:yt="http://www.youtube.com/xml/schemas/2015" as AtomYoutube, even
+     when the posts are ordinary blog posts. -->
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-US" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>tonsky.me</title>
+  <subtitle>Nikita Prokopov&#8217;s blog</subtitle>
+  <link rel="self" href="https://tonsky.example/atom.xml" type="application/atom+xml" />
+  <link rel="alternate" href="https://tonsky.example/" type="text/html" />
+  <id>https://tonsky.example/</id>
+  <updated>2026-09-13T11:31:24Z</updated>
+  <entry>
+    <title>Building a keyboard from scratch</title>
+    <link rel="alternate" href="https://tonsky.example/2026/keyboard/" type="text/html" />
+    <id>tag:example.com,2026:video-post</id>
+    <published>2026-09-13T11:31:24Z</published>
+    <media:description>A talk about custom keyboards, with an embedded video.</media:description>
+  </entry>
+</feed>
