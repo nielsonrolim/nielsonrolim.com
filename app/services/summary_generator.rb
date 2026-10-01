@@ -50,7 +50,15 @@ class SummaryGenerator
     # A reporting verb whose subject is the author described as a person.
     /\b(?:developer|professional|engineer|veteran|author|writer|desenvolvedor|profissional|engenheiro|veterano)\b[^.]{0,40}\b(?:describes|argues|advocates|descreve|defende|argumenta)\b/i,
     # Portuguese null subject: a sentence that opens with a reporting verb.
-    /(?:\A|[.!?]\s+)(?:Propõe|Sugere|Defende|Argumenta|Afirma|Sustenta|Descreve|Relata|Explica|Comprova)\b/
+    /(?:\A|[.!?]\s+)(?:Propõe|Sugere|Defende|Argumenta|Afirma|Sustenta|Descreve|Relata|Explica|Comprova)\b/,
+    # The model commenting on the input instead of the subject ("The supplied
+    # body contains no substantive information…"). This is what a fetch that
+    # returned only page chrome produced; a summary about the absence of content
+    # must be retried and, if it persists, rejected rather than shipped.
+    /\b(?:the|this)\s+(?:supplied|provided|available|given)\s+(?:body|text|content|excerpt|material|passage)\b/i,
+    /\b(?:no|not enough|lacks?|without)\s+(?:substantive|meaningful|sufficient|enough)\s+(?:information|content|detail|data|material)\b/i,
+    /\b(?:o|este|esse|um)\s+(?:corpo|texto|conte(?:údo|udo)|material|trecho|excerto)\s+(?:fornecido|disponibilizado|recebido|enviado|acima)\b/i,
+    /\b(?:não|nao)\s+(?:contém|contem|traz|possui|oferece)\s+informa(?:ção|ções|coes)\s+(?:substantiva|substantivas|relevante|relevantes|suficiente|suficientes)\b/i
   ].freeze
 
   # What the model returned, once parsed and validated. `summaries` is keyed by
@@ -72,6 +80,12 @@ class SummaryGenerator
   attr_reader :model, :timeout, :cli
 
   def call(title:, url:, source: nil, source_partial: false)
+    # Nothing to summarize: without this the model is handed "(no body text
+    # available)" and writes a summary about the absence of content, which is
+    # what a failed fetch used to produce. Failing instead flags the clipping for
+    # a manual pass.
+    raise Error, "no source text to summarize" if source.to_s.strip.blank?
+
     result = generate(build_prompt(title: title, url: url, source: source, source_partial: source_partial))
     return result unless meta_framing?(result)
 
@@ -199,8 +213,6 @@ class SummaryGenerator
 
   def truncate(source)
     text = source.to_s.strip
-    return "(no body text available)" if text.blank?
-
     text.length > MAX_SOURCE_CHARS ? "#{text[0, MAX_SOURCE_CHARS]}..." : text
   end
 

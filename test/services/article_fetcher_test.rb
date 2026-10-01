@@ -111,4 +111,22 @@ class ArticleFetcherTest < ActiveSupport::TestCase
       ArticleFetcher.new(transport: transport).call("file:///etc/passwd")
     end
   end
+
+  test "delegates a YouTube URL to the video fetcher" do
+    page = file_fixture("youtube_watch_page.html").read
+
+    result = fetch(page, url: "https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_equal "Jev: O Novo Hype da IA para Devs (QUE NÃO É HYPE)", result.title
+    assert_includes result.text, "Conheça o Jev, o novo modelo de IA da TypeSafe AI"
+    assert_not_includes result.text, "AboutPressCopyright"
+  end
+
+  test "treats a page that is only site chrome as a failed fetch" do
+    chrome = "<html><body><div>AboutPressCopyrightContact usCreatorsAdvertiseDevelopers</div></body></html>"
+
+    error = assert_raises(ArticleFetcher::Error) { fetch(chrome) }
+
+    assert_match(/site chrome/, error.message)
+  end
 end

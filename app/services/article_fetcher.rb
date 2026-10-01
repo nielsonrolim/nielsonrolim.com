@@ -3,6 +3,9 @@
 #
 # The HTML comes from a third-party site, so it is reduced to plain text here and
 # never rendered anywhere.
+#
+# A YouTube watch page needs its own extraction (its content is rendered by
+# JavaScript), so those URLs are delegated to YoutubeFetcher.
 class ArticleFetcher
   Error = Class.new(StandardError)
 
@@ -30,6 +33,16 @@ class ArticleFetcher
   COMMENT_SELECTORS = "#comments, #comments-container, .comments, .comment-list, " \
                       "#disqus_thread, [id^='comment-node-']"
 
+  # A page whose content is rendered by JavaScript leaves only its chrome in the
+  # static HTML, and storing that makes the model summarize the absence of
+  # content. YouTube watch pages have their own path (see YoutubeFetcher); this
+  # catches the same failure elsewhere. A body that is nothing but known chrome
+  # is reported as a failed fetch, so the caller falls back to the RSS excerpt.
+  CHROME_PATTERNS = [
+    /\AAboutPressCopyrightContact us/,
+    /\AJavaScript is disabled/i
+  ].freeze
+
   Result = Struct.new(:title, :text, keyword_init: true)
 
   def initialize(transport: HttpTransport.default)
@@ -39,6 +52,8 @@ class ArticleFetcher
   attr_reader :transport
 
   def call(url)
+    return fetch_youtube(url) if YoutubeFetcher.video_id(url)
+
     html = transport.get(url, accept: HttpTransport::HTML_ACCEPT)
     document = Nokogiri::HTML(html)
 
@@ -48,6 +63,16 @@ class ArticleFetcher
   end
 
   private
+
+  # The video fetcher reads the page's embedded player data instead of its
+  # visible text, so it is handed the same transport and its result mapped onto
+  # this class's Result shape.
+  def fetch_youtube(url)
+    video = YoutubeFetcher.new(transport: transport).call(url)
+    Result.new(title: video.title, text: video.text)
+  rescue YoutubeFetcher::Error => e
+    raise Error, e.message
+  end
 
   # In order of trustworthiness: what the site says the title is, then the
   # document title, then the first heading, and finally the host as a fallback.
@@ -67,7 +92,14 @@ class ArticleFetcher
     document.css("#{NOISE_SELECTORS}, #{COMMENT_SELECTORS}").remove
 
     container = document.at_css("article") || document.at_css("main") || document.at_css("body")
-    plain_text(container&.text).to_s[0, MAX_TEXT_CHARS]
+    text = plain_text(container&.text).to_s[0, MAX_TEXT_CHARS]
+    raise Error, "page body is only site chrome" if chrome_only?(text)
+
+    text
+  end
+
+  def chrome_only?(text)
+    text.present? && CHROME_PATTERNS.any? { |pattern| text.match?(pattern) }
   end
 
   # HTML entities are already decoded by the parser, so this only has to collapse

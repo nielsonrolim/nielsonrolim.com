@@ -170,6 +170,22 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_nil @clipping.source_variant.locale
   end
 
+  test "marks the clipping failed when there is no text to summarize" do
+    clipping = Clipping.new
+    clipping.variants.build(url: "https://example.com/empty", title: "Empty")
+    clipping.save!
+
+    job = GenerateSummaryJob.new(clipping.id, GenerateSummaryJob::MAX_ATTEMPTS)
+    # The generator's own guard must raise before the CLI is ever asked, so the
+    # fake only succeeds in failing the assertion below if the guard is gone.
+    job.summary_generator = SummaryGenerator.new(cli: FakeOpencodeCli.new(error: StandardError.new("CLI ran")))
+    job.article_fetcher = FakeArticleFetcher.new(error: ArticleFetcher::Error.new("blocked bot"))
+    job.perform_now
+
+    assert clipping.reload.failed?
+    assert_match(/no source text/, clipping.summary_error)
+  end
+
   test "truncates a long error message" do
     job_with(FakeSummaryGenerator.new(error: SummaryGenerator::Error.new("x" * 900)),
              attempt: GenerateSummaryJob::MAX_ATTEMPTS).perform_now

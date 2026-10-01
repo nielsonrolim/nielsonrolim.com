@@ -25,7 +25,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "returns the detected language, the translated title and both summaries" do
     cli = cli_returning(payload)
 
-    result = SummaryGenerator.new(cli: cli).call(title: "Original title", url: "https://example.com/a")
+    result = SummaryGenerator.new(cli: cli).call(title: "Original title", url: "https://example.com/a", source: "Body.")
 
     assert_equal "en-US", result.language
     assert_equal "Título traduzido", result.title_translated
@@ -36,7 +36,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "detects a Portuguese article" do
     cli = cli_returning(payload(language: "pt-BR", title: "Translated title"))
 
-    result = SummaryGenerator.new(cli: cli).call(title: "Título", url: "https://example.com/a")
+    result = SummaryGenerator.new(cli: cli).call(title: "Título", url: "https://example.com/a", source: "Body.")
 
     assert_equal "pt-BR", result.language
     assert_equal "Translated title", result.title_translated
@@ -45,19 +45,19 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "tolerates the model wrapping the object in a code fence" do
     cli = cli_returning("```json\n#{JSON.generate(payload)}\n```")
 
-    assert_equal "en-US", SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a").language
+    assert_equal "en-US", SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.").language
   end
 
   test "tolerates a sentence around the object" do
     cli = cli_returning("Here you go: #{JSON.generate(payload)} — hope it helps!")
 
-    assert_equal "en-US", SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a").language
+    assert_equal "en-US", SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.").language
   end
 
   test "collapses line breaks the model slipped into a value" do
     cli = cli_returning(payload(pt: "Primeira parte.\nSegunda parte."))
 
-    result = SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    result = SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     assert_equal "Primeira parte. Segunda parte.", result.summary_for("pt-BR")
   end
@@ -66,7 +66,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning("I could not read that article, sorry.")
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/no JSON object/, error.message)
@@ -76,7 +76,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning('{"language": "en-US", oops}')
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/not valid JSON/, error.message)
@@ -86,7 +86,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning(payload(language: "de-DE"))
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/unsupported language/, error.message)
@@ -96,7 +96,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning(payload(en: ""))
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/no summary in en-US/, error.message)
@@ -106,7 +106,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning(payload(title: "  "))
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/no translated title/, error.message)
@@ -116,7 +116,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = FakeOpencodeCli.new(stderr: "model not found", success: false, exitstatus: 1)
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_equal "model not found", error.message
@@ -126,7 +126,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = FakeOpencodeCli.new(stdout: opencode_json_output(""))
 
     assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
   end
 
@@ -134,14 +134,14 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = FakeOpencodeCli.new(error: OpencodeCli::TimeoutError.new("too slow"))
 
     assert_raises(OpencodeCli::TimeoutError) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
   end
 
   test "requests the model with a JSON stream over a private server" do
     cli = cli_returning(payload)
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     args = cli.last_args
     assert_equal "run", args.first
@@ -153,7 +153,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "passes the timeout through to the CLI" do
     cli = cli_returning(payload)
 
-    SummaryGenerator.new(cli: cli, timeout: 7).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli, timeout: 7).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     assert_equal 7, cli.calls.first.fetch(:timeout)
   end
@@ -217,7 +217,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "does not retry a clean summary" do
     cli = cli_returning(payload)
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     assert_equal 1, cli.calls.size
   end
@@ -229,7 +229,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     )
     cli = cli_returning(clean)
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     assert_equal 1, cli.calls.size
   end
@@ -241,7 +241,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
                    en: "Keeping up with every release is impossible.")
     cli = cli_returning([ bad, good ])
 
-    result = SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    result = SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     assert_equal 2, cli.calls.size
     assert_equal "Acompanhar cada novidade é impossível.", result.summary_for("pt-BR")
@@ -252,7 +252,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     bad = payload(pt: "Ele defende que X.", en: "It argues that Y.")
     cli = cli_returning([ bad, payload ])
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     prompt = cli.prompt
     assert_includes prompt, "CORRECTION"
@@ -277,7 +277,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     cli = cli_returning([ bad, bad ])
 
     error = assert_raises(SummaryGenerator::Error) do
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
     end
 
     assert_match(/kept framing/, error.message)
@@ -299,7 +299,24 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     framings.each do |framing|
       cli = cli_returning([ payload(pt: framing, en: framing), payload ])
 
-      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
+
+      assert_equal 2, cli.calls.size, "expected a retry for: #{framing}"
+    end
+  end
+
+  test "recognises a summary that reports the absence of content" do
+    framings = [
+      "The supplied body contains no substantive information about the subject.",
+      "The available material lacks sufficient information for a conclusion.",
+      "O corpo fornecido não contém informações substantivas sobre o assunto.",
+      "O material disponibilizado é insuficiente para qualquer conclusão."
+    ]
+
+    framings.each do |framing|
+      cli = cli_returning([ payload(pt: framing, en: framing), payload ])
+
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
       assert_equal 2, cli.calls.size, "expected a retry for: #{framing}"
     end
@@ -348,12 +365,17 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_not_includes cli.prompt, "x" * (SummaryGenerator::MAX_SOURCE_CHARS + 1)
   end
 
-  test "notes when no body text is available" do
+  test "raises when there is no body text to summarize" do
     cli = cli_returning(payload)
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: nil)
+    error = assert_raises(SummaryGenerator::Error) do
+      SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: nil)
+    end
 
-    assert_includes cli.prompt, "(no body text available)"
+    assert_match(/no source text/, error.message)
+    # The model is never asked: a summary about the absence of content is not a
+    # summary, and used to be what a failed fetch produced.
+    assert_empty cli.calls
   end
 
   test "reads the model from the environment when not overridden" do
@@ -369,7 +391,7 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
   test "requests Nemotron Ultra by default" do
     cli = cli_returning(payload)
 
-    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a")
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
 
     args = cli.last_args
     assert_equal "opencode/nemotron-3-ultra-free", args[args.index("--model") + 1]
