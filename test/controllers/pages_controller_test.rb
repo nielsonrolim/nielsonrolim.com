@@ -164,4 +164,41 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "title", "Get a newsletter about tech. — Nielson Rolim"
   end
+
+  test "home exposes canonical, hreflang and social metadata" do
+    get "/pt-BR"
+
+    assert_select "link[rel=canonical][href=?]", "http://www.example.com/pt-BR"
+    assert_select "link[rel=alternate][hreflang=pt-BR][href=?]", "http://www.example.com/pt-BR"
+    assert_select "link[rel=alternate][hreflang=en-US][href=?]", "http://www.example.com/en-US"
+    assert_select "link[rel=alternate][hreflang=x-default][href=?]", "http://www.example.com/pt-BR"
+    assert_select "meta[property='og:title'][content=?]", "Nielson Rolim — Engenheiro de Software Sênior"
+    assert_select "meta[property='og:url'][content=?]", "http://www.example.com/pt-BR"
+    assert_select "meta[property='og:locale'][content=?]", "pt_BR"
+    assert_select "meta[property='og:locale:alternate'][content=?]", "en_US"
+    assert_select "meta[property='og:image'][content*=?]", "og-image"
+    assert_select "meta[name=theme-color]", count: 2
+  end
+
+  test "the newsletter page carries its own canonical and alternates" do
+    get "/en-US/newsletter"
+
+    assert_select "link[rel=canonical][href=?]", "http://www.example.com/en-US/newsletter"
+    assert_select "link[rel=alternate][hreflang=pt-BR][href=?]", "http://www.example.com/pt-BR/newsletter"
+    assert_select "meta[property='og:locale'][content=?]", "en_US"
+  end
+
+  test "pages that are not locale-scoped do not advertise language alternates" do
+    get preferences_path(token: subscribers(:first).unsubscribe_token)
+
+    assert_select "link[rel=alternate]", count: 0
+  end
+
+  test "home serves responsive portrait and logo variants" do
+    get "/pt-BR"
+
+    assert_select "img[srcset*=?]", "nielson-240"
+    assert_select "img[srcset*=?]", "jamparuby-240"
+    assert_select "img[sizes=?]", "(max-width: 45rem) 200px, 240px"
+  end
 end

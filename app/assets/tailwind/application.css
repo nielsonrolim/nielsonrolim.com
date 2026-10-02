@@ -176,7 +176,7 @@
   }
 
   .toast {
-    @apply pointer-events-auto w-full max-w-[32rem] cursor-pointer rounded-frame border border-l-[3px] border-current px-4 py-[0.7rem] text-prompt shadow-md motion-reduce:animate-none;
+    @apply pointer-events-auto w-full max-w-[32rem] cursor-pointer rounded-frame border border-l-[3px] border-current px-4 py-3 text-prompt shadow-md motion-reduce:animate-none;
     animation: toast-in 0.18s ease-out;
   }
 
@@ -196,11 +196,11 @@
 
   /* Buttons — base first, then size and colour modifiers (source order wins). */
   .btn {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-frame border border-line-stronger bg-paper px-4 py-[0.4rem] font-mono text-form text-ink-soft no-underline;
+    @apply inline-flex cursor-pointer items-center justify-center rounded-frame border border-line-stronger bg-paper px-4 py-1.5 font-mono text-form text-ink-soft no-underline;
   }
 
   .btn--sm {
-    @apply px-[0.5rem] py-[0.15rem] text-chrome;
+    @apply px-2 py-0.5 text-chrome;
   }
 
   .btn--primary {
@@ -216,12 +216,12 @@
   }
 
   .btn--cta {
-    @apply border-ruby bg-ruby px-[1.1rem] py-[0.65rem] font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink;
+    @apply border-ruby bg-ruby px-4.5 py-2.5 font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink;
   }
 
   /* Chips — the small bordered labels (language, status, category). */
   .chip {
-    @apply inline-flex items-center rounded-frame border border-line-strong bg-surface px-[0.4rem] py-[0.05rem] text-meta text-muted no-underline;
+    @apply inline-flex items-center rounded-frame border border-line-strong bg-surface px-1.5 py-px text-meta text-muted no-underline;
   }
 
   .chip--ok {
@@ -234,7 +234,7 @@
 
   /* Language switch, in the header and on an archived issue. */
   .locale-switch__link {
-    @apply rounded-frame border border-transparent px-[0.45rem] py-[0.4rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
+    @apply rounded-frame border border-transparent px-2 py-1.5 text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
   }
 }
 

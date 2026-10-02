@@ -7,11 +7,11 @@
 <% invalid = subscriber && subscriber.errors.include?(:email) %>
 <div id="subscribe_form">
   <%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
-    <div class="flex flex-wrap gap-[0.6rem]">
+    <div class="flex flex-wrap gap-2.5">
       <%= form.label :email, t("subscribers.form.email"), class: "sr-only" %>
       <%= form.email_field :email, value: subscriber&.email, placeholder: t("subscribers.form.email_placeholder"), required: true, autocomplete: "email",
             aria: { describedby: [ "subscriber-email-hint", ("subscriber-email-error" if invalid) ].compact.join(" "), invalid: ("true" if invalid) },
-            class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby#{' border-err' if invalid}" %>
+            class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-3.5 py-2.5 text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby#{' border-err' if invalid}" %>
       <%= form.submit t("subscribers.form.submit"), class: "btn btn--cta" %>
     </div>
 

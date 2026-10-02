@@ -7,9 +7,11 @@ en-US:
   shared:
     skip_to_content: "Skip to content"
     dismiss: "Dismiss"
+    topbar_path: "~/nielsonrolim"
   pages:
     home:
       title: "Nielson Rolim"
+      portrait_caption: "~/nielson.jpg"
       whoami: "whoami"
       role: "Senior Software Engineer"
       location: "João Pessoa, Paraíba, Brazil"
