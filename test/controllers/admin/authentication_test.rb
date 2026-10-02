@@ -52,6 +52,15 @@ class Admin::AuthenticationTest < ActionDispatch::IntegrationTest
     assert_redirected_to reader_feeds_path
   end
 
+  test "rejects an expired session" do
+    sign_in_as_admin
+    Current.session.update_columns(expires_at: 1.minute.ago)
+
+    get admin_root_path
+
+    assert_redirected_to new_session_path
+  end
+
   test "signs out" do
     sign_in_as_admin
 
