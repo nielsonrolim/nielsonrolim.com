@@ -5,9 +5,19 @@
       try { return localStorage.getItem("theme"); } catch (e) { return null; }
     };
     const prefersDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const apply = (theme) => { root.dataset.theme = theme; };
+    const toggle = () => document.querySelector("[data-theme-toggle]");
+    // Keep the toggle's pressed state in sync with the theme, so assistive
+    // technology announces the current state instead of only the action.
+    const apply = (theme) => {
+      root.dataset.theme = theme;
+      const button = toggle();
+      if (button) button.setAttribute("aria-pressed", String(theme === "dark"));
+    };
 
     apply(stored() || (prefersDark() ? "dark" : "light"));
+    // The button lives after this inline script, so sync its state once the DOM
+    // exists (the script itself runs early to avoid a flash of the wrong theme).
+    document.addEventListener("DOMContentLoaded", () => apply(root.dataset.theme));
 
     document.addEventListener("click", (event) => {
       if (!event.target.closest("[data-theme-toggle]")) return;

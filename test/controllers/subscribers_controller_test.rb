@@ -120,4 +120,29 @@ class SubscribersControllerTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select ".toast--alert"
   end
+
+  test "an invalid signup with Turbo re-renders the form with the error and the typed email" do
+    assert_no_difference("Subscriber.count") do
+      post "/subscribers?locale=pt-BR",
+           params: { subscriber: { email: "not-an-email", nickname: "" } },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+    end
+
+    assert_response :success
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_match(/action="replace"/, response.body)
+    assert_match(/target="subscribe_form"/, response.body)
+    assert_includes response.body, 'value="not-an-email"'
+    assert_includes response.body, 'aria-invalid="true"'
+  end
+
+  test "an invalid signup on the newsletter page with Turbo keeps the source" do
+    post "/subscribers?locale=pt-BR",
+         params: { subscriber: { email: "not-an-email", nickname: "" }, from: "newsletter" },
+         headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+    assert_response :success
+    assert_includes response.body, 'name="from"'
+    assert_includes response.body, 'value="newsletter"'
+  end
 end

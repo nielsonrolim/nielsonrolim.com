@@ -108,4 +108,97 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h3", "Get a newsletter about tech."
     assert_select "body", /Every week I pick the tech links/
   end
+
+  test "home has a single h1 and real section headings" do
+    get "/pt-BR"
+
+    assert_select "h1", count: 1
+    assert_select "h2", minimum: 1
+    assert_select "h2 span.sr-only", "Experiência"
+  end
+
+  test "home exposes a skip link to the main content" do
+    get "/pt-BR"
+
+    assert_select "a[href=?]", "#main", text: "Pular para o conteúdo"
+    assert_select "main#main"
+  end
+
+  test "the language switch stays on the current page" do
+    get "/pt-BR/newsletter"
+    assert_select "a.locale-switch__link[href=?]", "/en-US/newsletter"
+
+    get "/pt-BR"
+    assert_select "a.locale-switch__link[href=?]", "/en-US"
+  end
+
+  test "only the active language carries aria-current" do
+    get "/pt-BR"
+
+    assert_select "a.locale-switch__link[aria-current=?]", "true", count: 1
+    assert_select "a.locale-switch__link[href='/en-US']:not([aria-current])"
+  end
+
+  test "the theme toggle announces its pressed state" do
+    get "/pt-BR"
+
+    assert_select "button[data-theme-toggle][aria-pressed=?]", "false"
+  end
+
+  test "the signup field is labelled and described" do
+    get "/pt-BR"
+
+    assert_select "form label[for=?]", "subscriber_email", text: "E-mail"
+    assert_select "form input[name=?][aria-describedby=?]", "subscriber[email]", "subscriber-email-hint"
+  end
+
+  test "home sets its own page title and description" do
+    get "/pt-BR"
+
+    assert_select "title", "Nielson Rolim — Engenheiro de Software Sênior"
+    assert_select "meta[name=description][content=?]", I18n.t("pages.home.bio")
+  end
+
+  test "the newsletter page sets its own page title" do
+    get "/en-US/newsletter"
+
+    assert_select "title", "Get a newsletter about tech. — Nielson Rolim"
+  end
+
+  test "home exposes canonical, hreflang and social metadata" do
+    get "/pt-BR"
+
+    assert_select "link[rel=canonical][href=?]", "http://www.example.com/pt-BR"
+    assert_select "link[rel=alternate][hreflang=pt-BR][href=?]", "http://www.example.com/pt-BR"
+    assert_select "link[rel=alternate][hreflang=en-US][href=?]", "http://www.example.com/en-US"
+    assert_select "link[rel=alternate][hreflang=x-default][href=?]", "http://www.example.com/pt-BR"
+    assert_select "meta[property='og:title'][content=?]", "Nielson Rolim — Engenheiro de Software Sênior"
+    assert_select "meta[property='og:url'][content=?]", "http://www.example.com/pt-BR"
+    assert_select "meta[property='og:locale'][content=?]", "pt_BR"
+    assert_select "meta[property='og:locale:alternate'][content=?]", "en_US"
+    assert_select "meta[property='og:image'][content*=?]", "og-image"
+    assert_select "meta[name=theme-color]", count: 2
+  end
+
+  test "the newsletter page carries its own canonical and alternates" do
+    get "/en-US/newsletter"
+
+    assert_select "link[rel=canonical][href=?]", "http://www.example.com/en-US/newsletter"
+    assert_select "link[rel=alternate][hreflang=pt-BR][href=?]", "http://www.example.com/pt-BR/newsletter"
+    assert_select "meta[property='og:locale'][content=?]", "en_US"
+  end
+
+  test "pages that are not locale-scoped do not advertise language alternates" do
+    get preferences_path(token: subscribers(:first).unsubscribe_token)
+
+    assert_select "link[rel=alternate]", count: 0
+  end
+
+  test "home serves responsive portrait and logo variants" do
+    get "/pt-BR"
+
+    assert_select "img[srcset*=?]", "nielson-240"
+    assert_select "img[srcset*=?]", "jamparuby-240"
+    assert_select "img[sizes=?]", "(max-width: 45rem) 200px, 240px"
+  end
 end

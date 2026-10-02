@@ -17,11 +17,25 @@ class SubscribersController < ApplicationController
     if already_subscribed?(@subscriber.email) || @subscriber.save
       redirect_to after_signup_path, notice: t("subscribers.create.success"), status: :see_other
     else
-      redirect_to after_signup_path, alert: t("subscribers.create.invalid"), status: :see_other
+      respond_to do |format|
+        format.turbo_stream { render_invalid_subscriber }
+        format.html { redirect_to after_signup_path, alert: t("subscribers.create.invalid"), status: :see_other }
+      end
     end
   end
 
   private
+
+  # Re-renders the signup form in place so the visitor keeps the address they
+  # typed and sees the error next to the field. The address travels in the
+  # response body — never in a redirect URL or the session.
+  def render_invalid_subscriber
+    render turbo_stream: turbo_stream.replace(
+      "subscribe_form",
+      partial: "pages/subscribe_form",
+      locals: { source: ("newsletter" if params[:from] == "newsletter"), subscriber: @subscriber }
+    )
+  end
 
   # The home page and the standalone newsletter page share this endpoint. A
   # submission carrying `from=newsletter` goes back to that page, so the visitor
