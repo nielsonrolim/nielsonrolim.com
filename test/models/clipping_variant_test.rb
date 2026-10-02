@@ -28,6 +28,14 @@ class ClippingVariantTest < ActiveSupport::TestCase
     assert_includes variant.errors.attribute_names, :url
   end
 
+  test "rejects a URL whose scheme is smuggled before an http one" do
+    variant = ClippingVariant.new(clipping: clippings(:pending), title: "t",
+                                  url: "javascript:alert(document.cookie) https://example.com/a")
+
+    assert_not variant.valid?
+    assert_includes variant.errors.attribute_names, :url
+  end
+
   test "rejects a locale the site does not speak" do
     variant = ClippingVariant.new(clipping: clippings(:pending), locale: "de-DE",
                                  url: "https://example.com/a", title: "t")

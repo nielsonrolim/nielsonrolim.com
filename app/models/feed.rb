@@ -1,4 +1,6 @@
 class Feed < ApplicationRecord
+  include SafeUrl
+
   has_many :entries, dependent: :destroy
   has_many :feed_categories, dependent: :destroy
   has_many :categories, through: :feed_categories
@@ -9,9 +11,8 @@ class Feed < ApplicationRecord
   attr_accessor :category
 
   validates :title, presence: true
-  validates :url, presence: true,
-                  uniqueness: true,
-                  format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }
+  validates :url, presence: true, uniqueness: true
+  validates_safe_url :url
 
   # Sort by what the reader actually sees, which is the custom title when set.
   scope :alphabetical, lambda {

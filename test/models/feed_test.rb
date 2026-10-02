@@ -16,6 +16,13 @@ class FeedTest < ActiveSupport::TestCase
     assert_includes feed.errors.attribute_names, :url
   end
 
+  test "rejects a URL whose scheme is smuggled before an http one" do
+    feed = Feed.new(title: "Local", url: "javascript:alert(1) https://example.com/feed")
+
+    assert_not feed.valid?
+    assert_includes feed.errors.attribute_names, :url
+  end
+
   test "does not allow the same feed twice" do
     duplicate = Feed.new(title: "Copy", url: feeds(:ruby_blog).url)
 

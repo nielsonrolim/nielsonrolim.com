@@ -75,7 +75,7 @@
                 </p>
 
                 <h3 class="mt-[0.2rem] mb-[0.25rem] text-base font-bold text-ink">
-                  <%= link_to clipping.title_for(locale), clipping.url_for(locale), target: "_blank", rel: "noopener noreferrer",
+                  <%= link_to clipping.title_for(locale), safe_url(clipping.url_for(locale)), target: "_blank", rel: "noopener noreferrer",
                         class: "text-ink no-underline hover:text-ruby" %>
                 </h3>
 

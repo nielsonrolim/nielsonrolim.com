@@ -62,7 +62,7 @@
           </div>
 
           <p class="mt-[0.2rem] mb-[0.4rem] text-meta">
-            <%= link_to feed.url, feed.url, target: "_blank", rel: "noopener noreferrer", class: "text-muted no-underline hover:text-ruby" %>
+            <%= link_to feed.url, safe_url(feed.url), target: "_blank", rel: "noopener noreferrer", class: "text-muted no-underline hover:text-ruby" %>
           </p>
 
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-chrome text-muted">

@@ -1,8 +1,11 @@
 class Entry < ApplicationRecord
+  include SafeUrl
+
   belongs_to :feed
   has_many :clippings, dependent: :destroy
 
   validates :title, :url, :guid, presence: true
+  validates_safe_url :url
   validates :guid, uniqueness: { scope: :feed_id }
 
   scope :recent, -> { order(published_at: :desc, id: :desc) }

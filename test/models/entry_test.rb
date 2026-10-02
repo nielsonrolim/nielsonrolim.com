@@ -8,6 +8,14 @@ class EntryTest < ActiveSupport::TestCase
     assert_equal [ :guid, :title, :url ].sort, entry.errors.attribute_names.sort
   end
 
+  test "rejects a URL whose scheme is smuggled before an http one" do
+    entry = Entry.new(feed: feeds(:ruby_blog), title: "t", guid: "g",
+                      url: "javascript:alert(1) https://example.com/a")
+
+    assert_not entry.valid?
+    assert_includes entry.errors.attribute_names, :url
+  end
+
   test "guid only has to be unique within a feed" do
     Entry.create!(feed: feeds(:hacker_news), guid: "shared-guid", title: "t", url: "https://example.com/a")
 

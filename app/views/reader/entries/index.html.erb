@@ -87,7 +87,7 @@
           </div>
 
           <h3 class="mt-[0.3rem] mb-[0.35rem] text-lead font-bold text-ink">
-            <%= link_to entry.title, entry.url, target: "_blank", rel: "noopener noreferrer",
+            <%= link_to entry.title, safe_url(entry.url), target: "_blank", rel: "noopener noreferrer",
                   class: "text-ink no-underline hover:text-ruby" %>
           </h3>
 
@@ -97,7 +97,7 @@
             </p>
           <% end %>
 
-          <%= link_to entry.url, entry.url, target: "_blank", rel: "noopener noreferrer",
+          <%= link_to entry.url, safe_url(entry.url), target: "_blank", rel: "noopener noreferrer",
                 class: "mb-[0.6rem] block break-all text-chrome text-muted no-underline hover:text-ink" %>
 
           <div class="flex flex-wrap items-center gap-3 text-chrome">

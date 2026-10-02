@@ -11,6 +11,7 @@
 # never overwritten by a later generation.
 class ClippingVariant < ApplicationRecord
   include SupportedLanguages
+  include SafeUrl
 
   belongs_to :clipping
 
@@ -23,7 +24,7 @@ class ClippingVariant < ApplicationRecord
   validates :title, presence: true
   # Optional: a variant that only holds a machine translation has no page of its
   # own, and readers fall back to the URL of the edition that exists.
-  validates :url, format: { with: URI::DEFAULT_PARSER.make_regexp(%w[http https]) }, allow_nil: true
+  validates_safe_url :url, allow_blank: true
   validate :single_sourceless_variant
 
   scope :ordered, -> { order(Arel.sql("locale IS NULL DESC"), :locale) }

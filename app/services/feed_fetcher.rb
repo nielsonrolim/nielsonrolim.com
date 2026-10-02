@@ -29,7 +29,7 @@ class FeedFetcher
     feed = Feed.create!(
       url: url,
       title: plain_text(parsed.title).presence || URI.parse(url).host.to_s,
-      site_url: parsed.url,
+      site_url: SafeUrl.safe(parsed.url),
       description: truncate_text(plain_text(feed_description(parsed)), 1_000).presence
     )
 
@@ -96,7 +96,7 @@ class FeedFetcher
       last_fetched_at: Time.current,
       last_error: nil,
       title: self.class.plain_text(parsed.title).presence || feed.title,
-      site_url: parsed.url.presence || feed.site_url,
+      site_url: SafeUrl.safe(parsed.url).presence || feed.site_url,
       description: self.class.truncate_text(self.class.plain_text(self.class.feed_description(parsed)), 1_000).presence || feed.description
     )
 
@@ -122,7 +122,9 @@ class FeedFetcher
 
   def row_for(entry)
     guid = entry.entry_id.to_s.presence || entry.url.to_s
-    url = entry.url.to_s
+    # insert_all skips validations, so the scheme check has to happen here: a
+    # feed entry with a javascript:/data: link is dropped rather than stored.
+    url = SafeUrl.safe(entry.url)
     return nil if guid.blank? || url.blank?
 
     now = Time.current
