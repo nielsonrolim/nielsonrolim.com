@@ -1,6 +1,9 @@
+<% content_for :title, "#{t('preferences.show.title')} — #{t('pages.home.title')}" %>
+<% content_for :robots, "noindex, nofollow" %>
+
 <section class="mt-2 max-w-measure">
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("preferences.show.prompt") %></p>
-  <h1 class="mt-[0.1rem] mb-[0.9rem] text-lead font-bold text-ink"><%= t("preferences.show.title") %></h1>
+  <p class="terminal__prompt mt-0 mb-3.5 text-prompt font-bold text-ink"><%= t("preferences.show.prompt") %></p>
+  <h1 class="mt-px mb-3.5 text-lead font-bold text-ink"><%= t("preferences.show.title") %></h1>
 
   <p class="mb-6 text-prompt text-ink-soft">
     <%= t("preferences.show.body", email: @subscriber.email) %>
@@ -11,7 +14,7 @@
     <div>
       <%= form.label :language, t("preferences.show.language_label"), class: "mb-1 block text-chrome text-muted" %>
       <%= form.select :language, Subscriber::LANGUAGES, { selected: @subscriber.language },
-            class: "rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+            class: "rounded-frame border border-line-strong bg-paper px-3 py-1.5 font-mono text-form text-ink focus:border-ruby" %>
       <p class="mt-1 mb-0 text-meta text-muted"><%= t("preferences.show.language_hint") %></p>
     </div>
 

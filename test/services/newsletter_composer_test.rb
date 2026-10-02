@@ -181,4 +181,17 @@ class NewsletterComposerTest < ActiveSupport::TestCase
 
     assert_match(/2 links selecionados/, html)
   end
+
+  test "hides a preheader at the top of the HTML body" do
+    html = NewsletterComposer.new(@clippings, date: @date).to_html
+
+    assert_includes html, I18n.t("newsletters.email.preheader", count: @clippings.size)
+    assert_match(/display:none/, html)
+  end
+
+  test "has no preheader in the plain-text body" do
+    text = NewsletterComposer.new(@clippings, date: @date).to_text
+
+    assert_not_includes text, I18n.t("newsletters.email.preheader", count: @clippings.size)
+  end
 end

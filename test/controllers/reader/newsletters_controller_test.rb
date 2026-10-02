@@ -83,6 +83,12 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href*=?]", "issue_locale=", count: 0
   end
 
+  test "the archive index has a page heading" do
+    get reader_newsletters_path
+
+    assert_select "h1 span.sr-only", "Edições enviadas"
+  end
+
   private
 
   def add_english_body(newsletter)

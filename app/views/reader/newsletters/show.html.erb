@@ -30,6 +30,6 @@
   <%# Rendered in an iframe so the archived email keeps the exact inline styles
       it was delivered with, isolated from the reader's own stylesheet. %>
   <iframe title="<%= issue_body&.subject %>" srcdoc="<%= issue_body&.body %>"
-          sandbox="allow-popups allow-popups-to-escape-sandbox"
+          sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"
           class="h-[70vh] w-full rounded-frame border border-line bg-paper"></iframe>
 </section>

@@ -16,6 +16,14 @@ class NewsletterMailerTest < ActionMailer::TestCase
     assert_equal [ "newsletter@nielsonrolim.com" ], @email.from
   end
 
+  test "sets a Reply-To so replies reach a monitored inbox" do
+    assert_equal [ "contato@nielsonrolim.com" ], @email.reply_to
+  end
+
+  test "tags each issue so mail clients do not collapse them into one thread" do
+    assert_equal "newsletter-#{@newsletter.id}", @email["X-Entity-Ref-ID"].to_s
+  end
+
   test "carries both an HTML and a plain-text part" do
     assert_equal 2, @email.parts.size
 

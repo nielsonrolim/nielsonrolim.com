@@ -94,4 +94,11 @@ class UnsubscribesControllerTest < ActionDispatch::IntegrationTest
 
     assert_not_nil Subscriber.find_by(email: "clipping-reader@example.org")
   end
+
+  test "is marked noindex and has its own title" do
+    get unsubscribe_path(token: subscribers(:first).unsubscribe_token) # pt-BR
+
+    assert_select "meta[name=robots][content=?]", "noindex, nofollow"
+    assert_select "title", "Cancelar inscrição — Nielson Rolim"
+  end
 end

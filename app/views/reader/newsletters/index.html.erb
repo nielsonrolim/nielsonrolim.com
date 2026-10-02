@@ -1,5 +1,8 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.newsletters.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.newsletters.prompt") %></span>
+    <span class="sr-only"><%= t("reader.newsletters.title") %></span>
+  </h1>
 
   <div class="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-line py-3 text-chrome">
     <span class="text-muted"><%= t("reader.newsletters.stats.queued", count: @queued_count) %></span>
@@ -17,10 +20,10 @@
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @newsletters.each do |newsletter| %>
-        <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line py-[1.1rem] last:border-b">
-          <h3 class="m-0 text-base font-bold text-ink">
+        <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-line py-4.5 last:border-b">
+          <h2 class="m-0 text-base font-bold text-ink">
             <%= link_to newsletter.subject, reader_newsletter_path(newsletter), class: "text-ink no-underline hover:text-ruby" %>
-          </h3>
+          </h2>
 
           <span class="chip <%= 'chip--ok' if newsletter.sent? %>">
             <%= t("reader.newsletters.status.#{newsletter.status}") %>

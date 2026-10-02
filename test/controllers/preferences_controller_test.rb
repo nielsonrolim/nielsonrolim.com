@@ -89,4 +89,11 @@ class PreferencesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href^=?]", "/newsletter/unsubscribe"
     assert_select "a[href*=?]", subscribers(:first).unsubscribe_token
   end
+
+  test "is marked noindex and has its own title" do
+    get preferences_path(token: subscribers(:first).unsubscribe_token) # pt-BR
+
+    assert_select "meta[name=robots][content=?]", "noindex, nofollow"
+    assert_select "title", "Preferências da inscrição — Nielson Rolim"
+  end
 end

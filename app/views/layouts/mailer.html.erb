@@ -3,9 +3,25 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
     <title><%= @newsletter&.subject %></title>
+    <%# Email clients strip external CSS; these class-based rules let clients that
+        support prefers-color-scheme darken the shell/card. Clients that ignore the
+        <style> keep the inline light theme, which is the safe fallback. %>
+    <style>
+      :root { color-scheme: light dark; supported-color-schemes: light dark; }
+      body { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      @media (prefers-color-scheme: dark) {
+        .email-shell { background: #12110f !important; color: #f2efe8 !important; }
+        .email-card { background: #1b1a17 !important; border-color: #2b2925 !important; }
+        .email-soft { color: #cfc9bf !important; }
+        .email-muted { color: #948d83 !important; }
+        .email-accent { color: #e05666 !important; }
+      }
+    </style>
   </head>
-  <body style="margin:0;padding:0;background:#f7f6f2;">
+  <body style="margin:0;padding:0;background:#f7f6f2;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
     <%= yield %>
   </body>
 </html>

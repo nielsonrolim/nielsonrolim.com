@@ -429,6 +429,7 @@ pt-BR:
         success: "Removido da fila: %{title}"
     newsletters:
       prompt: "ls issues/"
+      title: "Edições enviadas"
       send_now: "enviar edição agora"
       back: "← voltar ao arquivo"
       language_label: "idioma"
@@ -459,6 +460,9 @@ pt-BR:
     presentation: "Toda semana eu escolho os links que valeram a leitura sobre tecnologia e mando um clipping com resumo direto no seu e-mail. Sem spam, cancele quando quiser."
     subject: "Clipping de tecnologia — %{date}"
     email:
+      preheader:
+        one: "O que valeu a leitura esta semana: %{count} link com resumo."
+        other: "O que valeu a leitura esta semana: %{count} links com resumo."
       intro:
         one: "O que valeu a leitura nesta semana (%{date}): %{count} link selecionado, com resumo."
         other: "O que valeu a leitura nesta semana (%{date}): %{count} links selecionados, com resumo."

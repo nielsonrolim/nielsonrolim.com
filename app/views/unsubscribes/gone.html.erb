@@ -1,6 +1,9 @@
+<% content_for :title, "#{t('unsubscribes.gone.title')} — #{t('pages.home.title')}" %>
+<% content_for :robots, "noindex, nofollow" %>
+
 <section class="mt-2 max-w-measure">
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("unsubscribes.gone.prompt") %></p>
-  <h1 class="mt-[0.1rem] mb-[0.9rem] text-lead font-bold text-ink"><%= t("unsubscribes.gone.title") %></h1>
+  <p class="terminal__prompt mt-0 mb-3.5 text-prompt font-bold text-ink"><%= t("unsubscribes.gone.prompt") %></p>
+  <h1 class="mt-px mb-3.5 text-lead font-bold text-ink"><%= t("unsubscribes.gone.title") %></h1>
 
   <p class="mb-6 text-prompt text-ink-soft"><%= t("unsubscribes.gone.body") %></p>
 

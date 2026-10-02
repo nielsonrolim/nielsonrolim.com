@@ -429,6 +429,7 @@ en-US:
         success: "Removed from the queue: %{title}"
     newsletters:
       prompt: "ls issues/"
+      title: "Sent issues"
       send_now: "send issue now"
       back: "← back to archive"
       language_label: "language"
@@ -459,6 +460,9 @@ en-US:
     presentation: "Every week I pick the tech links worth reading and send a clipping with summaries straight to your inbox. No spam, unsubscribe anytime."
     subject: "Tech clipping — %{date}"
     email:
+      preheader:
+        one: "Worth reading this week: %{count} link, summarized."
+        other: "Worth reading this week: %{count} links, summarized."
       intro:
         one: "Worth reading this week (%{date}): %{count} link, summarized."
         other: "Worth reading this week (%{date}): %{count} links, summarized."
