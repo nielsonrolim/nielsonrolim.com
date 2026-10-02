@@ -28,5 +28,5 @@ bin/ci                      # full local CI: setup, style, bundler-audit, brakem
 - **Two SQLite databases**: app + a separate `queue` DB (`config/database.yml`, schema in `db/queue_schema.rb`). Solid Queue models are wired to it in `config/application.rb`.
 - **Versioned data changes go in `db/data/`** (data_migrate), separate from schema migrations: `bin/rails data:migrate`. `db/seeds.rb` is idempotent starter data only.
 - **Schema change**: edit `db/migrate/`, run `bin/rails db:prepare`. If Solid Queue changes, use its generator rather than editing `db/queue_schema.rb` by hand.
-- Feed/article HTML is untrusted: sanitize on ingest, escape on render, and keep `opencode` runs on `config/opencode/summarizer.json` (all tools denied). Invoke it via argument arrays, never a shell string.
+- Feed/article HTML is untrusted: sanitize on ingest, escape on render, and keep `opencode` runs on `config/opencode/summarizer.json` (default-deny for all tools; `read`/`shell` are `ask` because the free tier rejects a hard deny, and the non-interactive run declines every ask). Invoke it via argument arrays, never a shell string.
 - `.env` is consumed by dotenv and docker compose, not a shell; values with spaces/`<>` break `source .env`.

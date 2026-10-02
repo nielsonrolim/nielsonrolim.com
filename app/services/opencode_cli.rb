@@ -3,8 +3,9 @@ require "timeout"
 
 # Thin wrapper around the `opencode` CLI.
 #
-# Every invocation runs with a locked-down config that denies all tools. The
-# prompts we send embed text scraped from third-party feeds, so a prompt
+# Every invocation runs with a locked-down config that default-denies every
+# tool (`read`/`shell` are `ask`, declined because the run is non-interactive).
+# The prompts we send embed text scraped from third-party feeds, so a prompt
 # injection attempt hidden in an article must never be able to reach a shell, a
 # file edit or a network fetch.
 class OpencodeCli

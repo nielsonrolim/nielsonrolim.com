@@ -27,8 +27,12 @@ agent or the user apply fixes.
   public.
 - **Feed/article HTML is untrusted.** It must be sanitized on ingest and
   escaped on render. `opencode` summary runs are locked down via
-  `config/opencode/summarizer.json` (all tools denied) and must be invoked via
-  argument arrays, never a shell string.
+  `config/opencode/summarizer.json`: a default `deny` for every tool, with
+  `read` and `shell` raised to `ask` only because the free tier rejects configs
+  that deny them outright — a non-interactive run declines every `ask`, so no
+  tool runs. Never "tighten" `read`/`shell` to `deny` without confirming the
+  chosen model accepts it, and invoke the CLI via argument arrays, never a shell
+  string.
 - Secrets live in `.env` (loaded only in development by dotenv-rails). `.env`
   is also consumed by docker compose, not a shell. Never log or commit secrets.
 - Two SQLite DBs; Solid Queue runs jobs from feeds. Treat all fetched remote

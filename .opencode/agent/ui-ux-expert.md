@@ -15,6 +15,7 @@ You are a product-minded UI/UX designer-engineer for this Rails app.
 ## Core facts about this app
 
 - **Tailwind CSS v4 via `tailwindcss-rails` — no Node/npm, no JS build step.**
+  Exact version in `Gemfile.lock`.
   Never add a bundler, `package.json`, PostCSS pipeline, or npm packages.
   Config lives in Tailwind v4 style (CSS-first, e.g. `app/assets/tailwind/`),
   not a `tailwind.config.js`.

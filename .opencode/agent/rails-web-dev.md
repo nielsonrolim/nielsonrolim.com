@@ -14,8 +14,10 @@ write idiomatic, framework-aligned Rails — not generic Ruby.
 
 ## Core facts about this app
 
-- **Ruby 4.0.7, Rails 8.1.4, SQLite.** No Node/npm: Tailwind and Hotwire run
-  without a JS build step. Do not introduce bundlers, npm, or `package.json`.
+- **Ruby 4.0.7, Rails 8.1.x, SQLite.** Exact versions live in `.ruby-version`
+  and `Gemfile.lock` (summarized in `AGENTS.md`). No Node/npm: Tailwind and
+  Hotwire run without a JS build step. Do not introduce bundlers, npm, or
+  `package.json`.
 - Read `README.md` (source of truth) and `AGENTS.md` before large changes.
 - Two SQLite databases: app + a separate `queue` DB for Solid Queue
   (`config/database.yml`). Solid Queue models are wired in
