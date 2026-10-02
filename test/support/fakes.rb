@@ -1,5 +1,9 @@
 require "net/http"
 
+# Tests never touch DNS: unless a test injects its own resolver to exercise the
+# SSRF guard, every host resolves to this public address.
+HttpTransport.resolver = ->(_host) { [ "93.184.216.34" ] }
+
 # Test doubles shared across suites.
 #
 # Minitest 6 dropped minitest/mock (no Object#stub), so the production code

@@ -307,4 +307,64 @@ class HttpTransportTest < ActiveSupport::TestCase
     assert body.valid_encoding?
     assert_equal Encoding::UTF_8, body.encoding
   end
+
+  test "rejects a literal loopback address" do
+    transport = transport_always(http_response(200, "secret"))
+
+    error = assert_raises(HttpTransport::Error) { transport.get("http://127.0.0.1/feed") }
+    assert_match(/blocked address/, error.message)
+  end
+
+  test "rejects the cloud metadata address" do
+    transport = transport_always(http_response(200, "credentials"))
+
+    error = assert_raises(HttpTransport::Error) { transport.get("http://169.254.169.254/latest/meta-data/") }
+    assert_match(/blocked address/, error.message)
+  end
+
+  test "rejects a hostname that resolves to a private address" do
+    transport = HttpTransport.new(
+      session: ->(_uri) { http_response(200, "secret") },
+      resolver: ->(_host) { [ "10.0.0.5" ] }
+    )
+
+    error = assert_raises(HttpTransport::Error) { transport.get("https://internal.example.com/feed") }
+    assert_match(/blocked address/, error.message)
+  end
+
+  test "rejects a redirect to a private address" do
+    transport = transport_returning(http_response(301, "", { "location" => "http://10.0.0.5/feed" }))
+
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
+    assert_match(/blocked address/, error.message)
+  end
+
+  test "allows a host that resolves to a public address" do
+    transport = HttpTransport.new(
+      session: ->(_uri) { http_response(200, "ok") },
+      resolver: ->(_host) { [ "93.184.216.34" ] }
+    )
+
+    assert_equal "ok", transport.get("https://example.com/feed")
+  end
+
+  test "rejects a gzip body that expands past the cap" do
+    buffer = StringIO.new
+    writer = Zlib::GzipWriter.new(buffer)
+    writer.write("a" * (HttpTransport::MAX_BODY_BYTES + 1024))
+    writer.close
+
+    transport = transport_always(http_response(200, buffer.string, { "content-encoding" => "gzip" }))
+
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
+    assert_match(/after decompression/, error.message)
+  end
+
+  test "rejects a deflate body that expands past the cap" do
+    compressed = Zlib::Deflate.deflate("a" * (HttpTransport::MAX_BODY_BYTES + 1024))
+    transport = transport_always(http_response(200, compressed, { "content-encoding" => "deflate" }))
+
+    error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
+    assert_match(/after decompression/, error.message)
+  end
 end
