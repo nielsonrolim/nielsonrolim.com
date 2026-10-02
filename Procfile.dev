@@ -1,0 +1,9 @@
+# Development processes started by `bin/dev` (Foreman).
+#
+#   web  - Puma. In development it also watches and rebuilds Tailwind through the
+#          :tailwindcss Puma plugin (config/puma.rb), so Tailwind needs no entry.
+#   jobs - Solid Queue supervisor: dispatchers, workers and the recurring
+#          scheduler (config/recurring.yml). Required for feed polling, summary
+#          generation and the weekly newsletter send.
+web: bin/rails server
+jobs: bin/jobs start

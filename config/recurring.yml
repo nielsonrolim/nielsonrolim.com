@@ -1,5 +1,6 @@
 # Solid Queue recurring tasks. The section matching Rails.env is loaded by the
-# scheduler (bin/jobs start --recurring).
+# scheduler, which `bin/jobs start` runs by default (use --skip-recurring to omit
+# it, or --only-recurring to run just the scheduler).
 #
 # Times are interpreted in the application time zone (config.time_zone, set from
 # APP_TIME_ZONE / default "Brasilia"). Make sure TZ is exported in production so

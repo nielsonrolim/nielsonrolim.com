@@ -10,8 +10,8 @@ Personal site + private RSS→newsletter app. **Ruby 4.0.7 / Rails 8.1**, SQLite
 mise install && bundle install
 cp .env.example .env        # fill in the mail/SMTP settings you need
 bin/rails db:prepare
-bin/dev                     # Puma + Tailwind watch
-bin/jobs start              # Solid Queue worker + recurring scheduler (needed for feeds/summaries/sends)
+bin/dev                     # Foreman: Puma + Solid Queue worker/scheduler, Tailwind via Puma plugin
+bin/jobs start              # Solid Queue worker + recurring scheduler (bin/dev already runs this)
 bin/rails test              # full suite; single file: bin/rails test test/models/clipping_test.rb
 bin/rails test test/models/clipping_test.rb -n /pattern/
 bin/rubocop                 # rails-omakase style

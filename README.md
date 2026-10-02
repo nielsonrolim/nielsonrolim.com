@@ -60,7 +60,7 @@ bundle install
 cp .env.example .env  # fill in the SMTP / newsletter settings you need
 bin/rails db:prepare
 bin/rails db:seed     # optional: the starter feeds
-bin/dev               # starts Puma; Tailwind rebuilds automatically in dev
+bin/dev               # Foreman: Puma + Solid Queue worker/scheduler (Tailwind via Puma plugin)
 ```
 
 Open http://localhost:3000 — `/` redirects to `/pt-BR`. The admin area lives at
@@ -73,8 +73,10 @@ bin/rails runner 'User.create!(email_address: "you@example.com", password: "a-lo
 
 Until a user exists, `/admin` answers 403 rather than becoming public.
 
-Feed polling, summary generation and the weekly send all run through Solid Queue,
-so start a worker in a second terminal:
+Feed polling, summary generation and the weekly send all run through Solid Queue.
+`bin/dev` starts the worker and the recurring scheduler alongside Puma (through
+Foreman and `Procfile.dev`). If you run the server directly with
+`bin/rails server` instead, start the worker yourself in a second terminal:
 
 ```sh
 bin/jobs start        # workers + the recurring scheduler

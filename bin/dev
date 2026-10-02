@@ -1,2 +1,9 @@
 #!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+
+# Development process manager: runs Puma and the Solid Queue worker/scheduler
+# together through Foreman (see Procfile.dev). Tailwind is watched by the
+# :tailwindcss Puma plugin in config/puma.rb, so it needs no separate process.
+#
+# Port 3000 is pinned so the dev URL keeps matching the APP_HOST default
+# (localhost:3000). Without -p, Foreman would hand `web` PORT=5000.
+exec "bundle", "exec", "foreman", "start", "-f", "Procfile.dev", "-p", "3000", *ARGV

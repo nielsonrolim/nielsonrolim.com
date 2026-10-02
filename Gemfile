@@ -91,6 +91,10 @@ group :development do
   # Opens sent email in the browser instead of delivering it, so the weekly
   # clipping can be reviewed locally without emailing real subscribers.
   gem "letter_opener"
+
+  # Process manager for `bin/dev`: runs Puma and the Solid Queue worker/scheduler
+  # together (see Procfile.dev). Development only.
+  gem "foreman"
 end
 
 gem "tailwindcss-rails", "~> 4.6"
