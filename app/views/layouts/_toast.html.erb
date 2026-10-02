@@ -1,4 +1,9 @@
-<%# A single toast. `type` is the flash key: notice or alert. %>
-<p class="toast toast--<%= type %>" role="<%= type.to_s == "alert" ? "alert" : "status" %>"
+<%# A single toast. `type` is the flash key: notice or alert. The container in
+    the layout owns the live region, so this element stays role-less to avoid a
+    double announcement. %>
+<p class="toast toast--<%= type %> flex items-start gap-3"
    data-controller="toast"
-   data-action="click->toast#dismiss"><%= message %></p>
+   data-action="click->toast#dismiss mouseenter->toast#pause focusin->toast#pause mouseleave->toast#resume focusout->toast#resume">
+  <span class="flex-1"><%= message %></span>
+  <button type="button" class="shrink-0 cursor-pointer border-0 bg-transparent p-0 leading-none text-inherit opacity-70 hover:opacity-100" aria-label="<%= t('shared.dismiss') %>">✕</button>
+</p>

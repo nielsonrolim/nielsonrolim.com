@@ -4,6 +4,9 @@ pt-BR:
       models:
         clipping:
           duplicate_url: "Essa URL já está na fila."
+  shared:
+    skip_to_content: "Pular para o conteúdo"
+    dismiss: "Fechar"
   pages:
     home:
       title: "Nielson Rolim"
@@ -20,8 +23,9 @@ pt-BR:
         stack: "stack"
       experience:
         prompt: "cat experience.log"
-        show_all: "ver todas as %{count} experiências"
-        show_less: "mostrar menos"
+        heading: "Experiência"
+        show_all: "[+] ver todas as %{count} experiências"
+        show_less: "[-] mostrar menos"
         jobs:
           - title: "Senior Software Engineer"
             company: "Light Labs Inc"
@@ -101,6 +105,7 @@ pt-BR:
             summary: "Cofundei uma empresa de hospedagem, liderando suporte ao cliente e desenvolvimento web."
       education:
         prompt: "cat education.txt"
+        heading: "Formação"
         items:
           - institution: "IFPB — Instituto Federal da Paraíba"
             credential: "Tecnólogo em Sistemas para Internet"
@@ -110,9 +115,11 @@ pt-BR:
             year: "2009"
       jampa_ruby:
         prompt: "cat jamparuby.txt"
+        heading: "Jampa Ruby"
         body_html: "Sou membro ativo da <a href=\"https://chat.whatsapp.com/Kan05TwASEtDItNK0ClCJT\">Jampa Ruby</a>, a comunidade de desenvolvedores Ruby da Paraíba, Brasil — parte da <a href=\"https://crudpb.org/\">CRUDPB</a>. Entre no grupo do WhatsApp e participe."
       projects:
         prompt: "cat projects.md"
+        heading: "Projetos"
         items:
           - name: "Lavanderia 60 Minutos"
             description: "Projetei a arquitetura de software de uma rede de lavanderias self-service 100% automatizadas, com mais de 400 lojas no Brasil. Desenvolvi o sistema de gestão e a API que comunica com os terminais das lojas, além da primeira versão do terminal do atendente, rodando em um Raspberry Pi com touchscreen, sincronizado com o sistema central e capaz de operar offline."
@@ -126,20 +133,25 @@ pt-BR:
             tags: "Open Source, GNOME Shell, GJS, JavaScript"
       contact:
         prompt: "cat contact.txt"
+        heading: "Contato"
         email_label: "E-mail"
         github_label: "GitHub"
         linkedin_label: "LinkedIn"
       newsletter:
         prompt: "./subscribe.sh"
+        heading: "Newsletter"
     newsletter:
       prompt: "./newsletter.sh"
+      heading: "Newsletter"
       back: "← voltar ao site"
   subscribers:
     create:
       success: "Inscrição confirmada! Obrigado por assinar."
       invalid: "Não foi possível concluir a inscrição. Verifique o e-mail informado."
     form:
+      email: "E-mail"
       email_placeholder: "seu@email.com"
+      email_hint: "Sem spam. Cancele quando quiser."
       submit: "Inscrever-se"
       nickname_label: "Deixe em branco"
   date:

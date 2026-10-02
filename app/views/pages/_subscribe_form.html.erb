@@ -1,20 +1,33 @@
 <%# Shared newsletter signup form, used by the home page and the standalone
     newsletter page. `source` marks where the submission came from, so the
-    controller can send the visitor back to the page they signed up on. %>
+    controller can send the visitor back to the page they signed up on.
+    `subscriber` (optional) repopulates the field after a failed submission. %>
 <% source = local_assigns[:source] %>
-<%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
-  <div class="flex flex-wrap gap-[0.6rem]">
-    <%= form.label :email, t("subscribers.form.email_placeholder"), class: "sr-only" %>
-    <%= form.email_field :email, placeholder: t("subscribers.form.email_placeholder"), required: true, autocomplete: "email", class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby" %>
-    <%= form.submit t("subscribers.form.submit"), class: "btn btn--cta" %>
-  </div>
+<% subscriber = local_assigns[:subscriber] %>
+<% invalid = subscriber && subscriber.errors.include?(:email) %>
+<div id="subscribe_form">
+  <%= form_with url: subscribers_path(locale: I18n.locale), scope: :subscriber, method: :post do |form| %>
+    <div class="flex flex-wrap gap-[0.6rem]">
+      <%= form.label :email, t("subscribers.form.email"), class: "sr-only" %>
+      <%= form.email_field :email, value: subscriber&.email, placeholder: t("subscribers.form.email_placeholder"), required: true, autocomplete: "email",
+            aria: { describedby: [ "subscriber-email-hint", ("subscriber-email-error" if invalid) ].compact.join(" "), invalid: ("true" if invalid) },
+            class: "min-w-0 flex-[1_1_16rem] rounded-frame border border-line-strong bg-paper px-[0.85rem] py-[0.65rem] text-form text-ink placeholder:text-muted focus:border-ruby focus:outline-2 focus:outline-offset-1 focus:outline-ruby#{' border-err' if invalid}" %>
+      <%= form.submit t("subscribers.form.submit"), class: "btn btn--cta" %>
+    </div>
 
-  <% if source %>
-    <%= hidden_field_tag :from, source %>
+    <% if invalid %>
+      <p id="subscriber-email-error" class="mt-2 text-meta text-err" role="alert"><%= t("subscribers.create.invalid") %></p>
+    <% end %>
+
+    <p id="subscriber-email-hint" class="mt-2 text-meta text-muted"><%= t("subscribers.form.email_hint") %></p>
+
+    <% if source %>
+      <%= hidden_field_tag :from, source %>
+    <% end %>
+
+    <div class="honeypot absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+      <%= form.label :nickname, t("subscribers.form.nickname_label") %>
+      <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
+    </div>
   <% end %>
-
-  <div class="honeypot absolute -left-[9999px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-    <%= form.label :nickname, t("subscribers.form.nickname_label") %>
-    <%= form.text_field :nickname, tabindex: -1, autocomplete: "off" %>
-  </div>
-<% end %>
+</div>

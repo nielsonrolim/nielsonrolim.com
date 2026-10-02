@@ -1,5 +1,11 @@
+<% content_for :title, "#{t('newsletters.title')} — #{t('pages.home.title')}" %>
+<% content_for :description, t('newsletters.presentation') %>
+
 <section class="mt-2 max-w-measure">
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("pages.newsletter.prompt") %></p>
+  <h2 class="mt-0 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("pages.newsletter.prompt") %></span>
+    <span class="sr-only"><%= t("pages.newsletter.heading") %></span>
+  </h2>
   <h3 class="mt-[0.1rem] mb-[0.9rem] text-lead font-bold text-ink"><%= t("newsletters.title") %></h3>
 
   <p class="mt-0 mb-6 text-prompt text-ink-soft"><%= t("newsletters.presentation") %></p>

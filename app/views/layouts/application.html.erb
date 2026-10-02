@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
   <head>
-    <title><%= t("pages.home.title") %> — <%= t("pages.home.role") %></title>
+    <title><%= content_for?(:title) ? yield(:title) : "#{t('pages.home.title')} — #{t('pages.home.role')}" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="<%= t("pages.home.bio") %>">
+    <meta name="description" content="<%= content_for?(:description) ? yield(:description) : t('pages.home.bio') %>">
     <%= render "layouts/theme_script" %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -11,7 +11,9 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="max-tiny:text-[15px]">
+  <body>
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-frame focus:border focus:border-line-stronger focus:bg-paper focus:px-4 focus:py-2 focus:text-ink"><%= t("shared.skip_to_content") %></a>
+
     <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="true">
       <%= render "layouts/toasts" %>
     </div>
@@ -20,18 +22,18 @@
       <header class="mb-12 flex items-center justify-between gap-4 border-b border-line py-[1.1rem] text-chrome text-muted">
         <span class="topbar__path">~/nielsonrolim</span>
         <div class="inline-flex items-center gap-3">
-          <button type="button" data-theme-toggle class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-frame border border-transparent text-muted hover:border-line-strong hover:text-ink" aria-label="<%= t("pages.home.theme_toggle") %>">
+          <button type="button" data-theme-toggle aria-pressed="false" class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-frame border border-transparent text-muted hover:border-line-strong hover:text-ink" aria-label="<%= t("pages.home.theme_toggle") %>">
             <svg class="block h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
           <nav class="inline-flex items-center gap-2" aria-label="<%= t("pages.home.language_label") %>">
-            <%= link_to "PT-BR", home_path(locale: "pt-BR"), class: "locale-switch__link", aria: { current: I18n.locale == :"pt-BR" } %>
-            <%= link_to "EN-US", home_path(locale: "en-US"), class: "locale-switch__link", aria: { current: I18n.locale == :"en-US" } %>
+            <%= link_to "PT-BR", url_for(locale: "pt-BR"), class: "locale-switch__link", aria: { current: ("true" if I18n.locale == :"pt-BR") } %>
+            <%= link_to "EN-US", url_for(locale: "en-US"), class: "locale-switch__link", aria: { current: ("true" if I18n.locale == :"en-US") } %>
           </nav>
         </div>
       </header>
 
-      <main>
+      <main id="main" tabindex="-1">
         <%= yield %>
       </main>
 

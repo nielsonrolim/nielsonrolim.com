@@ -1,7 +1,10 @@
+<% content_for :title, "#{t('.title')} — #{t('.role')}" %>
+<% content_for :description, t('.bio') %>
+
 <section class="mt-2 grid grid-cols-[minmax(180px,240px)_1fr] items-start gap-10 max-narrow:grid-cols-1 max-narrow:gap-7">
   <figure class="m-0 max-narrow:max-w-[200px]">
-    <%= image_tag "nielson.jpg", alt: "Nielson Rolim", width: 900, height: 900, class: "block h-auto w-full rounded-frame border border-line-strong" %>
-    <figcaption class="mt-2 text-caption text-muted">~/nielson.jpg</figcaption>
+    <%= image_tag "nielson.jpg", alt: "Nielson Rolim", width: 900, height: 900, decoding: "async", class: "block h-auto w-full rounded-frame border border-line-strong" %>
+    <figcaption class="mt-2 text-caption text-muted" aria-hidden="true">~/nielson.jpg</figcaption>
   </figure>
 
   <div>
@@ -28,7 +31,10 @@
 </section>
 
 <section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".newsletter.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".newsletter.prompt") %></span>
+    <span class="sr-only"><%= t(".newsletter.heading") %></span>
+  </h2>
   <div class="max-w-measure">
     <h3 class="mt-0 mb-2 text-lead font-bold text-ink"><%= t("newsletters.title") %></h3>
     <p class="mt-0 mb-4"><%= t("newsletters.presentation") %></p>
@@ -37,10 +43,13 @@
 </section>
 
 <section>
-  <% experience = t(".experience.jobs") %>
+  <% experience = Array(t(".experience.jobs")) %>
   <% recent_experience = experience.first(6) %>
   <% earlier_experience = experience.drop(6) %>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".experience.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".experience.prompt") %></span>
+    <span class="sr-only"><%= t(".experience.heading") %></span>
+  </h2>
   <div class="max-w-measure">
     <ol class="m-0 list-none border-l border-line py-0 pl-[1.1rem]">
       <% recent_experience.each_with_index do |job, index| %>
@@ -51,8 +60,8 @@
     <% if earlier_experience.any? %>
       <details class="experience-more group mt-4">
         <summary class="inline-flex cursor-pointer list-none items-center text-prompt text-ruby hover:text-ruby-ink">
-          <span class="group-open:hidden">[+] <%= t(".experience.show_all", count: earlier_experience.size) %></span>
-          <span class="hidden group-open:inline">[-] <%= t(".experience.show_less") %></span>
+          <span class="group-open:hidden"><%= t(".experience.show_all", count: earlier_experience.size) %></span>
+          <span class="hidden group-open:inline"><%= t(".experience.show_less") %></span>
         </summary>
 
         <ol class="mt-6 list-none border-l border-line py-0 pl-[1.1rem]">
@@ -66,10 +75,13 @@
 </section>
 
 <section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".education.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".education.prompt") %></span>
+    <span class="sr-only"><%= t(".education.heading") %></span>
+  </h2>
   <div class="max-w-measure">
     <ol class="m-0 list-none p-0">
-      <% t(".education.items").each do |item| %>
+      <% Array(t(".education.items")).each do |item| %>
         <li class="grid grid-cols-[6rem_1fr] gap-4 border-t border-line py-[1.1rem] last:border-b max-tiny:grid-cols-1 max-tiny:gap-[0.2rem]">
           <span class="whitespace-nowrap text-meta text-muted"><%= item[:year] %></span>
           <div>
@@ -83,7 +95,10 @@
 </section>
 
 <section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".jampa_ruby.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".jampa_ruby.prompt") %></span>
+    <span class="sr-only"><%= t(".jampa_ruby.heading") %></span>
+  </h2>
   <div class="grid max-w-measure grid-cols-[120px_1fr] items-center gap-7 text-ink-soft max-narrow:grid-cols-[84px_1fr] max-narrow:gap-5">
     <%= image_tag "jamparuby.png", alt: "Jampa Ruby", width: 1000, height: 1000, loading: "lazy", class: "block h-auto w-full rounded-frame" %>
     <p class="m-0"><%= t(".jampa_ruby.body_html") %></p>
@@ -91,9 +106,12 @@
 </section>
 
 <section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".projects.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".projects.prompt") %></span>
+    <span class="sr-only"><%= t(".projects.heading") %></span>
+  </h2>
   <div class="max-w-measure">
-    <% t(".projects.items").each do |project| %>
+    <% Array(t(".projects.items")).each do |project| %>
       <article class="border-t border-line py-[1.4rem] last:border-b">
         <h3 class="mt-0 mb-2 text-lead font-bold text-ink">
           <% if project[:url] %>
@@ -105,7 +123,7 @@
         <p class="mt-0 mb-[0.9rem] text-ink-soft"><%= project[:description] %></p>
         <ul class="m-0 flex list-none flex-wrap gap-[0.4rem] p-0">
           <% project[:tags].split(",").each do |tag| %>
-            <li class="rounded-frame border border-line bg-surface px-2 py-[0.15rem] text-caption text-ink-soft"><%= tag.strip %></li>
+            <li class="chip"><%= tag.strip %></li>
           <% end %>
         </ul>
       </article>
@@ -114,7 +132,10 @@
 </section>
 
 <section>
-  <p class="terminal__prompt mt-11 mb-[0.9rem] text-prompt font-bold text-ink"><%= t(".contact.prompt") %></p>
+  <h2 class="mt-11 mb-[0.9rem] text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t(".contact.prompt") %></span>
+    <span class="sr-only"><%= t(".contact.heading") %></span>
+  </h2>
   <ul class="m-0 max-w-measure list-none p-0">
     <li class="grid grid-cols-[7rem_1fr] items-baseline gap-4 border-b border-dashed border-line py-[0.55rem] max-tiny:grid-cols-1 max-tiny:gap-[0.1rem]">
       <span class="text-chrome text-muted"><%= t(".contact.email_label") %></span>

@@ -31,9 +31,9 @@
 
   --text-base: 1rem;
   --text-base--line-height: 1.6;
-  --text-caption: 0.72rem;
+  --text-caption: 0.75rem;
   --text-caption--line-height: 1.6;
-  --text-meta: 0.78rem;
+  --text-meta: 0.8125rem;
   --text-meta--line-height: 1.6;
   --text-chrome: 0.8rem;
   --text-chrome--line-height: 1.6;
@@ -176,7 +176,7 @@
   }
 
   .toast {
-    @apply pointer-events-auto w-full max-w-[32rem] cursor-pointer rounded-frame border border-l-[3px] border-current px-4 py-[0.7rem] text-prompt shadow-md;
+    @apply pointer-events-auto w-full max-w-[32rem] cursor-pointer rounded-frame border border-l-[3px] border-current px-4 py-[0.7rem] text-prompt shadow-md motion-reduce:animate-none;
     animation: toast-in 0.18s ease-out;
   }
 
@@ -234,7 +234,7 @@
 
   /* Language switch, in the header and on an archived issue. */
   .locale-switch__link {
-    @apply rounded-frame border border-transparent px-[0.45rem] py-[0.15rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
+    @apply rounded-frame border border-transparent px-[0.45rem] py-[0.4rem] text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
   }
 }
 
