@@ -72,4 +72,12 @@ class SubscriberTest < ActiveSupport::TestCase
     assert_equal %w[email language created_at], lines.first
     assert_equal [ "clipping-reader@example.org", "en-US" ], lines.second.first(2)
   end
+
+  test "to_csv neutralises a spreadsheet formula in the email" do
+    subscriber = Subscriber.create!(email: "=1+1@example.com")
+
+    line = CSV.parse(Subscriber.to_csv(Subscriber.where(id: subscriber.id))).second
+
+    assert_equal "'=1+1@example.com", line.first
+  end
 end

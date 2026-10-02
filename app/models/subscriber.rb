@@ -43,9 +43,17 @@ class Subscriber < ApplicationRecord
     CSV.generate do |csv|
       csv << %w[email language created_at]
       subscribers.each do |subscriber|
-        csv << [ subscriber.email, subscriber.language, subscriber.created_at.iso8601 ]
+        csv << [ subscriber.email, subscriber.language, subscriber.created_at.iso8601 ].map { |cell| safe_cell(cell) }
       end
     end
+  end
+
+  # A spreadsheet treats a cell starting with =, +, -, @ or a control character
+  # as a formula. An email validator accepts values like "=1+1@example.com", so
+  # prefix those with an apostrophe to keep them text when the export is opened.
+  def self.safe_cell(value)
+    text = value.to_s
+    text.match?(/\A[=+\-@\t\r]/) ? "'#{text}" : text
   end
 
   private
