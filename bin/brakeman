@@ -2,6 +2,7 @@
 require "rubygems"
 require "bundler/setup"
 
-ARGV.unshift("--ensure-latest")
-
+# `--ensure-latest` aborts with exit 5 (and no report) whenever the installed
+# Brakeman is not the newest release, which silently disabled this scan. Pin the
+# version in the Gemfile instead and run the analysis.
 load Gem.bin_path("brakeman", "brakeman")
