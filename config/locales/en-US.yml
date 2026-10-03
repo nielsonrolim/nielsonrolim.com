@@ -384,12 +384,17 @@ en-US:
       translation: "translation"
       translation_pending: "translation pending"
       partial_summary_source: "summary based on RSS excerpt only"
+      deferred_chip: "deferred"
+      deferred_heading: "Deferred"
       hint:
         one: "%{count} clipping will go out in the next weekly issue."
         other: "%{count} clippings will go out in the next weekly issue."
       failed_in_queue:
         one: "(%{count} with a failed summary stays out)"
         other: "(%{count} with a failed summary stay out)"
+      deferred_in_queue:
+        one: "(%{count} deferred to the following issue)"
+        other: "(%{count} deferred to the following issue)"
       summary_status:
         pending: "summary pending"
         fetching: "fetching transcript"
@@ -415,6 +420,7 @@ en-US:
         summary: "summary"
         source_text: "text the summary is generated from"
         source_text_hint: "This is what feeds the summary. Paste the article text here when the fetch could not get it."
+        deferred_note: "Deferred clipping: it sits out the next issue and returns for the one after."
         save: "save"
         cancel: "cancel"
       create:
@@ -429,10 +435,16 @@ en-US:
       refetch_source:
         queued: "Fetching the text again: %{title}"
         no_url: "This clipping has no URL to fetch."
+      defer:
+        success: "Deferred to the next issue: %{title}"
+      resume:
+        success: "Back in the next issue: %{title}"
       actions:
         edit: "edit"
         generate_summary: "generate summary and translation"
         refetch_source: "fetch text again"
+        defer: "defer"
+        resume: "resume"
         confirm_overwrite_summary: "This will replace the hand-edited summary. Continue?"
         remove: "remove"
         confirm_remove: "Remove '%{title}' from the next issue?"
