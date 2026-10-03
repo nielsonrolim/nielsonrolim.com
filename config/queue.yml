@@ -3,9 +3,18 @@ default: &default
     - polling_interval: 1
       batch_size: 500
   workers:
-    - queues: "*"
+    # General pool: everything but the source fetches.
+    - queues: [ feeds, summaries, newsletters, default ]
       threads: 3
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
+      polling_interval: 1
+    # Source fetches run a `yt-dlp` subprocess that can take minutes and retries
+    # rate limits. A worker of its own keeps one slow video from occupying the
+    # general pool and delaying feeds or the newsletter. `SOURCE_FETCH_CONCURRENCY`
+    # is separate so it can be tuned without touching the rest.
+    - queues: [ sources ]
+      threads: <%= ENV.fetch("SOURCE_FETCH_CONCURRENCY", 1) %>
+      processes: 1
       polling_interval: 1
 
 development:

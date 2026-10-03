@@ -10,9 +10,10 @@ module Reader
     end
 
     # Adds a clipping by hand from a URL: the page is fetched for its title and
-    # body. When the fetch fails the clipping is still created — marked failed
-    # with the reason — so the article text can be pasted on the edit page and
-    # the summary generated from there.
+    # body in the background (FetchSourceTextJob), so a slow fetch — a YouTube
+    # transcript can take minutes — does not hold the request open. The clipping
+    # is created immediately with the typed title (or the host) and the reader
+    # sees the "fetching" state until the text is stored.
     def create
       url = create_params[:url].to_s.strip
 
@@ -25,8 +26,10 @@ module Reader
       # fetch so it is stored even when the page itself cannot be fetched.
       @clipping = Clipping.new(source_name: SourceNameResolver.new.call(url))
       # The language is not known yet, so the source edition starts without one.
-      variant = @clipping.variants.build(url: url, origin: :generated)
-      fetch_article(@clipping, variant, url, provided_title: create_params[:title].to_s.strip.presence)
+      # Its title is what the reader typed, or the host until the fetch finds
+      # the real one.
+      title = create_params[:title].to_s.strip.presence
+      variant = @clipping.variants.build(url: url, origin: :generated, title: title || host_of(url))
 
       if @clipping.save
         redirect_after_create(@clipping)
@@ -64,22 +67,32 @@ module Reader
 
     # Runs the summary and the translation for a clipping, on demand. Also how a
     # clipping added without a source gets one, once its text has been pasted in.
+    # When the text has not been stored yet (a manual clipping still fetching, or
+    # one whose fetch failed), fetch it first and let that job chain the summary;
+    # otherwise run the summary directly.
     # This is an explicit request, so it overwrites a summary edited by hand; an
     # automatic run leaves those alone (see Clipping#apply_summary).
     def generate_summary
       clipping = Clipping.find(params[:id])
-      clipping.update!(summary_status: :pending, summary_error: nil)
-      GenerateSummaryJob.perform_later(clipping.id, 1, true)
+
+      if clipping.source_text.blank? && clipping.primary_variant&.url.present?
+        clipping.update!(summary_status: :pending, summary_error: nil)
+        FetchSourceTextJob.perform_later(clipping.id, force: true)
+      else
+        clipping.update!(summary_status: :pending, summary_error: nil)
+        GenerateSummaryJob.perform_later(clipping.id, 1, true)
+      end
 
       redirect_back fallback_location: reader_clippings_path,
                     notice: t("reader.clippings.generate_summary.queued", title: clipping.display_title),
                     status: :see_other
     end
 
-    # Re-fetches the article and replaces the stored text, so a page whose
-    # extraction was fixed (or that came in incomplete) can be summarized again
-    # without deleting the clipping. Text pasted by hand is only replaced when
-    # this is asked for on purpose.
+    # Re-fetches the article and replaces the stored text, in the background, so
+    # a page whose extraction was fixed (or that came in incomplete) can be
+    # summarized again without deleting the clipping. Text pasted by hand is only
+    # replaced when this is asked for on purpose. This does not run the summary:
+    # the text is refreshed, and the reader regenerates on demand.
     def refetch_source
       clipping = Clipping.find(params[:id])
       url = clipping.primary_variant&.url
@@ -91,15 +104,11 @@ module Reader
         return
       end
 
-      article = ArticleFetcher.new.call(url)
-      clipping.update!(source_text: article.text)
+      clipping.update!(summary_status: :fetching)
+      FetchSourceTextJob.perform_later(clipping.id, force: true)
 
       redirect_back fallback_location: edit_reader_clipping_path(clipping),
-                    notice: t("reader.clippings.refetch_source.success", title: clipping.display_title),
-                    status: :see_other
-    rescue ArticleFetcher::Error => e
-      redirect_back fallback_location: edit_reader_clipping_path(clipping),
-                    alert: t("reader.clippings.refetch_source.failure", error: e.message),
+                    notice: t("reader.clippings.refetch_source.queued", title: clipping.display_title),
                     status: :see_other
     end
 
@@ -121,27 +130,13 @@ module Reader
       Clipping.unsent.joins(:variants).where("lower(clipping_variants.url) = ?", url.downcase).exists?
     end
 
-    def fetch_article(clipping, variant, url, provided_title:)
-      article = ArticleFetcher.new.call(url)
-
-      variant.title = provided_title || article.title
-      clipping.source_text = article.text
-    rescue ArticleFetcher::Error => e
-      variant.title = provided_title || host_of(url)
-      clipping.summary_status = :failed
-      clipping.summary_error = t("reader.clippings.create.fetch_failed", error: e.message)
-    end
-
+    # A clipping added by hand is created straight away; its text is fetched in
+    # the background (FetchSourceTextJob), so this always lands on the queue with
+    # the "fetching" state showing.
     def redirect_after_create(clipping)
-      if clipping.failed?
-        redirect_to edit_reader_clipping_path(clipping),
-                    alert: t("reader.clippings.create.added_without_source"),
-                    status: :see_other
-      else
-        redirect_to reader_clippings_path,
-                    notice: t("reader.clippings.create.success", title: clipping.display_title),
-                    status: :see_other
-      end
+      redirect_to reader_clippings_path,
+                  notice: t("reader.clippings.create.success", title: clipping.display_title),
+                  status: :see_other
     end
 
     # Maps the per-language form fields onto variants. A locale with nothing

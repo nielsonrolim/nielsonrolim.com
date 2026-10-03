@@ -14,6 +14,7 @@ class Clipping < ApplicationRecord
 
   enum :summary_status, {
     pending: "pending",
+    fetching: "fetching",
     summarizing: "summarizing",
     summarized: "summarized",
     failed: "failed"
@@ -32,8 +33,9 @@ class Clipping < ApplicationRecord
   scope :shippable, -> { unsent.where.not(summary_status: :failed) }
 
   # A clipping created as already failed (no source to summarize) must not kick
-  # off a generation run.
-  after_create_commit :enqueue_summary_generation, if: :pending?
+  # off a generation run. The first step is fetching the text off the request
+  # cycle (a YouTube transcript can take minutes); that job chains the summary.
+  after_create_commit :enqueue_source_fetch, if: :pending?
 
   # The text the summary is generated from: the article text stored when the
   # clipping was added or fetched (the whole page), falling back to the feed
@@ -188,7 +190,7 @@ class Clipping < ApplicationRecord
     errors.add(:base, :duplicate_url) if scope.exists?
   end
 
-  def enqueue_summary_generation
-    GenerateSummaryJob.perform_later(id)
+  def enqueue_source_fetch
+    FetchSourceTextJob.perform_later(id)
   end
 end

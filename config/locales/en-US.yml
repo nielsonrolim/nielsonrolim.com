@@ -392,6 +392,7 @@ en-US:
         other: "(%{count} with a failed summary stay out)"
       summary_status:
         pending: "summary pending"
+        fetching: "fetching transcript"
         summarizing: "summarizing"
         summarized: "summary ready"
         failed: "summary failed"
@@ -401,7 +402,7 @@ en-US:
         title: "title"
         title_placeholder: "optional"
         submit: "add"
-        hint: "We fetch the page for its title and text to generate the summary. If the fetch fails the clipping is still created so you can complete it on the edit page."
+        hint: "We fetch the page in the background for its title and text to generate the summary. The clipping joins the queue right away; if the fetch fails it stays in the queue so you can complete it on the edit page."
       edit:
         prompt: "edit clipping.conf"
         title: "Edit clipping"
@@ -417,19 +418,16 @@ en-US:
         save: "save"
         cancel: "cancel"
       create:
-        success: "Clipping added: %{title}"
+        success: "Clipping added: %{title}. Fetching the text to summarize."
         duplicate: "That URL is already in the queue."
         invalid: "Could not add: %{error}"
-        fetch_failed: "Could not fetch the page: %{error}"
-        added_without_source: "Clipping created, but we could not fetch the page. Paste the text and use \"generate summary and translation\"."
       update:
         success: "Clipping updated: %{title}"
         invalid: "Could not save: %{error}"
       generate_summary:
         queued: "Summary and translation queued: %{title}"
       refetch_source:
-        success: "Text refreshed: %{title}"
-        failure: "Could not fetch the page: %{error}"
+        queued: "Fetching the text again: %{title}"
         no_url: "This clipping has no URL to fetch."
       actions:
         edit: "edit"

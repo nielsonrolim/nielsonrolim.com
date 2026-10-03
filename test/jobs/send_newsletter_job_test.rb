@@ -72,6 +72,19 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     assert_equal 2, Clipping.unsent.count
   end
 
+  test "defers while a source is still being fetched" do
+    make_all_summaries_ready
+    clippings(:pending).update!(summary_status: :fetching)
+
+    assert_no_difference -> { Newsletter.count } do
+      assert_enqueued_with(job: SendNewsletterJob, args: [ 1 ]) do
+        SendNewsletterJob.new(0).perform_now
+      end
+    end
+
+    assert_no_enqueued_emails
+  end
+
   test "stops deferring once the limit is reached and ships what it has" do
     assert_difference -> { Newsletter.count }, 1 do
       assert_enqueued_emails 2 do

@@ -83,6 +83,9 @@ bin/jobs start        # workers + the recurring scheduler
 ```
 
 Without a worker, clippings stay in `pending` and feeds are never refreshed.
+Source fetches run on their own `sources` worker (see `config/queue.yml`), so a
+slow fetch — a YouTube transcript can take minutes — does not occupy the worker
+that refreshes feeds and sends the newsletter.
 
 To send an issue by hand while developing, use the "send now" button on
 `/admin/reader/newsletters` — the email opens in a browser tab via `letter_opener`.
@@ -205,7 +208,10 @@ that edition's URL, with the same fallback).
 ### Adding and editing a clipping by hand
 
 A clipping does not have to come from a feed: the form at the top of the page
-takes a URL and an optional title. `ArticleFetcher` fetches the page through the
+takes a URL and an optional title. The clipping joins the queue immediately and
+its page is fetched in the background (`FetchSourceTextJob`), so a slow fetch — a
+YouTube transcript can take minutes — never holds the request open; the queue
+shows it as `fetching` until the text is stored. The fetch goes through the
 same `HttpTransport` feeds use, and pulls out a title (`og:title` → `twitter:title`
 → `<title>` → `<h1>`) and the body text (dropping scripts, chrome and asides),
 which becomes `source_text` — the text the summary is generated from. YouTube
@@ -232,10 +238,13 @@ losing the end. The cap exists only
 because some pages are endless, not to shorten normal articles.
 
 When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping is
-**still created**, marked `failed` with the reason and with the host as its title,
-and the page sends you to `/admin/reader/clippings/:id/edit`. There you can paste
-the article text and press **"gerar sumário e tradução"**, which runs the summary
-and the translation on demand. **"buscar texto novamente"** re-fetches the page and
+**still created**, and once the background fetch gives up it lands in the queue
+without text — the job hands straight to the summary run, which marks it `failed`
+if there is nothing to summarize (a feed clipping keeps its RSS excerpt, so it is
+summarized as usual). The edit page
+lets you paste the article text and press **"gerar sumário e tradução"**, which runs the summary
+and the translation on demand. **"buscar texto novamente"** re-fetches the page in
+the background and
 replaces the stored source text, so a page whose extraction was fixed — or that came
 in incomplete — can be summarized again without deleting the clipping. The edit page
 exposes **one title, summary and
@@ -300,18 +309,23 @@ local workers — the Docker `jobs` container writes to the production queue.
 ### How a clipping flows
 
 1. **Clip** an entry → a `Clipping` is created (unique per entry while unsent) and
-   `GenerateSummaryJob` is enqueued.
-2. **Summarize** — the job first makes sure it has the article text: a feed
-   clipping arrives with only the RSS excerpt, so its page is fetched once and
-   the text kept (a failed fetch falls back to the excerpt). A YouTube link goes
+   `FetchSourceTextJob` is enqueued on the `sources` queue.
+2. **Fetch the text** — that job pulls the article's own text off the request
+   cycle (a YouTube transcript can take minutes), marking the clipping
+   `fetching` while it runs. A feed clipping arrives with only the RSS excerpt,
+   so its page is fetched once and the text kept (a failed fetch falls back to
+   the excerpt). A YouTube link goes
    through `YoutubeFetcher`, which reads the video's description and, when
    available, the caption transcript instead of the JavaScript-rendered page. It
-   tries the page's caption tracks best-first (original language, auto-generated
-   ahead of human) and keeps the text within the same 40 000-character cap the
+   tries the page's caption tracks best-first (the video's own language, then a
+   fixed preference list, `-orig` tracks first) and keeps the text within the
+   same 40 000-character cap the
    article path uses. If every listed track comes back empty — YouTube now asks
    for a PoToken the page's own caption URL cannot satisfy — it falls back to
    `yt-dlp` (via the `android_vr` player client, from the static binary installed
-   in the runtime image) before giving up. A
+   in the runtime image) before giving up. Either way the job then enqueues
+   `GenerateSummaryJob`, so the clipping always moves forward.
+3. **Summarize** — `GenerateSummaryJob` runs the summary from the stored text. A
    source that is empty or only page chrome is not summarized at all: the run is
    rejected and the clipping is marked `failed` for a manual pass. An excerpt-only
    summary is constrained to what that excerpt supports and labelled as partial
@@ -575,8 +589,8 @@ app/
                                     PasswordsController (reset), Auth::BaseController,
                                     Admin::BaseController (auth) + Admin::Dashboard,
                                     Admin::Subscribers, Reader::* (nested under /admin)
-  jobs/                             RefreshFeedsJob, GenerateSummaryJob,
-                                    SendNewsletterJob
+  jobs/                             RefreshFeedsJob, FetchSourceTextJob,
+                                    GenerateSummaryJob, SendNewsletterJob
   mailers/                          NewsletterMailer (issue), PasswordsMailer (reset)
   models/                           User, Session, Subscriber, Feed, Category,
                                     FeedCategory, Entry, Clipping, ClippingVariant,

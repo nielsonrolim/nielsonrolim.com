@@ -78,46 +78,21 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_equal "texto colado à mão", generator.calls.first[:source]
   end
 
-  test "fetches the article and uses the full text as the source" do
-    fetcher = FakeArticleFetcher.new(text: "Corpo completo do artigo.")
-    generator = FakeSummaryGenerator.new
-    perform_with(generator, fetcher: fetcher)
-
-    assert_equal [ @clipping.primary_variant.url ], fetcher.calls
-    assert_equal "Corpo completo do artigo.", generator.calls.first[:source]
-    assert_equal "Corpo completo do artigo.", @clipping.reload.source_text
-    assert_equal @clipping.display_title, generator.calls.first[:title]
-    assert_equal @clipping.primary_variant.url, generator.calls.first[:url]
-  end
-
-  test "falls back to the feed summary when the fetch fails" do
-    fetcher = FakeArticleFetcher.new(error: ArticleFetcher::Error.new("blocked bot"))
-    generator = FakeSummaryGenerator.new
-
-    perform_with(generator, fetcher: fetcher)
-
-    assert_equal entries(:solid_queue).summary, generator.calls.first[:source]
-    assert_nil @clipping.reload.source_text
-    assert @clipping.summarized?
-    assert_equal true, generator.calls.first[:source_partial]
-  end
-
   test "passes a full fetched article as a complete source" do
+    @clipping.update!(source_text: "Full article.")
     generator = FakeSummaryGenerator.new
-    perform_with(generator, fetcher: FakeArticleFetcher.new(text: "Full article."))
+
+    perform_with(generator)
 
     assert_equal false, generator.calls.first[:source_partial]
   end
 
-  test "does not fetch again when the text is already stored" do
-    @clipping.update!(source_text: "texto já guardado")
-    fetcher = FakeArticleFetcher.new
+  test "falls back to the feed summary as a partial source" do
     generator = FakeSummaryGenerator.new
+    perform_with(generator)
 
-    perform_with(generator, fetcher: fetcher)
-
-    assert_empty fetcher.calls
-    assert_equal "texto já guardado", generator.calls.first[:source]
+    assert_equal entries(:solid_queue).summary, generator.calls.first[:source]
+    assert_equal true, generator.calls.first[:source_partial]
   end
 
   test "marks the clipping as summarizing while the model runs" do
@@ -140,7 +115,6 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 2, true ]) do
       job = GenerateSummaryJob.new(@clipping.id, 1, true)
       job.summary_generator = FakeSummaryGenerator.new(error: SummaryGenerator::Error.new("boom"))
-      job.article_fetcher = FakeArticleFetcher.new
       job.perform_now
     end
   end
@@ -151,7 +125,6 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
 
     job = GenerateSummaryJob.new(clipping.id, 1, true)
     job.summary_generator = FakeSummaryGenerator.new(result: result)
-    job.article_fetcher = FakeArticleFetcher.new
     job.perform_now
 
     assert_equal "Summary in English.", clipping.reload.summary_for("en-US")
@@ -179,7 +152,6 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     # The generator's own guard must raise before the CLI is ever asked, so the
     # fake only succeeds in failing the assertion below if the guard is gone.
     job.summary_generator = SummaryGenerator.new(cli: FakeOpencodeCli.new(error: StandardError.new("CLI ran")))
-    job.article_fetcher = FakeArticleFetcher.new(error: ArticleFetcher::Error.new("blocked bot"))
     job.perform_now
 
     assert clipping.reload.failed?
@@ -262,14 +234,13 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
   end
 
   # Rails 8.1: job arguments go to `new`, and the instance `perform_now` takes none.
-  def perform_with(generator, attempt: 1, fetcher: FakeArticleFetcher.new)
-    job_with(generator, attempt: attempt, fetcher: fetcher).perform_now
+  def perform_with(generator, attempt: 1)
+    job_with(generator, attempt: attempt).perform_now
   end
 
-  def job_with(generator, attempt: 1, clipping_id: @clipping.id, fetcher: FakeArticleFetcher.new)
+  def job_with(generator, attempt: 1, clipping_id: @clipping.id)
     job = GenerateSummaryJob.new(clipping_id, attempt)
     job.summary_generator = generator
-    job.article_fetcher = fetcher
     job
   end
 

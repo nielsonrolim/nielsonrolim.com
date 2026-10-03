@@ -15,8 +15,8 @@ class ClippingTest < ActiveSupport::TestCase
     assert_includes clipping.errors.attribute_names, :variants
   end
 
-  test "enqueues summary generation as soon as it is marked" do
-    assert_enqueued_with(job: GenerateSummaryJob) do
+  test "enqueues the source fetch as soon as it is marked" do
+    assert_enqueued_with(job: FetchSourceTextJob) do
       build_clipping(entry: entries(:front_page)).save!
     end
   end
