@@ -1,5 +1,6 @@
 <% content_for :title, "#{t('newsletters.title')} — #{t('pages.home.title')}" %>
 <% content_for :description, t('newsletters.presentation') %>
+<% content_for :og_image, I18n.locale == :"en-US" ? "og-image-newsletter-en.jpg" : "og-image-newsletter.jpg" %>
 <% content_for :translated, true %>
 
 <section class="mt-2 max-w-measure">

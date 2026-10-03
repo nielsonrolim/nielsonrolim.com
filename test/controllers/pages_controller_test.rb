@@ -189,6 +189,15 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[property='og:image'][content*=?]", "og-image-en"
   end
 
+  test "the newsletter page uses its own social card per language" do
+    get "/pt-BR/newsletter"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-newsletter-"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-newsletter-en", count: 0
+
+    get "/en-US/newsletter"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-newsletter-en-"
+  end
+
   test "the newsletter page carries its own canonical and alternates" do
     get "/en-US/newsletter"
 

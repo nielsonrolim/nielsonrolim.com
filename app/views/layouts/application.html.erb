@@ -4,8 +4,8 @@
     <% page_title = content_for?(:title) ? yield(:title) : "#{t('pages.home.title')} — #{t('pages.home.role')}" %>
     <% page_description = content_for?(:description) ? yield(:description) : t('pages.home.bio') %>
     <% canonical = content_for?(:canonical) ? yield(:canonical) : "#{request.base_url}#{request.path}" %>
-    <%# Each language has its own branded card, matching the page it shares. %>
-    <% og_image = I18n.locale == :"en-US" ? "og-image-en.jpg" : "og-image.jpg" %>
+    <%# Pages may brand their own share card; otherwise fall back to the locale default. %>
+    <% og_image = content_for?(:og_image) ? yield(:og_image) : (I18n.locale == :"en-US" ? "og-image-en.jpg" : "og-image.jpg") %>
     <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= page_description %>">
