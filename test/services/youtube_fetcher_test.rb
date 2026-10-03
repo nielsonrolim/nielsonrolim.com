@@ -13,7 +13,7 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
   # the request, or "" for an empty body. `caption_bodies:` drives the
   # multi-track case as an Array replayed in the order tracks are attempted,
   # where each entry is a body or `:error`.
-  def fetcher(page: @html, captions: nil, caption_bodies: nil)
+  def fetcher(page: @html, captions: nil, caption_bodies: nil, transcript_cli: nil)
     @requested = []
     replies = caption_bodies&.dup
     session = lambda do |uri|
@@ -30,7 +30,7 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
       end
     end
 
-    YoutubeFetcher.new(transport: HttpTransport.new(session: session))
+    YoutubeFetcher.new(transport: HttpTransport.new(session: session), transcript_cli: transcript_cli)
   end
 
   test "extracts the title and the full description" do
@@ -295,5 +295,88 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
   test "keeps the YouTube ceiling equal to the article and generator ceilings" do
     assert_equal ArticleFetcher::MAX_TEXT_CHARS, YoutubeFetcher::MAX_TEXT_CHARS
     assert_equal SummaryGenerator::MAX_SOURCE_CHARS, YoutubeFetcher::MAX_TEXT_CHARS
+  end
+
+  # --- The yt-dlp transcript fallback -----------------------------------------
+
+  test "falls back to the yt-dlp CLI when every listed track is empty" do
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(subtitles: { "sub.pt-orig.json3" => @captions }))
+
+    result = fetcher(captions: "", transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "hoje vamos falar sobre o Jev"
+  end
+
+  test "asks yt-dlp for the track languages in ranking order" do
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => @captions })
+    cli = YtdlpCli.new(runner: runner)
+
+    fetcher(page: @multi, caption_bodies: [ "", "", "" ], transcript_cli: cli).call("https://www.youtube.com/watch?v=abc12345678")
+
+    langs = runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last
+    # pt is the original language (defaultAudioTrackIndex points at the pt
+    # audio), so its tag comes first; en follows.
+    assert_equal "pt,en", langs
+    assert_includes runner.last_args.last, "watch?v=abc12345678"
+  end
+
+  test "does not call the CLI when the page lists no caption tracks" do
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"d"};</script></body></html>
+    HTML
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => @captions }))
+
+    result = fetcher(page: page, transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "d"
+    refute_includes result.text, "hoje vamos falar"
+  end
+
+  test "does not call the CLI when a track already yielded text" do
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => @captions })
+    cli = YtdlpCli.new(runner: runner)
+
+    result = fetcher(captions: @captions, transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "hoje vamos falar"
+    assert_empty runner.calls
+  end
+
+  test "falls back to the description when the CLI returns nothing" do
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(subtitles: {}))
+
+    result = fetcher(captions: "", transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "Conheça o Jev"
+    refute_includes result.text, "hoje vamos falar"
+  end
+
+  test "a crashing CLI never escapes the fetch" do
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(error: RuntimeError.new("boom")))
+
+    result = fetcher(captions: "", transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "Conheça o Jev"
+  end
+
+  test "a missing yt-dlp binary leaves the fetch on the description" do
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(error: Errno::ENOENT.new("yt-dlp")))
+
+    result = fetcher(captions: "", transcript_cli: cli).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    assert_includes result.text, "Conheça o Jev"
+  end
+
+  test "trims a CLI transcript into the same budget" do
+    transcript = ("A" * 30_000) + "MEIO-MARCADOR" + ("B" * 30_000)
+    body = JSON.generate({ "events" => [ { "segs" => [ { "utf8" => transcript } ] } ] })
+    cli = YtdlpCli.new(runner: FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => body }))
+
+    result = fetcher(page: @multi, caption_bodies: [ "", "", "" ], transcript_cli: cli).call("https://www.youtube.com/watch?v=abc12345678")
+
+    assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
+    assert_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
+    refute_includes result.text, "MEIO-MARCADOR"
   end
 end

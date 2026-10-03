@@ -17,6 +17,13 @@ require "json"
 # of human ones within it — until one yields text, so a broken first track no
 # longer costs the video its transcript.
 #
+# `timedtext` now also requires a PoToken for many videos: it answers HTTP 200
+# with an empty body, so a page that lists tracks can still yield no text. When
+# that happens — and only when the page listed tracks at all — `YtdlpCli` is
+# tried as a fallback, because yt-dlp reaches the captions through the
+# `android_vr` player client without a PoToken provider. Its result goes through
+# the same normalization and the same ceiling as the page's own tracks.
+#
 # Whatever is produced is kept within the same ceiling ArticleFetcher applies to
 # an article, so the stored text is exactly what the model sees and a long
 # transcript is cut at head and tail rather than losing its conclusion.
@@ -103,11 +110,19 @@ class YoutubeFetcher
   end
   private_class_method :query_value
 
-  def initialize(transport: HttpTransport.default)
+  def initialize(transport: HttpTransport.default, transcript_cli: nil)
     @transport = transport
+    @transcript_cli = transcript_cli
   end
 
   attr_reader :transport
+
+  # The transcript fallback, or a `YtdlpCli` when none was injected. The CLI is
+  # a subprocess and a separate seam from the transport (which only speaks
+  # HTTP), so it is injectable for the same reason: tests never spawn it.
+  def transcript_cli
+    @transcript_cli ||= YtdlpCli.new
+  end
 
   def call(url)
     id = self.class.video_id(url)
@@ -118,7 +133,7 @@ class YoutubeFetcher
     raise Error, "no description found for YouTube video #{id}" if description.blank?
 
     title = title_from(html).presence || "YouTube video #{id}"
-    Result.new(title: title, text: compose(description, transcript_from(html, original_language(html))))
+    Result.new(title: title, text: compose(description, transcript_from(html, original_language(html), id)))
   rescue HttpTransport::Error => e
     raise Error, e.message
   end
@@ -153,13 +168,55 @@ class YoutubeFetcher
   # Tries the tracks best-first and keeps the first transcript that has text.
   # Each track can fail (network, expired signature, empty body) without
   # affecting the others or the fetch: the worst case is the description alone.
-  def transcript_from(html, original_language)
-    ordered_tracks(html, original_language).first(MAX_TRACK_ATTEMPTS).each do |track|
-      text = transcript_for(track)
-      return text if text.present?
+  #
+  # When every track comes back empty but the page *did* list tracks, YouTube is
+  # almost certainly insisting on a PoToken for `timedtext` (the response is a
+  # 200 with no body). yt-dlp is tried as a fallback in that one case; if the
+  # page listed no tracks at all there is nothing to fall back to, so no
+  # subprocess is spawned.
+  def transcript_from(html, original_language, id)
+    tracks = ordered_tracks(html, original_language)
+
+    text = tracks.first(MAX_TRACK_ATTEMPTS).lazy.map { |track| transcript_for(track) }.find(&:present?)
+    return text if text.present?
+    return nil if tracks.empty?
+
+    fallback_transcript(id, tracks)
+  end
+
+  # yt-dlp is a subprocess: a crash, a timeout or a missing binary must never
+  # take the fetch down, so this rescues broadly around the one call and only
+  # ever yields text or nil. `YtdlpCli` already rescues its own expected
+  # failures; this is the belt to that pair of braces.
+  #
+  # The language list is a heuristic. The page's ranking carries `languageCode`
+  # ("pt-BR"), but yt-dlp tags its files by the caption track's own tag
+  # ("pt-orig", "pt", "en"). The ranking has no yt-dlp tag to pass, so both the
+  # language code and its base are offered, in ranking order; yt-dlp matches an
+  # exact tag and falls back to its own default when none match.
+  def fallback_transcript(id, tracks)
+    transcript_cli.call(video_id: id, languages: fallback_languages(tracks))
+  rescue StandardError => e
+    Rails.logger.warn("yt-dlp transcript fallback failed for #{id}: #{e.class}: #{e.message}")
+    nil
+  end
+
+  # The deduplicated tag list to ask yt-dlp for, original-language and
+  # auto-generated tracks first (the ranking order). Each track contributes its
+  # `languageCode` and its base tag, plus the `vssId` with its `.`/`a.` prefix
+  # stripped (it sometimes carries a more specific tag than `languageCode`).
+  # Values are reduced to the same safe token the transport uses, and anything
+  # starting with `-` (yt-dlp's exclusion syntax) is dropped.
+  def fallback_languages(tracks)
+    codes = tracks.flat_map do |track|
+      code = track.language_code.to_s
+      [ code, base_language(code), track.vss_id.to_s.sub(/\Aa?\./, "") ]
     end
 
-    nil
+    codes.filter_map do |code|
+      tag = code.to_s[/\A[\w-]+\z/]
+      tag unless tag.nil? || tag.start_with?("-")
+    end.uniq
   end
 
   # One track: a transport error, an empty body or a shape change all just mean
@@ -175,12 +232,22 @@ class YoutubeFetcher
 
     body = transport.get(unescape(track.url) + "&fmt=json3", accept: JSON_ACCEPT,
                          user_agent: HttpTransport::BROWSER_USER_AGENT, headers: headers)
-    events = JSON.parse(body)["events"]
+    self.class.flatten_json3(body)
+  rescue HttpTransport::Error, JSON::ParserError, TypeError
+    nil
+  end
+
+  # The single place json3 is turned into text: joins every caption segment,
+  # collapses the whitespace between cues and returns nil when there is nothing.
+  # Shared by the live captions path and the yt-dlp fallback so both normalize
+  # identically. A malformed body is "no transcript", never an exception.
+  def self.flatten_json3(body)
+    events = JSON.parse(body.to_s)["events"]
     return if events.blank?
 
     Array(events).flat_map { |event| Array(event["segs"]).map { |seg| seg["utf8"] } }
                  .join.gsub(/[[:space:]]+/, " ").strip.presence
-  rescue HttpTransport::Error, JSON::ParserError, TypeError
+  rescue JSON::ParserError, TypeError
     nil
   end
 

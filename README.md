@@ -216,7 +216,11 @@ caption track the page lists is tried best-first (original language, then
 auto-generated ahead of human captions) until one yields text, so a broken track
 does not cost the video its transcript; the caption request goes out with a
 browser user agent and the track's language, since that endpoint is friendlier to
-a browser-like request than to the site's own UA. A page whose
+a browser-like request than to the site's own UA. YouTube's caption endpoint now
+also demands a PoToken for many videos, answering with an empty body even though
+the page lists tracks; when every track comes back empty and the page did list
+tracks, `YtdlpCli` is tried as a fallback — it reaches the captions through
+yt-dlp's `android_vr` player client without a PoToken provider. A page whose
 static HTML is nothing but site chrome counts as a failed fetch, so the RSS excerpt
 is used rather than a body that would make the model summarize the absence of
 content. Both `ArticleFetcher` and `SummaryGenerator` cap the text at 40 000
@@ -302,7 +306,9 @@ local workers — the Docker `jobs` container writes to the production queue.
    available, the caption transcript instead of the JavaScript-rendered page. It
    tries the page's caption tracks best-first (original language, auto-generated
    ahead of human) and keeps the text within the same 40 000-character cap the
-   article path uses. A
+   article path uses. If every listed track comes back empty — YouTube now asks
+   for a PoToken the page's own caption URL cannot satisfy — it falls back to
+   `yt-dlp` (via the `android_vr` player client) before giving up. A
    source that is empty or only page chrome is not summarized at all: the run is
    rejected and the clipping is marked `failed` for a manual pass. An excerpt-only
    summary is constrained to what that excerpt supports and labelled as partial

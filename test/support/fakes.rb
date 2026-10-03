@@ -148,6 +148,49 @@ class FakeArticleFetcher
   end
 end
 
+# Stands in for the `YtdlpCli` Open3 runner seam. It writes the scenario's
+# subtitle files into the working directory yt-dlp was given, so the real
+# `YtdlpCli#call` — arg building, file selection, parsing — runs untouched,
+# without a process or a network.
+#
+# `subtitles` is a Hash of filename => body ("sub.pt-orig.json3" => json3 text),
+# written on every call. `statuses` can instead be an Array of
+# [success, exitstatus, stderr] replayed one per call, to drive the 429 retry.
+class FakeYtdlpRunner
+  attr_reader :calls
+
+  def initialize(subtitles: {}, success: true, exitstatus: 0, stderr: "", statuses: nil, error: nil)
+    @subtitles = subtitles
+    @statuses = statuses
+    @default_status = YtdlpCli::Status.new(success, exitstatus, stderr)
+    @error = error
+    @calls = []
+  end
+
+  def call(args, chdir:)
+    @calls << { args: args, chdir: chdir }
+    raise @error if @error
+
+    @subtitles.each do |name, body|
+      File.write(File.join(chdir, name), body)
+    end
+
+    next_status
+  end
+
+  def last_args = calls.last&.fetch(:args)
+  def last_chdir = calls.last&.fetch(:chdir)
+
+  private
+
+  def next_status
+    return @default_status unless @statuses
+
+    success, exitstatus, stderr = @statuses.shift || [ true, 0, "" ]
+    YtdlpCli::Status.new(success, exitstatus, stderr)
+  end
+end
+
 # Wraps a JSON event stream the way `opencode run --format json` emits it.
 module OpencodeEventHelpers
   def opencode_json_output(text, session_id: "ses_test")
