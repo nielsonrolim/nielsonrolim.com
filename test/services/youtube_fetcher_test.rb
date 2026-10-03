@@ -8,15 +8,22 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
 
   # Builds a fetcher whose transport serves the watch page, then the caption
   # track (unless `captions:` says otherwise), recording every URL requested.
-  def fetcher(page: @html, captions: nil)
+  #
+  # `captions:` controls the single-track case: a String body, `:error` to fail
+  # the request, or "" for an empty body. `caption_bodies:` drives the
+  # multi-track case as an Array replayed in the order tracks are attempted,
+  # where each entry is a body or `:error`.
+  def fetcher(page: @html, captions: nil, caption_bodies: nil)
     @requested = []
+    replies = caption_bodies&.dup
     session = lambda do |uri|
       @requested << uri.to_s
       if uri.to_s.include?("/api/timedtext")
-        if captions.is_a?(Symbol)
+        reply = caption_bodies ? replies.shift : captions
+        if reply == :error
           raise HttpTransport::Error, "captions unavailable"
         else
-          http_response(200, captions.to_s)
+          http_response(200, reply.to_s)
         end
       else
         http_response(200, page)
@@ -113,5 +120,136 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     assert_nil YoutubeFetcher.video_id("https://example.com/watch?v=abc123")
     assert_nil YoutubeFetcher.video_id("file:///etc/passwd")
     assert_nil YoutubeFetcher.video_id("not a url")
+  end
+
+  # --- Multiple caption tracks ------------------------------------------------
+
+  setup do
+    @multi = file_fixture("youtube_watch_page_multiple_tracks.html").read
+    @second = file_fixture("youtube_captions_second.json").read
+  end
+
+  test "prefers the original language's human track" do
+    # pt is the original (defaultAudioTrackIndex points at the pt audio): the
+    # pt human track is chosen even though it is listed last.
+    result = fetcher(page: @multi, caption_bodies: [ @captions ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_includes result.text, "hoje vamos falar sobre o Jev"
+    refute_includes result.text, "Segunda faixa"
+  end
+
+  test "falls back to the next track when the first fails" do
+    result = fetcher(page: @multi, caption_bodies: [ :error, @second ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_includes result.text, "Segunda faixa"
+  end
+
+  test "falls back to the next track when the first is empty" do
+    result = fetcher(page: @multi, caption_bodies: [ '{"events":[]}', @second ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_includes result.text, "Segunda faixa"
+  end
+
+  test "prefers the auto-generated track over a human one in the same language" do
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"d","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=en","languageCode":"en","vssId":".en"},
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=en\\u0026caps=asr","languageCode":"en","vssId":"a.en","kind":"asr"}
+      ]}}};</script></body></html>
+    HTML
+
+    fetcher(page: page, caption_bodies: [ @second ]).call("https://www.youtube.com/watch?v=a")
+
+    # Same language, so the auto-generated track is ranked ahead of the human
+    # one even though the human one is listed first in the page.
+    assert_includes @requested.find { |url| url.include?("/api/timedtext") }, "caps=asr"
+  end
+
+  test "prefers an original-language auto track over a human track in another language" do
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"d","defaultAudioLanguage":"en","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=pt","languageCode":"pt","vssId":".pt"},
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=en\\u0026caps=asr","languageCode":"en","vssId":"a.en","kind":"asr"}
+      ]}}};</script></body></html>
+    HTML
+
+    fetcher(page: page, caption_bodies: [ @second ]).call("https://www.youtube.com/watch?v=a")
+
+    # en is the original language, so its auto track is tried before the pt one.
+    assert_includes @requested.find { |url| url.include?("/api/timedtext") }, "lang=en"
+  end
+
+  test "stops after the first successful track" do
+    fetcher(page: @multi, caption_bodies: [ @captions, :error ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_equal 1, @requested.count { |url| url.include?("/api/timedtext") }
+  end
+
+  test "tries at most MAX_TRACK_ATTEMPTS tracks" do
+    fetcher(page: @multi, caption_bodies: [ :error, :error, :error, @second ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_equal YoutubeFetcher::MAX_TRACK_ATTEMPTS, @requested.count { |url| url.include?("/api/timedtext") }
+  end
+
+  test "reads the original language from defaultAudioLanguage when present" do
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"d","defaultAudioLanguage":"pt-BR","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=en","languageCode":"en"},
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=pt","languageCode":"pt"}
+      ]}}};</script></body></html>
+    HTML
+
+    result = fetcher(page: page, caption_bodies: [ @second ]).call("https://www.youtube.com/watch?v=a")
+
+    # The pt track is attempted first, so the en one is never requested.
+    assert_equal 1, @requested.count { |url| url.include?("/api/timedtext") }
+    assert_includes @requested.find { |url| url.include?("/api/timedtext") }, "lang=pt"
+    assert_includes result.text, "Segunda faixa"
+  end
+
+  # --- The transcript budget --------------------------------------------------
+
+  test "leaves a short transcript whole, without a truncation marker" do
+    result = fetcher(page: @multi, caption_bodies: [ @captions ]).call("https://www.youtube.com/watch?v=abc123")
+
+    refute_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
+    assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
+  end
+
+  test "cuts a long transcript at head and tail, keeping the conclusion" do
+    transcript = ("A" * 30_000) + "MEIO-MARCADOR" + ("B" * 30_000)
+    captions = JSON.generate({ "events" => [ { "segs" => [ { "utf8" => transcript } ] } ] })
+
+    result = fetcher(page: @multi, caption_bodies: [ captions ]).call("https://www.youtube.com/watch?v=abc123")
+
+    assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
+    assert_includes result.text, "A" * 100
+    assert_includes result.text, "B" * 100
+    assert_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
+    refute_includes result.text, "MEIO-MARCADOR"
+  end
+
+  test "leaves the transcript out when the description fills the budget" do
+    description = "D" * (YoutubeFetcher::MAX_TEXT_CHARS + 500)
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"#{description}","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=pt","languageCode":"pt"}
+      ]}}};</script></body></html>
+    HTML
+
+    result = fetcher(page: page, caption_bodies: [ @captions ]).call("https://www.youtube.com/watch?v=a")
+
+    assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
+    refute_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
+    refute_includes result.text, "hoje vamos falar"
+  end
+
+  test "keeps the YouTube ceiling equal to the article and generator ceilings" do
+    assert_equal ArticleFetcher::MAX_TEXT_CHARS, YoutubeFetcher::MAX_TEXT_CHARS
+    assert_equal SummaryGenerator::MAX_SOURCE_CHARS, YoutubeFetcher::MAX_TEXT_CHARS
   end
 end

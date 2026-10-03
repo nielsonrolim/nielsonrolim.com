@@ -211,11 +211,16 @@ same `HttpTransport` feeds use, and pulls out a title (`og:title` → `twitter:t
 which becomes `source_text` — the text the summary is generated from. YouTube
 watch pages are the exception: their content is rendered by JavaScript, so
 `YoutubeFetcher` reads the video's own data from the page instead — the title, the
-full description and, when YouTube serves it, the caption transcript. A page whose
+full description and, when YouTube serves it, the caption transcript. Every
+caption track the page lists is tried best-first (original language, then
+auto-generated ahead of human captions) until one yields text, so a broken track
+does not cost the video its transcript. A page whose
 static HTML is nothing but site chrome counts as a failed fetch, so the RSS excerpt
 is used rather than a body that would make the model summarize the absence of
 content. Both `ArticleFetcher` and `SummaryGenerator` cap the text at 40 000
-characters, so a fetched article reaches the model whole; the cap exists only
+characters, and the YouTube path keeps to the same ceiling — trimming a long
+transcript at head and tail so the opening and the conclusion survive rather than
+losing the end. The cap exists only
 because some pages are endless, not to shorten normal articles.
 
 When the fetch fails (blocked bot, paywall, JavaScript-only page) the clipping is
@@ -292,7 +297,10 @@ local workers — the Docker `jobs` container writes to the production queue.
    clipping arrives with only the RSS excerpt, so its page is fetched once and
    the text kept (a failed fetch falls back to the excerpt). A YouTube link goes
    through `YoutubeFetcher`, which reads the video's description and, when
-   available, the caption transcript instead of the JavaScript-rendered page. A
+   available, the caption transcript instead of the JavaScript-rendered page. It
+   tries the page's caption tracks best-first (original language, auto-generated
+   ahead of human) and keeps the text within the same 40 000-character cap the
+   article path uses. A
    source that is empty or only page chrome is not summarized at all: the run is
    rejected and the clipping is marked `failed` for a manual pass. An excerpt-only
    summary is constrained to what that excerpt supports and labelled as partial
