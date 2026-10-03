@@ -87,6 +87,12 @@ class Clipping < ApplicationRecord
     variants.detect { |variant| variant.url.present? } || variants.first
   end
 
+  # The URL the clipping's text is fetched from, and the edition a reader with no
+  # URL of their own falls back to. Blank until an edition has a URL.
+  def source_url
+    primary_variant&.url
+  end
+
   # The languages the story is actually published in — only pt-BR, only en-US,
   # or both. A translation with no URL of its own does not count: the story has
   # no edition in that language, only a translated rendering of another one.
@@ -115,7 +121,7 @@ class Clipping < ApplicationRecord
   # The URL to send a reader of `locale` to: their edition's own URL when the
   # story has one, otherwise the primary edition's.
   def url_for(locale)
-    variant_for(locale)&.url.presence || primary_variant&.url
+    variant_for(locale)&.url.presence || source_url
   end
 
   def display_title

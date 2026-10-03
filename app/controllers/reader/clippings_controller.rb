@@ -79,7 +79,7 @@ module Reader
     def generate_summary
       clipping = Clipping.find(params[:id])
 
-      if clipping.source_text.blank? && clipping.primary_variant&.url.present?
+      if clipping.source_text.blank? && clipping.source_url.present?
         clipping.update!(summary_status: :pending, summary_error: nil)
         FetchSourceTextJob.perform_later(clipping.id, force: true, overwrite: true)
       else
@@ -99,7 +99,7 @@ module Reader
     # the text is refreshed, and the reader regenerates on demand.
     def refetch_source
       clipping = Clipping.find(params[:id])
-      url = clipping.primary_variant&.url
+      url = clipping.source_url
 
       if url.blank?
         redirect_back fallback_location: edit_reader_clipping_path(clipping),

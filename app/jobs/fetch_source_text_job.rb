@@ -51,7 +51,7 @@ class FetchSourceTextJob < ApplicationJob
   def fetch_text(clipping, force:)
     return if clipping.source_text.present? && !force
 
-    url = clipping.primary_variant&.url
+    url = clipping.source_url
     return if url.blank?
 
     article = article_fetcher.call(url)

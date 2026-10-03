@@ -123,6 +123,12 @@ class ClippingTest < ActiveSupport::TestCase
     assert_equal "Understanding Solid Queue internals", pending.primary_variant.title
   end
 
+  test "source_url is the primary edition's URL" do
+    assert_equal "https://example.com/rails-8-1", clippings(:queued).source_url
+    assert_equal "https://example.com/single", clippings(:single).source_url
+    assert_nil Clipping.new.source_url
+  end
+
   test "source_variant is the edition before the language is detected" do
     assert_nil clippings(:pending).source_variant.locale
     assert_nil clippings(:queued).source_variant
