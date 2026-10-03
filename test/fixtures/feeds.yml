@@ -14,4 +14,5 @@ hacker_news:
 broken:
   title: "Broken Feed"
   url: "https://broken.example.com/feed"
-  last_error: "FeedFetcher::Error: HTTP 503 for https://broken.example.com/feed"
+  # Long enough to need the "show full error" disclosure in the reader list.
+  last_error: "FeedFetcher::Error: HTTP 503 for https://broken.example.com/feed — the upstream server returned Service Unavailable and the body was empty"

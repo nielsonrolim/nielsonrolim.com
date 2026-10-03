@@ -288,6 +288,8 @@ en-US:
       empty: "No feeds yet."
       never_fetched: "never fetched"
       error: "error"
+      error_more: "[+ show full error]"
+      error_less: "[- hide error]"
       total:
         one: "%{count} feed"
         other: "%{count} feeds"

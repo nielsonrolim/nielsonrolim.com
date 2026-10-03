@@ -288,6 +288,8 @@ pt-BR:
       empty: "Nenhuma fonte cadastrada."
       never_fetched: "nunca consultada"
       error: "erro"
+      error_more: "[+ ver erro completo]"
+      error_less: "[- ocultar erro]"
       total:
         one: "%{count} fonte"
         other: "%{count} fontes"

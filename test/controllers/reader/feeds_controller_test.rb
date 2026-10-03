@@ -30,6 +30,19 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".text-err", /HTTP 503/
   end
 
+  test "the full error is reachable without a mouse" do
+    feed = feeds(:broken)
+    assert_operator feed.last_error.length, :>, 90
+
+    get reader_feeds_path
+
+    assert_response :success
+    # Truncated in plain sight, the rest behind a native disclosure.
+    assert_select "details summary", /ver erro completo/
+    assert_select "details span", /the upstream server returned Service Unavailable/
+    assert_select "[title=?]", feed.last_error, count: 0
+  end
+
   test "adding a feed learns its title from the feed itself" do
     assert_difference -> { Feed.count }, 1 do
       assert_enqueued_with(job: RefreshFeedsJob) do
