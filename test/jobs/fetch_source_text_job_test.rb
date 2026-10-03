@@ -23,7 +23,7 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
   test "stores the fetched text and hands off to the summary" do
     fetcher = FakeArticleFetcher.new(text: "Corpo completo.")
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 1, false ]) do
       job_with(fetcher).perform_now
     end
 
@@ -50,7 +50,7 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
   test "still hands off to the summary when the fetch fails" do
     fetcher = FakeArticleFetcher.new(error: ArticleFetcher::Error.new("blocked bot"))
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 1, false ]) do
       job_with(fetcher).perform_now
     end
 
@@ -62,7 +62,7 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
     @clipping.update!(source_text: "texto já guardado")
     fetcher = FakeArticleFetcher.new
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ @clipping.id, 1, false ]) do
       job_with(fetcher).perform_now
     end
 
@@ -86,7 +86,7 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
     clipping.save!
     fetcher = FakeArticleFetcher.new
 
-    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id ]) do
+    assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id, 1, false ]) do
       job_with(fetcher, clipping: clipping).perform_now
     end
 
@@ -103,8 +103,9 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
 
   private
 
-  def job_with(fetcher, clipping: @clipping, clipping_id: nil, force: false)
-    job = FetchSourceTextJob.new(clipping_id || clipping.id, force: force)
+  def job_with(fetcher, clipping: @clipping, clipping_id: nil, force: false, chain_summary: true, overwrite: false)
+    job = FetchSourceTextJob.new(clipping_id || clipping.id, force: force,
+                                 chain_summary: chain_summary, overwrite: overwrite)
     job.article_fetcher = fetcher
     job
   end

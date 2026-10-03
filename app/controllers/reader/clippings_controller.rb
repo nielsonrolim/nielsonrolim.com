@@ -77,7 +77,7 @@ module Reader
 
       if clipping.source_text.blank? && clipping.primary_variant&.url.present?
         clipping.update!(summary_status: :pending, summary_error: nil)
-        FetchSourceTextJob.perform_later(clipping.id, force: true)
+        FetchSourceTextJob.perform_later(clipping.id, force: true, overwrite: true)
       else
         clipping.update!(summary_status: :pending, summary_error: nil)
         GenerateSummaryJob.perform_later(clipping.id, 1, true)
@@ -105,7 +105,7 @@ module Reader
       end
 
       clipping.update!(summary_status: :fetching)
-      FetchSourceTextJob.perform_later(clipping.id, force: true)
+      FetchSourceTextJob.perform_later(clipping.id, force: true, chain_summary: false)
 
       redirect_back fallback_location: edit_reader_clipping_path(clipping),
                     notice: t("reader.clippings.refetch_source.queued", title: clipping.display_title),

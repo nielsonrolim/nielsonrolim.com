@@ -23,7 +23,13 @@ class FetchSourceTextJob < ApplicationJob
 
   # `force` re-fetches even when text is already stored: the explicit "fetch text
   # again" button, which must not skip on the existing text.
-  def perform(clipping_id, force: false)
+  #
+  # `chain_summary` is false for that button too: it refreshes the text only, and
+  # enqueuing a summary there would run the model (and overwrite the stored
+  # summary) without the reader asking for it. `overwrite` rides along to the
+  # chained summary so the explicit "generate summary" button, which may have to
+  # fetch first, still overwrites a hand-edited summary as it promises.
+  def perform(clipping_id, force: false, chain_summary: true, overwrite: false)
     clipping = Clipping.find_by(id: clipping_id)
     return if clipping.nil?
 
@@ -32,7 +38,7 @@ class FetchSourceTextJob < ApplicationJob
   ensure
     # Never leave the clipping stuck in `fetching`: whatever happened, hand off
     # to the summary run (or the failure it will record).
-    GenerateSummaryJob.perform_later(clipping_id) if clipping
+    GenerateSummaryJob.perform_later(clipping_id, 1, overwrite) if clipping && chain_summary
   end
 
   private

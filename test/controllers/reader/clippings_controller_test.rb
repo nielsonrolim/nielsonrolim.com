@@ -118,7 +118,9 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = clippings(:pending)
     clipping.update!(summary_status: :failed, summary_error: "boom", source_text: nil)
 
-    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true } ]) do
+    # The explicit button must still overwrite a hand-edited summary, so the
+    # overwrite flag rides along to the chained summary job.
+    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true, overwrite: true } ]) do
       post generate_summary_reader_clipping_path(clipping)
     end
 
@@ -357,11 +359,11 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert clipping.reload.pending?
   end
 
-  test "refetching the source enqueues the fetch with force" do
+  test "refetching the source enqueues the fetch with force and no summary" do
     clipping = clippings(:queued)
     clipping.update!(source_text: "texto antigo")
 
-    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true } ]) do
+    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true, chain_summary: false } ]) do
       post refetch_source_reader_clipping_path(clipping)
     end
 
