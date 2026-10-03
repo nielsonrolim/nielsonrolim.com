@@ -1,5 +1,8 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("admin.subscribers.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("admin.subscribers.prompt") %></span>
+    <span class="sr-only"><%= t("admin.subscribers.title") %></span>
+  </h1>
 
   <div class="mb-8 grid gap-4 border border-line bg-surface p-4">
     <div class="flex flex-wrap items-end gap-3">
@@ -7,7 +10,7 @@
         <div class="min-w-[16rem] flex-1">
           <%= form.label :q, t("admin.subscribers.search.label"), class: "mb-1 block text-chrome text-muted" %>
           <%= form.search_field :q, value: @query, placeholder: t("admin.subscribers.search.placeholder"),
-                class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+                class: "field focus:border-ruby" %>
         </div>
         <%= form.submit t("admin.subscribers.search.submit"),
               class: "btn btn--primary" %>
@@ -24,13 +27,13 @@
     <%= form_with model: @subscriber, url: admin_subscribers_path, class: "flex flex-wrap items-end gap-3 border-t border-line pt-4" do |form| %>
       <div class="min-w-[15rem] flex-1">
         <%= form.label :email, t("admin.subscribers.form.email"), class: "mb-1 block text-chrome text-muted" %>
-        <%= form.email_field :email, required: true, placeholder: "pessoa@exemplo.com",
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+        <%= form.email_field :email, required: true, placeholder: t("admin.subscribers.form.email_placeholder"),
+              class: "field focus:border-ruby" %>
       </div>
       <div>
         <%= form.label :language, t("admin.subscribers.form.language"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.select :language, Subscriber::LANGUAGES, {},
-              class: "rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field w-auto focus:border-ruby" %>
       </div>
       <%= form.submit t("admin.subscribers.form.submit"),
             class: "btn btn--primary" %>
@@ -74,20 +77,20 @@
               <%= form.label :language, t("admin.subscribers.form.language"), class: "whitespace-nowrap text-meta" %>
               <%= form.select :language, Subscriber::LANGUAGES, {},
                     onchange: "this.form.requestSubmit()",
-                    class: "rounded-frame border border-line-strong bg-paper px-2 py-[0.15rem] font-mono text-meta text-ink focus:border-ruby focus:outline-none" %>
+                    class: "field field--sm w-auto focus:border-ruby" %>
             <% end %>
 
             <label class="flex min-w-[18rem] flex-1 items-center gap-2">
               <span class="whitespace-nowrap text-meta"><%= t("admin.subscribers.unsubscribe_link") %></span>
               <input type="text" readonly value="<%= unsubscribe_link_for(subscriber) %>"
-                     class="w-full rounded-frame border border-line bg-surface px-2 py-[0.15rem] font-mono text-meta text-muted">
+                     class="w-full rounded-frame border border-line bg-surface px-2 py-0.5 font-mono text-meta text-muted">
             </label>
 
             <% if @recent_newsletters.any? %>
               <%= form_with url: resend_admin_subscriber_path(subscriber), method: :post, class: "flex items-center gap-2" do |form| %>
                 <%= select_tag :newsletter_id,
                       options_from_collection_for_select(@recent_newsletters, :id, :subject),
-                      class: "max-w-[16rem] rounded-frame border border-line-strong bg-paper px-2 py-[0.15rem] font-mono text-meta text-ink" %>
+                      class: "field field--sm w-auto max-w-[16rem] focus:border-ruby" %>
                 <%= form.submit t("admin.subscribers.resend.submit"),
                       class: "btn btn--sm btn--primary" %>
               <% end %>

@@ -21,6 +21,9 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /Understanding Solid Queue internals/
     assert_select "body", text: /Show HN/, count: 0 # already sent last week
     assert_select "body", /2 recortes vão na próxima edição semanal/
+    assert_select "h1", count: 1
+    assert_select "h1 span.sr-only", "Recortes"
+    assert_select "h3", count: 0
   end
 
   test "shows the summary and its status" do
@@ -265,6 +268,7 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "textarea[name=?]", "clipping[summary_pt_br]"
     assert_select "textarea[name=?]", "clipping[source_text]"
     assert_select "form button", /gerar sumário e tradução/
+    assert_select "h1 span.sr-only", "Editar recorte"
   end
 
   test "updating writes each language to its own edition" do

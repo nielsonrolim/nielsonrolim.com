@@ -2,7 +2,7 @@
     back out once it is in the queue, otherwise the button.
     Rendered both in the list and, via Turbo Stream, on its own — so it owns the
     id the stream targets, otherwise a replace would drop it. %>
-<div id="<%= dom_id(entry, :clip) %>" class="flex flex-col items-start gap-[0.55rem]">
+<div id="<%= dom_id(entry, :clip) %>" class="flex flex-col items-start gap-2">
   <% if entry.clipped? %>
     <span class="chip chip--ok">
       <%= t("reader.entries.clipped") %>

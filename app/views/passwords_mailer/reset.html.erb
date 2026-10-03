@@ -1,5 +1,43 @@
-<p><%= t("auth.passwords.mailer.intro") %></p>
+<%# Transactional password-reset mail. Email clients strip <style>/external CSS,
+    so every rule is inline (the mailer layout carries the dark-mode overrides).
+    No unsubscribe footer and no Reply-To: this is a transactional message. %>
+<% ink = "#14110f"; muted = "#6b6560"; line = "#e4dfd7"; accent = "#b01e2d"; soft = "#3d3833" %>
+<% mono = "'FiraCode Nerd Font', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" %>
+<% reset_url = edit_password_url(@user.password_reset_token) %>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f7f6f2;opacity:0;">
+  <%= t("auth.passwords.mailer.preheader") %>
+  &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table class="email-shell" role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f6f2;padding:24px 12px;font-family:<%= mono %>;color:<%= ink %>;font-size:16px;line-height:1.6;">
+  <tr>
+    <td align="center">
+      <table class="email-card" role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#ffffff;border:1px solid <%= line %>;border-radius:3px;">
+        <tr>
+          <td class="email-muted" style="padding:20px 24px;border-bottom:1px solid <%= line %>;color:<%= muted %>;font-size:13px;">
+            <span class="email-accent" style="color:<%= accent %>;">$ </span>passwd --reset
+          </td>
+        </tr>
 
-<p><%= link_to t("auth.passwords.mailer.link"), edit_password_url(@user.password_reset_token) %></p>
+        <tr>
+          <td style="padding:24px;">
+            <p class="email-soft" style="margin:0 0 20px;color:<%= soft %>;font-size:14px;">
+              <%= t("auth.passwords.mailer.intro") %>
+            </p>
 
-<p><%= t("auth.passwords.mailer.expiry", duration: distance_of_time_in_words(0, @user.password_reset_token_expires_in)) %></p>
+            <p style="margin:0 0 20px;">
+              <a href="<%= reset_url %>" style="display:inline-block;padding:12px 20px;background:<%= accent %>;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:3px;"><%= t("auth.passwords.mailer.link") %></a>
+            </p>
+
+            <p class="email-muted" style="margin:0 0 12px;color:<%= muted %>;font-size:13px;">
+              <%= t("auth.passwords.mailer.expiry", duration: distance_of_time_in_words(0, @user.password_reset_token_expires_in)) %>
+            </p>
+
+            <p class="email-muted" style="margin:0;color:<%= muted %>;font-size:13px;word-break:break-all;">
+              <a class="email-muted" href="<%= reset_url %>" style="color:<%= muted %>;text-decoration:none;"><%= reset_url %></a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

@@ -17,6 +17,8 @@ class Reader::CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[value=?]", "News"
     assert_select "input[value=?]", "Web"
     assert_select "body", /1 fonte/
+    assert_select "h1", count: 1
+    assert_select "h1 span.sr-only", "Categorias"
   end
 
   test "a category with several feeds counts them all" do

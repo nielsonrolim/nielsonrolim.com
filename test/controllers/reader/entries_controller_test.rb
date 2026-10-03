@@ -258,4 +258,14 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body", /Solid Queue internals/
   end
+
+  test "has a single sr-only h1 and item headings at h2" do
+    get reader_entries_path
+
+    assert_response :success
+    assert_select "h1", count: 1
+    assert_select "h1 span.sr-only", "Entradas"
+    assert_select "h2", minimum: 1
+    assert_select "h3", count: 0
+  end
 end

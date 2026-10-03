@@ -1,5 +1,8 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.clippings.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.clippings.prompt") %></span>
+    <span class="sr-only"><%= t("reader.clippings.title") %></span>
+  </h1>
 
   <p class="mb-6 max-w-measure border-y border-line py-3 text-chrome text-muted">
     <%= t("reader.clippings.hint", count: @shippable_count) %>
@@ -13,13 +16,13 @@
     <%= form_with model: @clipping, url: reader_clippings_path, class: "flex flex-wrap items-end gap-3" do |form| %>
       <div class="min-w-[16rem] flex-1">
         <%= form.label :url, t("reader.clippings.form.url"), class: "mb-1 block text-chrome text-muted" %>
-        <%= form.url_field :url, required: true, placeholder: "https://exemplo.com/noticia",
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+        <%= form.url_field :url, required: true, placeholder: t("reader.clippings.form.url_placeholder"),
+              class: "field focus:border-ruby" %>
       </div>
       <div class="min-w-[14rem]">
         <%= form.label :title, t("reader.clippings.form.title"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.text_field :title, placeholder: t("reader.clippings.form.title_placeholder"),
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field focus:border-ruby" %>
       </div>
       <%= form.submit t("reader.clippings.form.submit"),
             class: "btn btn--primary" %>
@@ -33,7 +36,7 @@
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @clippings.each_with_index do |clipping, index| %>
-        <li class="border-t border-line py-[1.1rem] last:border-b">
+        <li class="border-t border-line py-4.5 last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
             <span class="text-ruby"><%= format("%02d", index + 1) %></span>
             <% if clipping.display_source.present? %>
@@ -74,10 +77,10 @@
                   <% end %>
                 </p>
 
-                <h3 class="mt-[0.2rem] mb-[0.25rem] text-base font-bold text-ink">
+                <h2 class="mt-0.5 mb-1 text-base font-bold text-ink">
                   <%= link_to clipping.title_for(locale), safe_url(clipping.url_for(locale)), target: "_blank", rel: "noopener noreferrer",
                         class: "text-ink no-underline hover:text-ruby" %>
-                </h3>
+                </h2>
 
                 <% summary = clipping.summary_for(locale) %>
                 <% if summary.present? %>

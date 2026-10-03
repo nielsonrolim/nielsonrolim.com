@@ -219,6 +219,16 @@
     @apply border-ruby bg-ruby px-4.5 py-2.5 font-bold text-paper hover:border-ruby-ink hover:bg-ruby-ink;
   }
 
+  /* Text inputs, textareas and selects get one shared frame. No
+     `focus:outline-none` here: the global `:focus-visible` ring must stay. */
+  .field {
+    @apply w-full rounded-frame border border-line-strong bg-paper px-3 py-1.5 font-mono text-form text-ink;
+  }
+
+  .field--sm {
+    @apply px-2 py-0.5 text-meta;
+  }
+
   /* Chips — the small bordered labels (language, status, category). */
   .chip {
     @apply inline-flex items-center rounded-frame border border-line-strong bg-surface px-1.5 py-px text-meta text-muted no-underline;

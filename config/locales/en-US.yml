@@ -8,6 +8,7 @@ en-US:
     skip_to_content: "Skip to content"
     dismiss: "Dismiss"
     topbar_path: "~/nielsonrolim"
+    admin_path: "~/admin"
   pages:
     home:
       title: "Nielson Rolim"
@@ -196,6 +197,7 @@ en-US:
       no_newsletter: "No issue sent yet."
     subscribers:
       prompt: "cat subscribers.csv"
+      title: "Subscribers"
       search:
         label: "search"
         placeholder: "email"
@@ -203,6 +205,7 @@ en-US:
         clear: "clear"
       form:
         email: "email"
+        email_placeholder: "person@example.com"
         language: "language"
         submit: "add"
       total:
@@ -249,6 +252,7 @@ en-US:
       newsletters: "[archive]"
     entries:
       prompt: "cat entries.log"
+      title: "Entries"
       clip: "clip for newsletter"
       clipped: "[in the next issue]"
       empty: "No entries yet. Add some feeds or run a refresh."
@@ -259,7 +263,7 @@ en-US:
       filters:
         feed: "feed"
         all_feeds: "all"
-        choose: "choose"
+        choose: "[+ choose]"
         category: "category"
         category_with_count: "%{name} (%{count})"
         all_categories: "all"
@@ -280,6 +284,7 @@ en-US:
         status: "page %{page} of %{pages}"
     feeds:
       prompt: "cat sources.conf"
+      title: "Feeds"
       empty: "No feeds yet."
       never_fetched: "never fetched"
       error: "error"
@@ -297,6 +302,7 @@ en-US:
         empty: "No feeds in this category."
       form:
         url: "Feed URL"
+        url_placeholder: "https://example.com/feed"
         category: "category"
         category_placeholder: "optional"
         submit: "add"
@@ -309,6 +315,7 @@ en-US:
         save: "save"
       edit:
         prompt: "edit source.conf"
+        title: "Edit feed"
         url_locked: "The URL identifies the feed (entries are matched by it), so it is not editable."
         cancel: "cancel"
       actions:
@@ -335,6 +342,7 @@ en-US:
         queued: "Refresh of all feeds queued."
     categories:
       prompt: "cat categories.conf"
+      title: "Categories"
       hint:
         one: "One category. A feed can have several."
         other: "%{count} categories. A feed can have several."
@@ -364,6 +372,7 @@ en-US:
         success: "Category removed: %{name}"
     clippings:
       prompt: "cat clipping-queue.md"
+      title: "Clippings"
       view_issues: "view sent issues"
       empty: "Nothing in the queue. Clip entries from the reader or add one by URL."
       marked_at: "clipped %{time}"
@@ -386,18 +395,20 @@ en-US:
         failed: "summary failed"
       form:
         url: "Article URL"
+        url_placeholder: "https://example.com/article"
         title: "title"
         title_placeholder: "optional"
         submit: "add"
         hint: "We fetch the page for its title and text to generate the summary. If the fetch fails the clipping is still created so you can complete it on the edit page."
       edit:
         prompt: "edit clipping.conf"
+        title: "Edit clipping"
         status: "summary: %{status}"
         content: "content per language"
         content_hint: "Each language has its own URL, title and summary. Leaving the URL blank takes the language out of the clipping, but keeps the title and summary. Leave all three fields blank to remove the edition."
         url: "edition URL"
         url_hint: "Fill it only when the article has a published edition in this language. Left blank, the link uses the URL of the edition that exists."
-        title: "title"
+        field_title: "title"
         summary: "summary"
         source_text: "text the summary is generated from"
         source_text_hint: "This is what feeds the summary. Paste the article text here when the fetch could not get it."
@@ -541,6 +552,7 @@ en-US:
       rate_limited: "Too many attempts. Try again in a few minutes."
       mailer:
         subject: "Reset your password"
+        preheader: "Set a new password in a few clicks. The link expires soon."
         intro: "We received a request to reset your account password."
         link: "set a new password"
         expiry: "The link expires in %{duration}."

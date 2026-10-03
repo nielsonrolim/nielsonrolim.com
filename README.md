@@ -398,6 +398,7 @@ environment variables are read:
 | `APP_HOST`, `APP_PROTOCOL`| Base URL used to build links inside emails.                             |
 | `NEWSLETTER_FROM`         | `From:` header of the weekly clipping.                                  |
 | `NEWSLETTER_REPLY_TO`     | `Reply-To:` header; replies go to this monitored inbox instead of the send-only From. |
+| `PASSWORDS_FROM`          | `From:` header of transactional mail (password reset). Defaults to a no-reply address, separate from the newsletter sender. |
 | `SMTP_ADDRESS`            | SMTP relay. Blank ⇒ mail is not delivered for real.                     |
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |

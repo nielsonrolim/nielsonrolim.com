@@ -30,4 +30,14 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
     assert_empty cookies[:session_id]
   end
+
+  test "the login page exposes the skip link, main landmark and a labelled theme toggle" do
+    get new_session_path
+
+    assert_response :success
+    assert_select "a[href=?]", "#main", text: "Pular para o conteúdo"
+    assert_select "main#main"
+    assert_select "button[data-theme-toggle][aria-pressed=?]", "false"
+    assert_no_match(/focus:outline-none/, response.body)
+  end
 end

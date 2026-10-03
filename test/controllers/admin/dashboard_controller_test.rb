@@ -55,4 +55,14 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body", /Nenhuma edição enviada ainda/
   end
+
+  test "exposes the skip link and main landmark, and keeps the focus ring" do
+    get admin_root_path
+
+    assert_response :success
+    assert_select "a[href=?]", "#main", text: "Pular para o conteúdo"
+    assert_select "main#main"
+    assert_select "button[data-theme-toggle][aria-pressed=?]", "false"
+    assert_no_match(/focus:outline-none/, response.body)
+  end
 end

@@ -14,7 +14,7 @@
     <div>
       <%= form.label :language, t("preferences.show.language_label"), class: "mb-1 block text-chrome text-muted" %>
       <%= form.select :language, Subscriber::LANGUAGES, { selected: @subscriber.language },
-            class: "rounded-frame border border-line-strong bg-paper px-3 py-1.5 font-mono text-form text-ink focus:border-ruby" %>
+            class: "field w-auto focus:border-ruby" %>
       <p class="mt-1 mb-0 text-meta text-muted"><%= t("preferences.show.language_hint") %></p>
     </div>
 

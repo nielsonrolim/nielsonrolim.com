@@ -1,11 +1,14 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.feeds.edit.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.feeds.edit.prompt") %></span>
+    <span class="sr-only"><%= t("reader.feeds.edit.title") %></span>
+  </h1>
 
   <div class="max-w-measure">
     <%= form_with model: @feed, url: reader_feed_path(@feed), class: "grid gap-6" do |form| %>
       <div>
         <%= form.label :url, t("reader.feeds.form.url"), class: "mb-1 block text-chrome text-muted" %>
-        <p class="m-0 rounded-frame border border-line bg-surface px-3 py-[0.35rem] font-mono text-form break-all text-muted">
+        <p class="m-0 rounded-frame border border-line bg-surface px-3 py-1.5 font-mono text-form break-all text-muted">
           <%= @feed.url %>
         </p>
         <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.feeds.edit.url_locked") %></p>
@@ -14,7 +17,7 @@
       <div>
         <%= form.label :custom_title, t("reader.feeds.form.custom_title"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.text_field :custom_title, placeholder: @feed.title,
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field focus:border-ruby" %>
         <p class="mt-1 mb-0 text-meta text-muted">
           <%= t("reader.feeds.form.custom_title_hint", title: @feed.title) %>
         </p>
@@ -41,7 +44,7 @@
         <%= label_tag "feed_new_categories", t("reader.feeds.form.new_categories"), class: "mb-1 block text-chrome text-muted" %>
         <%= text_field_tag "feed[new_categories]", nil,
               placeholder: t("reader.feeds.form.new_categories_placeholder"),
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field focus:border-ruby" %>
       </div>
 
       <div class="flex items-center gap-4">
