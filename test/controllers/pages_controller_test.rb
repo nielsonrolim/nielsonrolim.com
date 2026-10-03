@@ -201,4 +201,10 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "img[srcset*=?]", "jamparuby-240"
     assert_select "img[sizes=?]", "(max-width: 45rem) 200px, 240px"
   end
+
+  test "sends the default referrer policy" do
+    get "/pt-BR"
+
+    assert_equal "strict-origin-when-cross-origin", response.headers["Referrer-Policy"]
+  end
 end

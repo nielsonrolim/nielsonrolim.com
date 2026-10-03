@@ -98,4 +98,10 @@ class PreferencesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=robots][content=?]", "noindex, nofollow"
     assert_select "title", "Preferências da inscrição — Nielson Rolim"
   end
+
+  test "does not leak its token through Referer" do
+    get preferences_path(token: subscribers(:first).unsubscribe_token)
+
+    assert_equal "no-referrer", response.headers["Referrer-Policy"]
+  end
 end

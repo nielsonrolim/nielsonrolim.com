@@ -2,6 +2,8 @@
 # newsletter email carries. The token is the same capability the unsubscribe
 # link uses, and the page is rendered in the subscriber's own language.
 class PreferencesController < ApplicationController
+  include NoReferrer
+
   def show
     @subscriber = find_subscriber
     return render :gone if @subscriber.nil?

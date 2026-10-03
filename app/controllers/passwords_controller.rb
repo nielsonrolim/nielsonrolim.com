@@ -1,4 +1,6 @@
 class PasswordsController < Auth::BaseController
+  include NoReferrer
+
   before_action :set_user_by_token, only: %i[ edit update ]
   rate_limit to: 10, within: 3.minutes, only: :create,
     with: -> { redirect_to new_password_path, alert: t("auth.passwords.rate_limited") }

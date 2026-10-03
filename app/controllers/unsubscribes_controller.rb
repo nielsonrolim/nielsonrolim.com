@@ -1,6 +1,8 @@
 # Public (no auth) one-click unsubscribe endpoint referenced by the
 # List-Unsubscribe headers on every newsletter email.
 class UnsubscribesController < ApplicationController
+  include NoReferrer
+
   skip_before_action :verify_authenticity_token, only: :destroy
 
   def show
