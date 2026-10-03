@@ -2,7 +2,10 @@ module Reader
   class NewslettersController < BaseController
     def index
       @newsletters = Newsletter.newest_first.includes(:bodies)
-      @queued_count = Clipping.shippable.count
+      # The queue includes failed and deferred clippings; the send-now
+      # confirmation separately counts only what would actually ship.
+      @queued_count = Clipping.unsent.count
+      @shippable_count = Clipping.shippable.count
       @subscriber_count = Subscriber.count
     end
 

@@ -1,11 +1,18 @@
 module Reader
   class ClippingsController < BaseController
     # The queue for the next issue: everything marked but not yet sent, failed
-    # ones included so they are visible and fixable.
+    # ones included so they are visible and fixable. Deferred clippings stay in
+    # the queue but are held at the end of the list and skip the next issue.
     def index
       @clippings = Clipping.unsent.includes(:variants, entry: :feed).order(:created_at)
+      @deferred_clippings, @active_clippings = @clippings.partition(&:deferred?)
       @recent_newsletters = Newsletter.newest_first.limit(5)
       @shippable_count = Clipping.shippable.count
+      # A failed summary keeps a clipping out whether or not it is deferred, so
+      # the failed tally covers the whole queue. Only a deferred clipping whose
+      # summary did not fail is promised for the following issue.
+      @failed_count = @active_clippings.count(&:failed?) + @deferred_clippings.count(&:failed?)
+      @deferred_count = @deferred_clippings.count { |clipping| !clipping.failed? }
       @clipping = Clipping.new
     end
 
@@ -113,6 +120,27 @@ module Reader
 
       redirect_back fallback_location: edit_reader_clipping_path(clipping),
                     notice: t("reader.clippings.refetch_source.queued", title: clipping.display_title),
+                    status: :see_other
+    end
+
+    # Holds the clipping out of the next issue while keeping it in the queue: it
+    # goes out in the issue after that.
+    def defer
+      clipping = Clipping.find(params[:id])
+      clipping.defer!
+
+      redirect_back fallback_location: reader_clippings_path,
+                    notice: t("reader.clippings.defer.success", title: clipping.display_title),
+                    status: :see_other
+    end
+
+    # Puts a deferred clipping back in line for the next issue.
+    def resume
+      clipping = Clipping.find(params[:id])
+      clipping.resume!
+
+      redirect_back fallback_location: reader_clippings_path,
+                    notice: t("reader.clippings.resume.success", title: clipping.display_title),
                     status: :see_other
     end
 

@@ -28,9 +28,14 @@ class Clipping < ApplicationRecord
   scope :unsent, -> { where(newsletter_id: nil) }
   scope :queued, -> { unsent.order(:created_at) }
 
+  # A clipping held back by hand: still in the queue, but out of the next issue.
+  scope :deferred, -> { where.not(deferred_at: nil) }
+  scope :active, -> { where(deferred_at: nil) }
+
   # What the next issue can actually carry. A clipping whose summary failed has
-  # nothing to show, so it waits in the queue until it is fixed or removed.
-  scope :shippable, -> { unsent.where.not(summary_status: :failed) }
+  # nothing to show, and a deferred one is held out of this issue; both wait in
+  # the queue until they are fixed, removed, or their turn comes.
+  scope :shippable, -> { unsent.active.where.not(summary_status: :failed) }
 
   # The summary is on its way: marked, fetching the text, or running the model.
   # Done (`summarized`) and stuck (`failed`) are the other two ends.
@@ -39,6 +44,20 @@ class Clipping < ApplicationRecord
 
   def in_flight?
     IN_FLIGHT_STATUSES.include?(summary_status)
+  end
+
+  # Held out of the next issue while staying in the queue: it ships in the issue
+  # after that.
+  def deferred?
+    deferred_at.present?
+  end
+
+  def defer!
+    update!(deferred_at: Time.current)
+  end
+
+  def resume!
+    update!(deferred_at: nil)
   end
 
   # A clipping created as already failed (no source to summarize) must not kick

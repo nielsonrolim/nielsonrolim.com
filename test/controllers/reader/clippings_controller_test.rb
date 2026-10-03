@@ -409,4 +409,55 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", refetch_source_reader_clipping_path(clipping)
     assert_select "button[data-confirm=?]", I18n.t("reader.clippings.actions.confirm_overwrite_summary")
   end
+
+  test "deferring a clipping holds it out of the next issue and marks it in the queue" do
+    clipping = clippings(:queued)
+
+    patch defer_reader_clipping_path(clipping)
+
+    assert_redirected_to reader_clippings_path
+    assert clipping.reload.deferred?
+
+    get reader_clippings_path
+
+    assert_select ".chip--warn", /adiado/
+    assert_select "button", /reativar/
+  end
+
+  test "resuming a deferred clipping puts it back in line" do
+    clipping = clippings(:queued)
+    clipping.defer!
+
+    patch resume_reader_clipping_path(clipping)
+
+    assert_redirected_to reader_clippings_path
+    assert_not clipping.reload.deferred?
+  end
+
+  test "a deferred clipping with a failed summary stays reported as failed" do
+    clipping = clippings(:pending)
+    clipping.update!(summary_status: :failed, summary_error: "sem fonte")
+    clipping.defer!
+
+    get reader_clippings_path
+
+    assert_response :success
+    # It is out because the summary failed, not because it will ship next issue.
+    assert_select "body", /fica de fora/
+    assert_no_match(/adiados ficam para a edição seguinte/, response.body)
+  end
+
+  test "the index puts deferred clippings after the active queue with their own numbering" do
+    clippings(:queued).defer!
+
+    get reader_clippings_path
+
+    assert_response :success
+    assert_select "h2", /Adiados/
+    # The deferred group is the ordered list right below the heading...
+    assert_select "h2 + ol"
+    assert_select "ol", count: 2
+    # ...and its numbering restarts: each group has its own "01".
+    assert_select "span.text-ruby", text: "01", count: 2
+  end
 end

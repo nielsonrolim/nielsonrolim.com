@@ -20,6 +20,16 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "dd", Subscriber.count.to_s
   end
 
+  test "keeps counting a deferred clipping as queued" do
+    clippings(:pending).defer!
+
+    get admin_root_path
+
+    assert_response :success
+    stat = assert_select("dt", text: /na fila/).first
+    assert_equal Clipping.unsent.count.to_s, stat.parent.at_css("dd").text
+  end
+
   test "shows the top-level navigation with the section links" do
     get admin_root_path
 

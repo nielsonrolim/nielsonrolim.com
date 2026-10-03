@@ -5,7 +5,10 @@ module Admin
     def index
       @feed_count = Feed.count
       @entry_count = Entry.count
-      @queued_clippings = Clipping.shippable.count
+      # The whole queue: failed and deferred clippings are still queued for the
+      # newsletter, they just are not ready to ship. `shippable` is what the job
+      # would send, not what is queued.
+      @queued_clippings = Clipping.unsent.count
       @subscriber_count = Subscriber.count
       @latest_newsletter = Newsletter.newest_first.first
       @failed_jobs = SolidQueue::FailedExecution.count

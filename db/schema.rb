@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_120000) do
   create_table "categories", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -41,6 +41,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.string "summary_error"
     t.string "summary_status", default: "pending", null: false
     t.datetime "updated_at", null: false
+    t.datetime "deferred_at"
+    t.index ["deferred_at"], name: "index_clippings_on_deferred_at"
     t.index ["entry_id"], name: "index_clippings_on_entry_id"
     t.index ["entry_id"], name: "index_clippings_on_unsent_entry", unique: true, where: "newsletter_id IS NULL"
     t.index ["newsletter_id"], name: "index_clippings_on_newsletter_id"

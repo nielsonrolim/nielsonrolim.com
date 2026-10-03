@@ -228,6 +228,69 @@ class SendNewsletterJobTest < ActiveJob::TestCase
     end
   end
 
+  test "a deferred clipping skips the next issue and returns for the following one" do
+    make_all_summaries_ready
+    clippings(:queued).defer!
+
+    assert_difference -> { Newsletter.count }, 1 do
+      assert_enqueued_emails 2 do
+        SendNewsletterJob.perform_now
+      end
+    end
+
+    first_issue = Newsletter.last
+    assert_equal [ clippings(:pending).id ], first_issue.clippings.map(&:id)
+
+    # The issue went out, so the hold is lifted: the clipping stays in the queue
+    # and lines up for the following issue.
+    held = clippings(:queued).reload
+    assert_includes Clipping.unsent, held
+    assert_not held.deferred?
+
+    assert_difference -> { Newsletter.count }, 1 do
+      SendNewsletterJob.perform_now
+    end
+
+    assert_equal [ clippings(:queued).id ], Newsletter.last.clippings.map(&:id)
+  end
+
+  test "a queue with only deferred clippings is not stuck" do
+    make_all_summaries_ready
+    clippings(:queued).defer!
+    clippings(:pending).defer!
+
+    # Nothing shippable this week, but the week still passes for both: the hold
+    # is lifted so they ship in the issue after this one.
+    assert_no_difference -> { Newsletter.count } do
+      assert_no_enqueued_emails { SendNewsletterJob.perform_now }
+    end
+
+    assert_not clippings(:queued).reload.deferred?
+    assert_not clippings(:pending).reload.deferred?
+
+    assert_difference -> { Newsletter.count }, 1 do
+      SendNewsletterJob.perform_now
+    end
+
+    expected = [ clippings(:pending).id, clippings(:queued).id ].sort
+    assert_equal expected, Newsletter.last.clippings.map(&:id).sort
+  end
+
+  test "an in-flight retry does not release deferrals" do
+    clippings(:queued).defer!
+    assert clippings(:pending).pending?
+
+    # The pending summary postpones the issue; the retry must not lift the hold
+    # or the deferred clipping would slip into the very issue it is skipping.
+    assert_no_difference -> { Newsletter.count } do
+      assert_enqueued_with(job: SendNewsletterJob, args: [ 1 ]) do
+        assert_no_enqueued_emails { SendNewsletterJob.perform_now }
+      end
+    end
+
+    assert clippings(:queued).reload.deferred?
+  end
+
   private
 
   def make_all_summaries_ready

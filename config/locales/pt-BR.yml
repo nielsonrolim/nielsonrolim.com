@@ -384,12 +384,17 @@ pt-BR:
       translation: "tradução"
       translation_pending: "tradução pendente"
       partial_summary_source: "resumo baseado apenas no trecho do RSS"
+      deferred_chip: "adiado"
+      deferred_heading: "Adiados"
       hint:
         one: "%{count} recorte vai na próxima edição semanal."
         other: "%{count} recortes vão na próxima edição semanal."
       failed_in_queue:
         one: "(%{count} com resumo falhou e fica de fora)"
         other: "(%{count} com resumo falharam e ficam de fora)"
+      deferred_in_queue:
+        one: "(%{count} adiado fica para a edição seguinte)"
+        other: "(%{count} adiados ficam para a edição seguinte)"
       summary_status:
         pending: "resumo pendente"
         fetching: "buscando transcrição"
@@ -415,6 +420,7 @@ pt-BR:
         summary: "resumo"
         source_text: "texto fonte do resumo"
         source_text_hint: "É o que alimenta o resumo. Cole aqui o texto do artigo quando a busca não conseguir pegar."
+        deferred_note: "Recorte adiado: não sai na próxima edição. Volta sozinho para a seguinte."
         save: "salvar"
         cancel: "cancelar"
       create:
@@ -429,10 +435,16 @@ pt-BR:
       refetch_source:
         queued: "Buscando o texto novamente: %{title}"
         no_url: "Este recorte não tem URL para buscar."
+      defer:
+        success: "Adiado para a próxima edição: %{title}"
+      resume:
+        success: "De volta à próxima edição: %{title}"
       actions:
         edit: "editar"
         generate_summary: "gerar sumário e tradução"
         refetch_source: "buscar texto novamente"
+        defer: "adiar"
+        resume: "reativar"
         confirm_overwrite_summary: "Isso vai substituir o resumo editado à mão. Continuar?"
         remove: "remover"
         confirm_remove: "Remover '%{title}' da próxima edição?"
