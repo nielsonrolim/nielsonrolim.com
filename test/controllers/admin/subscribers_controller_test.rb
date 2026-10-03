@@ -201,4 +201,14 @@ class Admin::SubscribersControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav a[href=?]", admin_subscribers_path
     assert_select "nav", /\[inscritos\]/
   end
+
+  test "has an sr-only h1 and keeps the focus ring on its fields" do
+    get admin_subscribers_path
+
+    assert_response :success
+    assert_select "h1", count: 1
+    assert_select "h1 span.sr-only", "Inscritos"
+    assert_select "input.field"
+    assert_no_match(/focus:outline-none/, response.body)
+  end
 end

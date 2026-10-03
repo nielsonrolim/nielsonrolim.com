@@ -197,6 +197,7 @@ en-US:
       no_newsletter: "No issue sent yet."
     subscribers:
       prompt: "cat subscribers.csv"
+      title: "Subscribers"
       search:
         label: "search"
         placeholder: "email"
@@ -204,6 +205,7 @@ en-US:
         clear: "clear"
       form:
         email: "email"
+        email_placeholder: "person@example.com"
         language: "language"
         submit: "add"
       total:
@@ -550,6 +552,7 @@ en-US:
       rate_limited: "Too many attempts. Try again in a few minutes."
       mailer:
         subject: "Reset your password"
+        preheader: "Set a new password in a few clicks. The link expires soon."
         intro: "We received a request to reset your account password."
         link: "set a new password"
         expiry: "The link expires in %{duration}."

@@ -197,6 +197,7 @@ pt-BR:
       no_newsletter: "Nenhuma edição enviada ainda."
     subscribers:
       prompt: "cat subscribers.csv"
+      title: "Inscritos"
       search:
         label: "buscar"
         placeholder: "e-mail"
@@ -204,6 +205,7 @@ pt-BR:
         clear: "limpar"
       form:
         email: "e-mail"
+        email_placeholder: "pessoa@exemplo.com"
         language: "idioma"
         submit: "adicionar"
       total:
@@ -550,6 +552,7 @@ pt-BR:
       rate_limited: "Muitas tentativas. Tente novamente em alguns minutos."
       mailer:
         subject: "Redefinir sua senha"
+        preheader: "Defina uma nova senha em poucos cliques. O link expira em breve."
         intro: "Recebemos um pedido para redefinir a senha da sua conta."
         link: "definir nova senha"
         expiry: "O link expira em %{duration}."
