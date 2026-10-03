@@ -378,4 +378,30 @@ class ClippingTest < ActiveSupport::TestCase
       build_clipping(summary_status: :failed, summary_error: "sem fonte").save!
     end
   end
+
+  test "defer! holds the clipping out of the next issue and resume! puts it back" do
+    clipping = clippings(:queued)
+
+    assert_not clipping.deferred?
+    assert_nil clipping.deferred_at
+
+    clipping.defer!
+
+    assert clipping.deferred?
+    assert_not_nil clipping.deferred_at
+
+    clipping.resume!
+
+    assert_not clipping.deferred?
+    assert_nil clipping.deferred_at
+  end
+
+  test "shippable drops a deferred clipping while unsent and queued still carry it" do
+    clipping = clippings(:queued)
+    clipping.defer!
+
+    assert_not_includes Clipping.shippable, clipping
+    assert_includes Clipping.unsent, clipping
+    assert_includes Clipping.queued, clipping
+  end
 end
