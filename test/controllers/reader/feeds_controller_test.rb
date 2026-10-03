@@ -151,6 +151,7 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", /#{Regexp.escape(feed.url)}/
     assert_select "input[name=?]", "feed[url]", count: 0
     assert_select "input[type=checkbox][name=?]", "feed[category_ids][]"
+    assert_select "h1 span.sr-only", "Editar fonte"
   end
 
   test "the edit page checks the feed's current categories" do
@@ -328,5 +329,15 @@ class Reader::FeedsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "body", /Nenhuma fonte cadastrada/
+  end
+
+  test "has a single sr-only h1 and item headings at h2" do
+    get reader_feeds_path
+
+    assert_response :success
+    assert_select "h1", count: 1
+    assert_select "h1 span.sr-only", "Fontes"
+    assert_select "h2", minimum: 1
+    assert_select "h3", count: 0
   end
 end

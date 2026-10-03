@@ -1,5 +1,8 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.clippings.edit.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.clippings.edit.prompt") %></span>
+    <span class="sr-only"><%= t("reader.clippings.edit.title") %></span>
+  </h1>
 
   <div class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-4 text-chrome">
     <span class="text-muted">
@@ -53,22 +56,22 @@
                 <%= label_tag "clipping_url_#{suffix}", t("reader.clippings.edit.url"),
                       class: "mb-1 block text-meta text-muted" %>
                 <%= url_field_tag "clipping[url_#{suffix}]", variant&.url,
-                      class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+                      class: "field focus:border-ruby" %>
                 <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.edit.url_hint") %></p>
               </div>
 
               <div>
-                <%= label_tag "clipping_title_#{suffix}", t("reader.clippings.edit.title"),
+                <%= label_tag "clipping_title_#{suffix}", t("reader.clippings.edit.field_title"),
                       class: "mb-1 block text-meta text-muted" %>
                 <%= text_field_tag "clipping[title_#{suffix}]", variant&.title,
-                      class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+                      class: "field focus:border-ruby" %>
               </div>
 
               <div>
                 <%= label_tag "clipping_summary_#{suffix}", t("reader.clippings.edit.summary"),
                       class: "mb-1 block text-meta text-muted" %>
                 <%= text_area_tag "clipping[summary_#{suffix}]", variant&.summary, rows: 8,
-                      class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.3rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+                      class: "field focus:border-ruby" %>
               </div>
             </div>
           <% end %>
@@ -78,7 +81,7 @@
       <div>
         <%= form.label :source_text, t("reader.clippings.edit.source_text"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.text_area :source_text, rows: 6,
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field focus:border-ruby" %>
         <p class="mt-1 mb-0 text-meta text-muted"><%= t("reader.clippings.edit.source_text_hint") %></p>
       </div>
 

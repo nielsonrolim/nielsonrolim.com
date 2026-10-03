@@ -1,5 +1,8 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.entries.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.entries.prompt") %></span>
+    <span class="sr-only"><%= t("reader.entries.title") %></span>
+  </h1>
 
   <%# Every filter link carries the other active filters, so combining them
       (feed + category + window) never silently drops one. %>
@@ -18,7 +21,7 @@
           disclosure, grouped by category. %>
       <details class="w-full">
         <summary class="mt-1 inline-flex cursor-pointer list-none text-ruby hover:text-ruby-ink">
-          [+ <%= t("reader.entries.filters.choose") %>]
+          <%= t("reader.entries.filters.choose") %>
         </summary>
 
         <div class="mt-2 columns-1 gap-x-6 border-l border-line pl-4 narrow:columns-2">
@@ -33,7 +36,7 @@
               </p>
               <ul class="m-0 list-none p-0 text-meta">
                 <% feeds.each do |feed| %>
-                  <li class="py-[0.05rem]">
+                  <li class="py-px">
                     <%= link_to feed.display_title, reader_entries_path(filters.merge(feed_id: feed.id)),
                           class: "no-underline #{@feed&.id == feed.id ? 'font-bold text-ink' : 'text-muted hover:text-ink'}" %>
                   </li>
@@ -75,7 +78,7 @@
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @entries.each do |entry| %>
-        <li class="border-t border-line py-[1.1rem] last:border-b">
+        <li class="border-t border-line py-4.5 last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta text-muted">
             <span class="text-ruby"><%= entry.feed.display_title %></span>
             <% if entry.published_at %>
@@ -86,19 +89,19 @@
             <% end %>
           </div>
 
-          <h3 class="mt-[0.3rem] mb-[0.35rem] text-lead font-bold text-ink">
+          <h2 class="mt-1 mb-1.5 text-lead font-bold text-ink">
             <%= link_to entry.title, safe_url(entry.url), target: "_blank", rel: "noopener noreferrer",
                   class: "text-ink no-underline hover:text-ruby" %>
-          </h3>
+          </h2>
 
           <% if entry.summary.present? %>
-            <p class="mt-0 mb-[0.6rem] max-w-measure text-prompt text-ink-soft">
+            <p class="mt-0 mb-2.5 max-w-measure text-prompt text-ink-soft">
               <%= truncate(entry.summary, length: 260, separator: " ") %>
             </p>
           <% end %>
 
           <%= link_to entry.url, safe_url(entry.url), target: "_blank", rel: "noopener noreferrer",
-                class: "mb-[0.6rem] block break-all text-chrome text-muted no-underline hover:text-ink" %>
+                class: "mb-2.5 block break-all text-chrome text-muted no-underline hover:text-ink" %>
 
           <div class="flex flex-wrap items-center gap-3 text-chrome">
             <%= render "reader/entries/clip_state", entry: entry %>

@@ -250,6 +250,7 @@ pt-BR:
       newsletters: "[arquivo]"
     entries:
       prompt: "cat entries.log"
+      title: "Entradas"
       clip: "marcar p/ newsletter"
       clipped: "[na próxima edição]"
       empty: "Nenhuma entrada ainda. Adicione fontes ou rode uma atualização."
@@ -260,7 +261,7 @@ pt-BR:
       filters:
         feed: "fonte"
         all_feeds: "todas"
-        choose: "escolher"
+        choose: "[+ escolher]"
         category: "categoria"
         category_with_count: "%{name} (%{count})"
         all_categories: "todas"
@@ -281,6 +282,7 @@ pt-BR:
         status: "página %{page} de %{pages}"
     feeds:
       prompt: "cat sources.conf"
+      title: "Fontes"
       empty: "Nenhuma fonte cadastrada."
       never_fetched: "nunca consultada"
       error: "erro"
@@ -298,6 +300,7 @@ pt-BR:
         empty: "Nenhuma fonte nesta categoria."
       form:
         url: "URL do feed"
+        url_placeholder: "https://example.com/feed"
         category: "categoria"
         category_placeholder: "opcional"
         submit: "adicionar"
@@ -310,6 +313,7 @@ pt-BR:
         save: "salvar"
       edit:
         prompt: "edit source.conf"
+        title: "Editar fonte"
         url_locked: "A URL identifica a fonte (as entradas são casadas por ela), então não é editável."
         cancel: "cancelar"
       actions:
@@ -336,6 +340,7 @@ pt-BR:
         queued: "Atualização de todas as fontes enfileirada."
     categories:
       prompt: "cat categories.conf"
+      title: "Categorias"
       hint:
         one: "Uma categoria. Uma fonte pode ter várias."
         other: "%{count} categorias. Uma fonte pode ter várias."
@@ -365,6 +370,7 @@ pt-BR:
         success: "Categoria removida: %{name}"
     clippings:
       prompt: "cat clipping-queue.md"
+      title: "Recortes"
       view_issues: "ver edições enviadas"
       empty: "Nenhum recorte na fila. Marque entradas no leitor ou adicione por URL."
       marked_at: "marcado em %{time}"
@@ -387,18 +393,20 @@ pt-BR:
         failed: "resumo falhou"
       form:
         url: "URL da notícia"
+        url_placeholder: "https://exemplo.com/noticia"
         title: "título"
         title_placeholder: "opcional"
         submit: "adicionar"
         hint: "Buscamos a página para pegar título e texto e gerar o resumo. Se a busca falhar, o recorte é criado mesmo assim para você completar na edição."
       edit:
         prompt: "edit clipping.conf"
+        title: "Editar recorte"
         status: "resumo: %{status}"
         content: "conteúdo por idioma"
         content_hint: "Cada idioma tem sua própria URL, título e resumo. Deixar a URL em branco tira o idioma do recorte, mas mantém o título e o resumo. Deixe os três campos em branco para remover a edição."
         url: "URL da edição"
         url_hint: "Só preencha quando o artigo tiver edição publicada neste idioma. Em branco, o link usa a URL da edição que existe."
-        title: "título"
+        field_title: "título"
         summary: "resumo"
         source_text: "texto fonte do resumo"
         source_text_hint: "É o que alimenta o resumo. Cole aqui o texto do artigo quando a busca não conseguir pegar."

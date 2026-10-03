@@ -1,17 +1,20 @@
 <section>
-  <p class="terminal__prompt mt-0 mb-[0.9rem] text-prompt font-bold text-ink"><%= t("reader.feeds.prompt") %></p>
+  <h1 class="mt-0 mb-3.5 text-prompt font-bold text-ink">
+    <span class="terminal__prompt" aria-hidden="true"><%= t("reader.feeds.prompt") %></span>
+    <span class="sr-only"><%= t("reader.feeds.title") %></span>
+  </h1>
 
   <div class="mb-8 border border-line bg-surface p-4">
     <%= form_with model: @feed, url: reader_feeds_path, class: "flex flex-wrap items-end gap-3" do |form| %>
       <div class="min-w-[16rem] flex-1">
         <%= form.label :url, t("reader.feeds.form.url"), class: "mb-1 block text-chrome text-muted" %>
-        <%= form.url_field :url, required: true, placeholder: "https://example.com/feed",
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+        <%= form.url_field :url, required: true, placeholder: t("reader.feeds.form.url_placeholder"),
+              class: "field focus:border-ruby" %>
       </div>
       <div class="min-w-[10rem]">
         <%= form.label :category, t("reader.feeds.form.category"), class: "mb-1 block text-chrome text-muted" %>
         <%= form.text_field :category, placeholder: t("reader.feeds.form.category_placeholder"),
-              class: "w-full rounded-frame border border-line-strong bg-paper px-3 py-[0.35rem] font-mono text-form text-ink focus:border-ruby focus:outline-none" %>
+              class: "field focus:border-ruby" %>
       </div>
       <%= form.submit t("reader.feeds.form.submit"),
             class: "btn btn--primary" %>
@@ -45,9 +48,9 @@
   <% else %>
     <ol class="m-0 list-none p-0">
       <% @feeds.each do |feed| %>
-        <li class="border-t border-line py-[1.1rem] last:border-b">
+        <li class="border-t border-line py-4.5 last:border-b">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 class="m-0 text-base font-bold text-ink"><%= feed.display_title %></h3>
+            <h2 class="m-0 text-base font-bold text-ink"><%= feed.display_title %></h2>
 
             <%# The feed's own title, when the reader overrode it. %>
             <% if feed.custom_title.present? %>
@@ -61,7 +64,7 @@
             <span class="text-meta text-muted"><%= t("reader.feeds.entry_count", count: @entry_counts[feed.id].to_i) %></span>
           </div>
 
-          <p class="mt-[0.2rem] mb-[0.4rem] text-meta">
+          <p class="mt-0.5 mb-1.5 text-meta">
             <%= link_to feed.url, safe_url(feed.url), target: "_blank", rel: "noopener noreferrer", class: "text-muted no-underline hover:text-ruby" %>
           </p>
 
