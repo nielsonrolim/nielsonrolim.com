@@ -4,6 +4,8 @@
     <% page_title = content_for?(:title) ? yield(:title) : "#{t('pages.home.title')} — #{t('pages.home.role')}" %>
     <% page_description = content_for?(:description) ? yield(:description) : t('pages.home.bio') %>
     <% canonical = content_for?(:canonical) ? yield(:canonical) : "#{request.base_url}#{request.path}" %>
+    <%# Each language has its own branded card, matching the page it shares. %>
+    <% og_image = I18n.locale == :"en-US" ? "og-image-en.jpg" : "og-image.jpg" %>
     <title><%= page_title %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description" content="<%= page_description %>">
@@ -17,7 +19,7 @@
     <meta property="og:description" content="<%= page_description %>">
     <meta property="og:url" content="<%= canonical %>">
     <meta property="og:locale" content="<%= I18n.locale.to_s.tr('-', '_') %>">
-    <meta property="og:image" content="<%= "#{request.base_url}#{image_path('og-image.jpg')}" %>">
+    <meta property="og:image" content="<%= "#{request.base_url}#{image_path(og_image)}" %>">
     <meta name="twitter:card" content="summary_large_image">
     <% if content_for?(:translated) %>
       <link rel="alternate" hreflang="pt-BR" href="<%= url_for(locale: "pt-BR", only_path: false) %>">

@@ -180,6 +180,15 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=theme-color]", count: 2
   end
 
+  test "the social card follows the page language" do
+    get "/pt-BR"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-en", count: 0
+
+    get "/en-US"
+    assert_select "meta[property='og:image'][content*=?]", "og-image-en"
+  end
+
   test "the newsletter page carries its own canonical and alternates" do
     get "/en-US/newsletter"
 
