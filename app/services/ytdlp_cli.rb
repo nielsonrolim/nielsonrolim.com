@@ -153,7 +153,7 @@ class YtdlpCli
 
     langs = sanitize_languages(languages)
 
-    with_retry(id, langs)
+    fetch_transcript(id, langs)
   rescue TimeoutError
     Rails.logger.warn("yt-dlp timed out for #{video_id}")
     nil
@@ -164,10 +164,34 @@ class YtdlpCli
 
   private
 
+  # Asks for the whole preference list first — one subprocess gets the preferred
+  # language if it is available. If that yields nothing, yt-dlp aborts the list
+  # on the first language it cannot fetch (a 429 on the preferred language, say)
+  # without trying the rest, so each language is then tried on its own, in order,
+  # and the first that comes back wins. The preference still holds (the video's
+  # own language is first), but a blocked preferred track no longer costs the
+  # video its transcript when another language is available.
+  #
+  # A single language needs no second pass; an empty list asks yt-dlp to pick.
+  def fetch_transcript(id, langs)
+    return with_retry(id, []) if langs.empty?
+    return with_retry(id, langs) if langs.one?
+
+    result = with_retry(id, langs)
+    return result if result.present?
+
+    langs.each do |language|
+      result = with_retry(id, [ language ])
+      return result if result.present?
+    end
+
+    nil
+  end
+
   # Retries only while the failure named a rate limit (any other non-zero exit
-  # is permanent within this call). Up to MAX_ATTEMPTS runs, with an increasing
-  # backoff, because a 429 is transient. Returns the transcript or nil; the temp
-  # directory is cleaned up by the block on every attempt.
+  # is permanent). Up to MAX_ATTEMPTS runs, with an increasing backoff, because a
+  # 429 is transient. Returns the transcript or nil; the temp directory is
+  # cleaned up by the block on every attempt.
   def with_retry(id, langs)
     attempt_number = 0
     loop do

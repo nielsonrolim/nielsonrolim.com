@@ -79,6 +79,13 @@ class YoutubeFetcher
   # Below this many alphabetic words a description is too short to guess from.
   MIN_LANGUAGE_WORDS = 12
 
+  # Fixed preference order for choosing a transcript when the video's own
+  # language has no usable track. Base tags are matched so "pt" also covers
+  # "pt-BR"/"pt-PT" by family; the explicit regional tags are listed to keep the
+  # order the reader asked for. Any language the page lists but this list omits
+  # comes after, in page order.
+  PREFERRED_LANGUAGES = %w[pt pt-BR pt-PT en en-US es].freeze
+
   Result = Struct.new(:title, :text, keyword_init: true)
 
   # One caption track from the player response. `kind` is "asr" on
@@ -193,14 +200,14 @@ class YoutubeFetcher
   # 200 with no body). yt-dlp is tried as a fallback in that one case; if the
   # page listed no tracks at all there is nothing to fall back to, so no
   # subprocess is spawned.
-  def transcript_from(html, original_language, id)
-    tracks = ordered_tracks(html, original_language)
+  def transcript_from(html, video_language, id)
+    tracks = ordered_tracks(html, video_language)
 
     text = tracks.first(MAX_TRACK_ATTEMPTS).lazy.map { |track| transcript_for(track) }.find(&:present?)
     return text if text.present?
     return nil if tracks.empty?
 
-    fallback_transcript(id, tracks, original_language)
+    fallback_transcript(id, tracks, video_language)
   end
 
   # yt-dlp is a subprocess: a crash, a timeout or a missing binary must never
@@ -208,36 +215,34 @@ class YoutubeFetcher
   # ever yields text or nil. `YtdlpCli` already rescues its own expected
   # failures; this is the belt to that pair of braces.
   #
-  # The language list is built in `fallback_languages`, which starts from the
-  # original language (not the first listed track, which can be a translation).
-  def fallback_transcript(id, tracks, original_language)
-    transcript_cli.call(video_id: id, languages: fallback_languages(tracks, original_language))
+  # The language list is built in `fallback_languages`: the video's own language
+  # first, then the fixed preference list, then anything else the page lists.
+  def fallback_transcript(id, tracks, video_language)
+    transcript_cli.call(video_id: id, languages: fallback_languages(tracks, video_language))
   rescue StandardError => e
     Rails.logger.warn("yt-dlp transcript fallback failed for #{id}: #{e.class}: #{e.message}")
     nil
   end
 
-  # The tag list to ask yt-dlp for, the original language first, then the
-  # available tracks in ranking order. The original track is served by yt-dlp
-  # under a `<lang>-orig` tag (`pt-orig`), while `languageCode` only carries the
-  # plain tag (`pt`) — and a request for the plain tag asks for the *translated*
-  # track, which can fail (a 429) and leave nothing. So the original language
-  # offers its `<base>-orig` variant first. Crucially this starts from
-  # `original_language`, not from the first listed track: the track list can omit
-  # the original entirely (an English video whose list holds only translations),
-  # and iterating the list would then ask for the wrong language. Each track also
-  # contributes its `languageCode`, its base tag and its `vssId` with the `.`/`a.`
-  # prefix stripped. Values are reduced to the same safe token the transport
-  # uses; anything starting with `-` (yt-dlp's exclusion syntax) or absurdly long
-  # is dropped. YtdlpCli sanitizes and caps the list again, so this is the cheap
-  # first pass.
-  def fallback_languages(tracks, original_language)
-    primary = base_language(original_language)
-    codes = [ "#{primary}-orig", primary, original_language ]
-    codes += tracks.flat_map do |track|
-      code = track.language_code.to_s
-      base = base_language(code)
-      [ "#{base}-orig", code, base, track.vss_id.to_s.sub(/\Aa?\./, "") ]
+  # The tag list to ask yt-dlp for, in priority order:
+  #   1. the video's own language,
+  #   2. the fixed preference list (pt, pt-BR, pt-PT, en, en-US, es),
+  #   3. any other language the page lists, in page order.
+  # Within a language the `<lang>-orig` track (yt-dlp's tag for the original) is
+  # offered before the plain tag, because the plain tag asks for a *translation*,
+  # which can fail while the original is available.
+  #
+  # The list is built from languages, not from the raw track tags: the page may
+  # omit the video's language entirely (an English video whose list holds only
+  # translations), and iterating the tracks would then never ask for English.
+  # `YtdlpCli` sanitizes and caps the list again.
+  def fallback_languages(tracks, video_language)
+    page_languages = tracks.map { |track| track.language_code.to_s }
+    ordered = [ video_language, *PREFERRED_LANGUAGES, *page_languages ]
+
+    codes = ordered.flat_map do |language|
+      base = base_language(language)
+      [ "#{base}-orig", language, base ]
     end
 
     codes.filter_map do |code|

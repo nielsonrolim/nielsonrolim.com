@@ -72,7 +72,9 @@ class YtdlpCliTest < ActiveSupport::TestCase
 
     cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "-pt", "\r\n", "a*" ])
 
+    # Nothing survives sanitizing, so yt-dlp is left to pick: no --sub-langs.
     refute_includes runner.last_args, "--sub-langs"
+    assert_equal 1, runner.calls.size
   end
 
   test "drops an absurdly long language tag" do
@@ -175,7 +177,6 @@ class YtdlpCliTest < ActiveSupport::TestCase
 
     assert_nil cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ])
   end
-
   test "returns nil for malformed json" do
     runner = FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => "not json" })
 
