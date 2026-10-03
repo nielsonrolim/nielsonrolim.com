@@ -9,6 +9,8 @@ class PreferencesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body", /clipping-reader@example\.org/
     assert_select "select[name=?] option[selected][value=?]", "subscriber[language]", "en-US"
+    assert_select "select.field"
+    assert_no_match(/focus:outline-none/, response.body)
   end
 
   test "the page follows the subscriber's language" do

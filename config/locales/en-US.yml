@@ -8,6 +8,7 @@ en-US:
     skip_to_content: "Skip to content"
     dismiss: "Dismiss"
     topbar_path: "~/nielsonrolim"
+    admin_path: "~/admin"
   pages:
     home:
       title: "Nielson Rolim"
