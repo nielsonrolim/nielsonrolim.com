@@ -75,6 +75,15 @@ class YtdlpCliTest < ActiveSupport::TestCase
     refute_includes runner.last_args, "--sub-langs"
   end
 
+  test "drops an absurdly long language tag" do
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => @captions })
+
+    cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt", "A" * 1_000_000 ])
+
+    langs = runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last
+    assert_equal "pt", langs
+  end
+
   # --- command shape ----------------------------------------------------------
 
   test "builds the yt-dlp argument array with a -- before the URL" do
@@ -238,8 +247,31 @@ class YtdlpCliTest < ActiveSupport::TestCase
     end
   end
 
-  # --- flatten_json3 (the shared parse contract) ------------------------------
+  # --- log sanitizing ---------------------------------------------------------
 
+  test "strips control characters from a non-json3 filename before logging" do
+    # yt-dlp names the file from the caption's language tag, which the page
+    # controls; a newline in it must not forge a second log line.
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt\nFAKE 2026-01-01.vtt" => "x" })
+
+    log = capture_log { cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ]) }
+
+    assert_includes log, "no json3 subtitle"
+    refute_includes log, "\nFAKE"
+  end
+
+  test "strips control characters from the rate-limit stderr line" do
+    runner = FakeYtdlpRunner.new(success: false, exitstatus: 1, stderr: "HTTP Error 429\nFAKE")
+
+    log = with_retry_wait(0) do
+      capture_log { cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ]) }
+    end
+
+    assert_includes log, "429"
+    refute_includes log, "FAKE"
+  end
+
+  # --- flatten_json3 (the shared parse contract) ------------------------------
   test "flatten_json3 collapses whitespace and joins segments" do
     body = JSON.generate({ "events" => [
       { "segs" => [ { "utf8" => "a\n" }, { "utf8" => "b " } ] },
@@ -256,6 +288,18 @@ class YtdlpCliTest < ActiveSupport::TestCase
   end
 
   private
+
+  # Swaps in a collector for the block's duration and returns what was logged,
+  # so a sanitized log line can be asserted without a real logger.
+  def capture_log
+    buffer = StringIO.new
+    original = Rails.logger
+    Rails.logger = ActiveSupport::Logger.new(buffer)
+    yield
+    buffer.string
+  ensure
+    Rails.logger = original
+  end
 
   def with_retry_wait(seconds)
     original = YtdlpCli::RETRY_WAIT

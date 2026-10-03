@@ -205,8 +205,10 @@ class YoutubeFetcher
   # auto-generated tracks first (the ranking order). Each track contributes its
   # `languageCode` and its base tag, plus the `vssId` with its `.`/`a.` prefix
   # stripped (it sometimes carries a more specific tag than `languageCode`).
-  # Values are reduced to the same safe token the transport uses, and anything
-  # starting with `-` (yt-dlp's exclusion syntax) is dropped.
+  # Values are reduced to the same safe token the transport uses; anything
+  # starting with `-` (yt-dlp's exclusion syntax) or absurdly long is dropped.
+  # YtdlpCli sanitizes and caps the list again, so this is the cheap first pass
+  # that keeps an oversized page value out of the array in the first place.
   def fallback_languages(tracks)
     codes = tracks.flat_map do |track|
       code = track.language_code.to_s
@@ -215,7 +217,10 @@ class YoutubeFetcher
 
     codes.filter_map do |code|
       tag = code.to_s[/\A[\w-]+\z/]
-      tag unless tag.nil? || tag.start_with?("-")
+      next if tag.nil? || tag.start_with?("-")
+      next if tag.length > YtdlpCli::MAX_LANGUAGE_LENGTH
+
+      tag
     end.uniq
   end
 

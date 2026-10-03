@@ -30,9 +30,17 @@ class YtdlpCli
   # must never reach the argument array or become a yt-dlp option.
   LANGUAGE_CODE = /\A[\w-]+\z/
 
+  # yt-dlp accepts `-` in a `--sub-langs` pattern as "exclude this", so a value
+  # starting with `-` is dropped rather than passed as an exclusion.
+  #
   # Cap on the language list, so a page listing hundreds of tracks cannot build
   # an unbounded `--sub-langs` argument (and a burst of downloads).
   MAX_LANGUAGES = 8
+
+  # BCP-47 tags are short ("pt-BR", "zh-Hans", "pt-orig"). A real tag never
+  # approaches this, so the bound only rejects a page that set `languageCode` to
+  # a multi-megabyte string to bloat the command line into an E2BIG failure.
+  MAX_LANGUAGE_LENGTH = 16
 
   # The player client that still serves captions without a PoToken provider.
   # Overridable for a future YouTube change without a deploy.
@@ -204,14 +212,15 @@ class YtdlpCli
   end
 
   # Each tag is sanitized with the fetcher's own pattern; anything starting with
-  # `-` (yt-dlp's exclusion syntax), duplicated or malformed is dropped. The
-  # order is preserved because it is the caller's preference order, and the list
-  # is capped so a huge page cannot build an unbounded argument.
+  # `-` (yt-dlp's exclusion syntax), duplicated, malformed or absurdly long is
+  # dropped. The order is preserved because it is the caller's preference order,
+  # and the list is capped so a huge page cannot build an unbounded argument.
   def sanitize_languages(languages)
     Array(languages).filter_map do |code|
       tag = code.to_s
       next unless tag.match?(LANGUAGE_CODE)
       next if tag.start_with?("-")
+      next if tag.length > MAX_LANGUAGE_LENGTH
 
       tag
     end.uniq.first(MAX_LANGUAGES)
@@ -253,10 +262,13 @@ class YtdlpCli
 
   # A .vtt or .srv3 only means yt-dlp could not honour the json3 preference;
   # this parses json3 only and never tries to parse another subtitle format.
+  # The names can carry an attacker-set language tag, so control characters are
+  # stripped before logging to keep a crafted tag from forging a log line.
   def log_no_json3(dir, id)
     names = Dir.children(dir)
     if names.any?
-      Rails.logger.info("yt-dlp returned no json3 subtitle for #{id}: #{names.join(", ")}")
+      safe = names.map { |name| name.to_s.gsub(/[^[:print:]]/, "?") }.join(", ")
+      Rails.logger.info("yt-dlp returned no json3 subtitle for #{id}: #{safe}")
     end
     nil
   end
@@ -269,10 +281,14 @@ class YtdlpCli
     nil
   end
 
+  # One line of yt-dlp's stderr, with control characters stripped: the text is
+  # derived from the video/response, so it must not forge a log line even though
+  # only the first line is kept.
   def log_rate_limit(id, stderr)
     return unless stderr.to_s.match?(/429|too many requests/i)
 
-    Rails.logger.warn("yt-dlp hit a rate limit for #{id}: #{stderr.to_s.strip.lines.first}")
+    line = stderr.to_s.strip.lines.first.to_s.gsub(/[^[:print:]]/, "?").first(200)
+    Rails.logger.warn("yt-dlp hit a rate limit for #{id}: #{line}")
   end
 
   def log_missing_binary
