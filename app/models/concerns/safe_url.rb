@@ -18,6 +18,15 @@ module SafeUrl
     text.match?(SAFE_URL_PATTERN) ? text : nil
   end
 
+  # The host of a URL, lower-cased, or "" when it cannot be parsed. The one place
+  # the app turns a URL into its host, so the create form's host placeholder and
+  # the variant that compares against it always agree.
+  def self.host(value)
+    URI.parse(value.to_s).host.to_s.downcase
+  rescue URI::InvalidURIError
+    ""
+  end
+
   class_methods do
     # `allow_blank` is for the optional URL of a translation-only clipping
     # edition; required URLs rely on their own presence validation.

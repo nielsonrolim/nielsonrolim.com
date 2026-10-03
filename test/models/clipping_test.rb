@@ -353,6 +353,20 @@ class ClippingTest < ActiveSupport::TestCase
     assert_not_includes Clipping.shippable, clippings(:sent)
   end
 
+  test "in_flight covers the states on the way to a summary and nothing else" do
+    assert clippings(:pending).in_flight?
+    assert_not clippings(:queued).in_flight? # summarized
+
+    clippings(:pending).update!(summary_status: :fetching)
+    assert_includes Clipping.in_flight, clippings(:pending)
+
+    clippings(:pending).update!(summary_status: :summarizing)
+    assert clippings(:pending).in_flight?
+
+    clippings(:pending).update!(summary_status: :failed)
+    assert_not_includes Clipping.in_flight, clippings(:pending)
+  end
+
   test "a clipping created as failed does not kick off a generation run" do
     assert_no_enqueued_jobs(only: GenerateSummaryJob) do
       build_clipping(summary_status: :failed, summary_error: "sem fonte").save!

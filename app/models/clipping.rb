@@ -32,6 +32,15 @@ class Clipping < ApplicationRecord
   # nothing to show, so it waits in the queue until it is fixed or removed.
   scope :shippable, -> { unsent.where.not(summary_status: :failed) }
 
+  # The summary is on its way: marked, fetching the text, or running the model.
+  # Done (`summarized`) and stuck (`failed`) are the other two ends.
+  IN_FLIGHT_STATUSES = %w[pending fetching summarizing].freeze
+  scope :in_flight, -> { where(summary_status: IN_FLIGHT_STATUSES) }
+
+  def in_flight?
+    IN_FLIGHT_STATUSES.include?(summary_status)
+  end
+
   # A clipping created as already failed (no source to summarize) must not kick
   # off a generation run. The first step is fetching the text off the request
   # cycle (a YouTube transcript can take minutes); that job chains the summary.

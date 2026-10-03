@@ -355,7 +355,7 @@ local workers — the Docker `jobs` container writes to the production queue.
    temporary; review summary quality on real clippings before relying on it.
    A clipping whose summary keeps failing is marked `failed` and still ships, with its source
    title and no summary.
-3. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
+4. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
    unsent clippings, storing one rendered body (HTML *and* plain text, with its
    own subject) per subscribed language on `newsletter_bodies` — so the archive is
    exactly what went out — emails every subscriber the body for their language,

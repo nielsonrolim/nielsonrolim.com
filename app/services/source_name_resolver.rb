@@ -30,7 +30,7 @@ class SourceNameResolver
   end
 
   def resolve(url)
-    host = host_of(url)
+    host = SafeUrl.host(url)
     return if host.blank?
 
     return Result.new(name: host.sub(/\Awww\./, "")) unless youtube?(host)
@@ -52,11 +52,5 @@ class SourceNameResolver
     metadata.is_a?(Hash) ? metadata : {}
   rescue HttpTransport::Error, JSON::ParserError
     {}
-  end
-
-  def host_of(url)
-    URI.parse(url.to_s).host.to_s.downcase
-  rescue URI::InvalidURIError
-    ""
   end
 end

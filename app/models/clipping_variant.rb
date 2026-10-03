@@ -35,16 +35,10 @@ class ClippingVariant < ApplicationRecord
   # replace that placeholder with the real title, and never a title the reader
   # typed (or a feed entry's own title, which is not a host in the first place).
   def placeholder_title?
-    url.present? && title.present? && title == url_host
+    url.present? && title.present? && title == SafeUrl.host(url)
   end
 
   private
-
-  def url_host
-    URI.parse(url.to_s).host.to_s
-  rescue URI::InvalidURIError
-    ""
-  end
 
   # The source edition is created before the language is known, so there is at
   # most one locale-less variant per clipping. The partial unique index backs

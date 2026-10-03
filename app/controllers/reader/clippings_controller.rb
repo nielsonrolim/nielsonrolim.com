@@ -33,7 +33,7 @@ module Reader
       # Its title is what the reader typed, then the video's own title from
       # oEmbed, then the host until the fetch finds the real one.
       title = create_params[:title].to_s.strip.presence || source&.title.presence
-      variant = @clipping.variants.build(url: url, origin: :generated, title: title || host_of(url))
+      variant = @clipping.variants.build(url: url, origin: :generated, title: title || SafeUrl.host(url))
 
       if @clipping.save
         redirect_after_create(@clipping)
@@ -172,12 +172,6 @@ module Reader
         variant.url = url.presence
         variant.summary = summary.presence
       end
-    end
-
-    def host_of(url)
-      URI.parse(url).host.to_s
-    rescue URI::InvalidURIError
-      ""
     end
 
     def create_params
