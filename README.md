@@ -353,17 +353,24 @@ local workers — the Docker `jobs` container writes to the production queue.
    only after a failure or timeout, not to review a valid summary. Both models
    use Zen, so a Zen-wide outage can affect both. Free-model availability is
    temporary; review summary quality on real clippings before relying on it.
-   A clipping whose summary keeps failing is marked `failed` and still ships, with its source
-   title and no summary.
-4. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from all
-   unsent clippings, storing one rendered body (HTML *and* plain text, with its
-   own subject) per subscribed language on `newsletter_bodies` — so the archive is
-   exactly what went out — emails every subscriber the body for their language,
-   and stamps the clippings with that issue.
+   A clipping whose summary keeps failing is marked `failed` and waits in the queue
+   rather than shipping, until the summary is corrected or the clipping is removed.
+4. **Send** — every Monday at 09:00 `SendNewsletterJob` composes an issue from
+   `Clipping.shippable` — the clippings still in the queue, without a `failed`
+   summary, and not deferred — storing one rendered body (HTML *and* plain text,
+   with its own subject) per subscribed language on `newsletter_bodies` — so the
+   archive is exactly what went out — emails every subscriber the body for their
+   language, and stamps the clippings with that issue. A clipping you **defer**
+   from the reader queue stays in the queue but sits out this issue; the deferral
+   lifts once the issue is composed, so it competes for the next one — skipping
+   exactly one issue — and reactivating it earlier is just as reversible.
 
 If some summaries are still in flight the job postpones itself by 10 minutes, up
-to 6 times, so a slow model delays the issue instead of truncating it. An empty
-queue or an empty subscriber list means no issue is created at all.
+to 6 times, so a slow model delays the issue instead of truncating it; a
+postponed run leaves deferrals in place, so a retry never consumes one. A
+composed issue clears every deferral, and so does a week with nothing to send, so
+deferred clippings return for the next issue. An empty queue or an empty
+subscriber list means no issue is created at all.
 
 ### Security notes
 
