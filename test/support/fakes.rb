@@ -154,16 +154,20 @@ end
 # without a process or a network.
 #
 # `subtitles` is a Hash of filename => body ("sub.pt-orig.json3" => json3 text),
-# written on every call. `statuses` can instead be an Array of
+# written on a successful call. `statuses` can instead be an Array of
 # [success, exitstatus, stderr] replayed one per call, to drive the 429 retry.
+# `partial:` writes the subtitles even when the call exits non-zero, modelling
+# yt-dlp downloading one language and then failing on the next (a 429 on a
+# secondary language).
 class FakeYtdlpRunner
   attr_reader :calls
 
-  def initialize(subtitles: {}, success: true, exitstatus: 0, stderr: "", statuses: nil, error: nil)
+  def initialize(subtitles: {}, success: true, exitstatus: 0, stderr: "", statuses: nil, error: nil, partial: false)
     @subtitles = subtitles
     @statuses = statuses
     @default_status = YtdlpCli::Status.new(success, exitstatus, stderr)
     @error = error
+    @partial = partial
     @calls = []
   end
 
@@ -171,11 +175,12 @@ class FakeYtdlpRunner
     @calls << { args: args, chdir: chdir }
     raise @error if @error
 
-    @subtitles.each do |name, body|
-      File.write(File.join(chdir, name), body)
+    status = next_status
+    if status.success? || @partial
+      @subtitles.each { |name, body| File.write(File.join(chdir, name), body) }
     end
 
-    next_status
+    status
   end
 
   def last_args = calls.last&.fetch(:args)

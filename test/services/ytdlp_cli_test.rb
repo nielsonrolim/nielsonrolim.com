@@ -230,11 +230,56 @@ class YtdlpCliTest < ActiveSupport::TestCase
     assert_equal 2, runner.calls.size
   end
 
+  test "keeps retrying a 429 up to MAX_ATTEMPTS" do
+    body = JSON.generate({ "events" => [ { "segs" => [ { "utf8" => "THIRD" } ] } ] })
+    runner = FakeYtdlpRunner.new(
+      subtitles: { "sub.pt.json3" => body },
+      statuses: [
+        [ false, 1, "ERROR: HTTP Error 429: Too Many Requests" ],
+        [ false, 1, "ERROR: HTTP Error 429: Too Many Requests" ],
+        [ true, 0, "" ]
+      ]
+    )
+
+    result = with_retry_wait(0) { cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ]) }
+
+    assert_equal "THIRD", result
+    assert_equal YtdlpCli::MAX_ATTEMPTS, runner.calls.size
+  end
+
+  test "gives up after MAX_ATTEMPTS of 429" do
+    runner = FakeYtdlpRunner.new(
+      statuses: Array.new(YtdlpCli::MAX_ATTEMPTS) { [ false, 1, "ERROR: HTTP Error 429: Too Many Requests" ] }
+    )
+
+    result = with_retry_wait(0) { cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ]) }
+
+    assert_nil result
+    assert_equal YtdlpCli::MAX_ATTEMPTS, runner.calls.size
+  end
+
   test "does not retry a non-429 failure" do
     runner = FakeYtdlpRunner.new(success: false, exitstatus: 1, stderr: "ERROR: unable to extract")
 
     assert_nil cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt" ])
     assert_equal 1, runner.calls.size
+  end
+
+  test "keeps a subtitle left behind when the run exits non-zero" do
+    # yt-dlp downloads each requested language and aborts on the first failure,
+    # so a 429 on a secondary language must not discard the track it already
+    # wrote. The file is on disk; use it.
+    body = JSON.generate({ "events" => [ { "segs" => [ { "utf8" => "PARTIAL" } ] } ] })
+    runner = FakeYtdlpRunner.new(
+      subtitles: { "sub.pt-orig.json3" => body },
+      success: false, exitstatus: 1, stderr: "ERROR: Unable to download video subtitles for 'pt': HTTP Error 429", partial: true
+    )
+
+    result = with_retry_wait(0) do
+      cli(runner).call(video_id: "xG-xACzIJQU", languages: [ "pt-orig", "pt" ])
+    end
+
+    assert_equal "PARTIAL", result
   end
 
   test "does not swallow a programming error" do

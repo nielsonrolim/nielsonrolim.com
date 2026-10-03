@@ -56,9 +56,13 @@ class YtdlpCli
   # below bounds the network wait separately.
   DEFAULT_TIMEOUT = 60
 
-  # A 429 from YouTube is an IP rate limit, not a permanent failure, so one
-  # short backoff often gets the track on the second try.
+  # A 429 from YouTube is an IP rate limit, not a permanent failure, and it is
+  # often transient: the same request can succeed seconds later. Retry a few
+  # times with an increasing backoff before giving up, rather than dropping to
+  # the description while a usable track was one retry away.
+  MAX_ATTEMPTS = 3
   RETRY_WAIT = 3
+  RETRY_WAIT_CAP = 8
 
   class TimeoutError < StandardError; end
 
@@ -160,24 +164,29 @@ class YtdlpCli
 
   private
 
-  # One attempt, then a second only when the failure named a rate limit (any
-  # other non-zero exit is permanent within this call). Returns the transcript or
-  # nil; the temp directory is cleaned up by the block either way.
+  # Retries only while the failure named a rate limit (any other non-zero exit
+  # is permanent within this call). Up to MAX_ATTEMPTS runs, with an increasing
+  # backoff, because a 429 is transient. Returns the transcript or nil; the temp
+  # directory is cleaned up by the block on every attempt.
   def with_retry(id, langs)
-    result = attempt(id, langs)
-    return result if result.present? || !rate_limited?
+    attempt_number = 0
+    loop do
+      attempt_number += 1
+      result = attempt(id, langs)
+      return result if result.present? || !rate_limited? || attempt_number >= MAX_ATTEMPTS
 
-    sleep(RETRY_WAIT)
-    attempt(id, langs)
+      sleep([ RETRY_WAIT * attempt_number, RETRY_WAIT_CAP ].min)
+    end
   end
 
   def attempt(id, langs)
     Dir.mktmpdir("ytdlp") do |dir|
       status = run(args_for(id, langs), chdir: dir)
-      unless status&.success?
-        log_rate_limit(id, status&.stderr)
-        next nil
-      end
+      # A non-zero exit can still leave a usable subtitle behind: yt-dlp
+      # downloads each requested language and aborts on the first failure, so a
+      # 429 on a secondary language must not discard the track it already
+      # wrote. Read what is there regardless, and only log the failure.
+      log_rate_limit(id, status&.stderr) unless status&.success?
 
       body = read_subtitle(dir, langs, id)
       body && YoutubeFetcher.flatten_json3(body)

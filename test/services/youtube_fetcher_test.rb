@@ -92,13 +92,14 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     assert_includes result.text, "hoje vamos falar sobre o Jev"
   end
 
-  test "appends the transcript when captions are available" do
+  test "uses the transcript alone when captions are available" do
     result = fetcher(captions: @captions).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
 
     assert_includes result.text, "hoje vamos falar sobre o Jev"
     assert_includes result.text, "O Jev é um runtime de IA para agentes"
-    # The description stays in front of the transcript.
-    assert_operator result.text.index("Conheça o Jev"), :<, result.text.index("hoje vamos falar")
+    # The description is a promotional blurb, not the video's content, so it is
+    # left out entirely when a transcript exists.
+    assert_not_includes result.text, "Conheça o Jev"
   end
 
   test "falls back to the description when the caption request fails" do
@@ -276,7 +277,7 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     refute_includes result.text, "MEIO-MARCADOR"
   end
 
-  test "leaves the transcript out when the description fills the budget" do
+  test "uses the transcript even when the description is huge" do
     description = "D" * (YoutubeFetcher::MAX_TEXT_CHARS + 500)
     page = <<~HTML
       <html><head><meta property="og:title" content="t"></head><body>
@@ -288,8 +289,22 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     result = fetcher(page: page, caption_bodies: [ @captions ]).call("https://www.youtube.com/watch?v=a")
 
     assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
-    refute_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
-    refute_includes result.text, "hoje vamos falar"
+    assert_includes result.text, "hoje vamos falar"
+    refute_includes result.text, "DDDD"
+  end
+
+  test "trims a description that has no transcript to go with it" do
+    description = "D" * (YoutubeFetcher::MAX_TEXT_CHARS + 500)
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"#{description}"};</script></body></html>
+    HTML
+
+    result = fetcher(page: page).call("https://www.youtube.com/watch?v=a")
+
+    assert_operator result.text.length, :<=, YoutubeFetcher::MAX_TEXT_CHARS
+    assert_includes result.text, "DDDD"
+    assert_includes result.text, YoutubeFetcher::TRANSCRIPT_GAP
   end
 
   test "keeps the YouTube ceiling equal to the article and generator ceilings" do
@@ -307,17 +322,52 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     assert_includes result.text, "hoje vamos falar sobre o Jev"
   end
 
-  test "asks yt-dlp for the track languages in ranking order" do
-    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt.json3" => @captions })
+  test "asks yt-dlp for the track languages, original variant first" do
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt-orig.json3" => @captions })
     cli = YtdlpCli.new(runner: runner)
 
     fetcher(page: @multi, caption_bodies: [ "", "", "" ], transcript_cli: cli).call("https://www.youtube.com/watch?v=abc12345678")
 
-    langs = runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last
+    langs = runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last.split(",")
     # pt is the original language (defaultAudioTrackIndex points at the pt
-    # audio), so its tag comes first; en follows.
-    assert_equal "pt,en", langs
+    # audio), so yt-dlp's "<lang>-orig" tag is offered first — the plain "pt"
+    # asks for a translated track, which can fail and leave nothing.
+    assert_equal "pt-orig", langs.first
+    assert_includes langs, "pt"
+    assert_includes langs, "en"
     assert_includes runner.last_args.last, "watch?v=abc12345678"
+  end
+
+  test "keeps the transcript when yt-dlp serves the original track" do
+    # The page's own timedtext yields nothing (PoToken), and the fallback must
+    # reach the "-orig" track rather than a translated one.
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.pt-orig.json3" => @captions })
+    cli = YtdlpCli.new(runner: runner)
+
+    result = fetcher(page: @multi, caption_bodies: [ "", "", "" ], transcript_cli: cli).call("https://www.youtube.com/watch?v=abc12345678")
+
+    assert_includes result.text, "hoje vamos falar sobre o Jev"
+    assert_equal "pt-orig", runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last.split(",").first
+  end
+
+  test "uses the description language when the page lists only translations" do
+    # An English video whose track list holds only translated tracks, as real
+    # pages do. The description is English, so the original language is inferred
+    # as English and the fallback asks for it — not the first listed track (de).
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"This is a talk about writing code with an AI assistant and cleaning it up afterwards.","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=de","languageCode":"de","vssId":"a.de","kind":"asr"},
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=ar","languageCode":"ar","vssId":"a.ar","kind":"asr"}
+      ]}}};</script></body></html>
+    HTML
+    runner = FakeYtdlpRunner.new(subtitles: { "sub.en-orig.json3" => @captions })
+    cli = YtdlpCli.new(runner: runner)
+
+    fetcher(page: page, caption_bodies: [ "", "" ], transcript_cli: cli).call("https://www.youtube.com/watch?v=abc12345678")
+
+    first = runner.last_args.each_cons(2).find { |a, _| a == "--sub-langs" }&.last.split(",").first
+    assert_equal "en-orig", first
   end
 
   test "does not call the CLI when the page lists no caption tracks" do

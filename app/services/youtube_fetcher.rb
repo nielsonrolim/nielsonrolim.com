@@ -63,6 +63,22 @@ class YoutubeFetcher
   # tests) can see that the middle was dropped.
   TRANSCRIPT_GAP = "\n\n[... transcript truncated ...]\n\n"
 
+  # A short function-word list per language (pt/en/es), used only to guess the
+  # language of a description when the page names no original track. Kept tiny
+  # and syntactic: those words are frequent and rarely appear in the other two,
+  # and the guess is discarded on a tie.
+  LANGUAGE_HINTS = {
+    "pt" => %w[a o e de que nao não um uma para com se por do da em os as do dos das
+               voce você isso essa este esta muito mais ja já aqui entao então],
+    "en" => %w[the a an of to in and is are for with that this it you your we they
+               on as be by at or from not have has],
+    "es" => %w[el la los las de que no un una para con se por del en es son como
+               tu usted esto esta muy mas ya aqui entonces]
+  }.freeze
+
+  # Below this many alphabetic words a description is too short to guess from.
+  MIN_LANGUAGE_WORDS = 12
+
   Result = Struct.new(:title, :text, keyword_init: true)
 
   # One caption track from the player response. `kind` is "asr" on
@@ -130,10 +146,13 @@ class YoutubeFetcher
 
     html = transport.get("#{WATCH_ENDPOINT}?v=#{id}", accept: HttpTransport::HTML_ACCEPT)
     description = description_from(html)
-    raise Error, "no description found for YouTube video #{id}" if description.blank?
+    transcript = transcript_from(html, original_language(html, description), id)
+    # Only a video with neither captions nor a description has nothing to
+    # summarize; a transcript alone is enough even when there is no description.
+    raise Error, "no description or transcript found for YouTube video #{id}" if description.blank? && transcript.blank?
 
     title = title_from(html).presence || "YouTube video #{id}"
-    Result.new(title: title, text: compose(description, transcript_from(html, original_language(html), id)))
+    Result.new(title: title, text: compose(description, transcript))
   rescue HttpTransport::Error => e
     raise Error, e.message
   end
@@ -181,7 +200,7 @@ class YoutubeFetcher
     return text if text.present?
     return nil if tracks.empty?
 
-    fallback_transcript(id, tracks)
+    fallback_transcript(id, tracks, original_language)
   end
 
   # yt-dlp is a subprocess: a crash, a timeout or a missing binary must never
@@ -189,30 +208,36 @@ class YoutubeFetcher
   # ever yields text or nil. `YtdlpCli` already rescues its own expected
   # failures; this is the belt to that pair of braces.
   #
-  # The language list is a heuristic. The page's ranking carries `languageCode`
-  # ("pt-BR"), but yt-dlp tags its files by the caption track's own tag
-  # ("pt-orig", "pt", "en"). The ranking has no yt-dlp tag to pass, so both the
-  # language code and its base are offered, in ranking order; yt-dlp matches an
-  # exact tag and falls back to its own default when none match.
-  def fallback_transcript(id, tracks)
-    transcript_cli.call(video_id: id, languages: fallback_languages(tracks))
+  # The language list is built in `fallback_languages`, which starts from the
+  # original language (not the first listed track, which can be a translation).
+  def fallback_transcript(id, tracks, original_language)
+    transcript_cli.call(video_id: id, languages: fallback_languages(tracks, original_language))
   rescue StandardError => e
     Rails.logger.warn("yt-dlp transcript fallback failed for #{id}: #{e.class}: #{e.message}")
     nil
   end
 
-  # The deduplicated tag list to ask yt-dlp for, original-language and
-  # auto-generated tracks first (the ranking order). Each track contributes its
-  # `languageCode` and its base tag, plus the `vssId` with its `.`/`a.` prefix
-  # stripped (it sometimes carries a more specific tag than `languageCode`).
-  # Values are reduced to the same safe token the transport uses; anything
-  # starting with `-` (yt-dlp's exclusion syntax) or absurdly long is dropped.
-  # YtdlpCli sanitizes and caps the list again, so this is the cheap first pass
-  # that keeps an oversized page value out of the array in the first place.
-  def fallback_languages(tracks)
-    codes = tracks.flat_map do |track|
+  # The tag list to ask yt-dlp for, the original language first, then the
+  # available tracks in ranking order. The original track is served by yt-dlp
+  # under a `<lang>-orig` tag (`pt-orig`), while `languageCode` only carries the
+  # plain tag (`pt`) — and a request for the plain tag asks for the *translated*
+  # track, which can fail (a 429) and leave nothing. So the original language
+  # offers its `<base>-orig` variant first. Crucially this starts from
+  # `original_language`, not from the first listed track: the track list can omit
+  # the original entirely (an English video whose list holds only translations),
+  # and iterating the list would then ask for the wrong language. Each track also
+  # contributes its `languageCode`, its base tag and its `vssId` with the `.`/`a.`
+  # prefix stripped. Values are reduced to the same safe token the transport
+  # uses; anything starting with `-` (yt-dlp's exclusion syntax) or absurdly long
+  # is dropped. YtdlpCli sanitizes and caps the list again, so this is the cheap
+  # first pass.
+  def fallback_languages(tracks, original_language)
+    primary = base_language(original_language)
+    codes = [ "#{primary}-orig", primary, original_language ]
+    codes += tracks.flat_map do |track|
       code = track.language_code.to_s
-      [ code, base_language(code), track.vss_id.to_s.sub(/\Aa?\./, "") ]
+      base = base_language(code)
+      [ "#{base}-orig", code, base, track.vss_id.to_s.sub(/\Aa?\./, "") ]
     end
 
     codes.filter_map do |code|
@@ -291,11 +316,35 @@ class YoutubeFetcher
 
   # The original language, from the most explicit signal to the weakest: the
   # declared audio language, then the track the page marks as default, then the
-  # first auto-generated track (ASR is only ever made from the original audio).
-  def original_language(html)
+  # language of the description (a video's description is nearly always written
+  # in the video's own language), and finally the first auto-generated track.
+  #
+  # The description hint sits above the ASR fallback because the ASR list is a
+  # translation set whose order is unrelated to the original: a video in English
+  # can list only translated tracks (de, ar, …), and "the first ASR" then names
+  # the wrong language. The description is a real signal where the track list is
+  # not.
+  def original_language(html, description = nil)
     html[DEFAULT_AUDIO_LANGUAGE, 1].presence ||
       default_audio_track_language(html) ||
+      description_language(description) ||
       first_asr_language(html)
+  end
+
+  # A tiny offline guess at a text's language using function words, enough to
+  # tell pt/en/es apart when choosing a track tag. Not a general detector: it
+  # returns nil when nothing scores, and the caller then falls back. Using a
+  # gem here would be a new dependency for one hint.
+  def description_language(text)
+    words = text.to_s.downcase.scan(/[[:alpha:]]+/)
+    return nil if words.length < MIN_LANGUAGE_WORDS
+
+    scores = LANGUAGE_HINTS.transform_values { |hints| words.count { |word| hints.include?(word) } }
+    best, score = scores.max_by { |_, value| value }
+    # Ambiguous when nothing matched, or two languages tie, so give no answer.
+    return nil if score.zero?
+
+    scores.values.count(score) > 1 ? nil : best
   end
 
   def default_audio_track_language(html)
@@ -366,25 +415,22 @@ class YoutubeFetcher
     value
   end
 
-  # Description first, transcript after, both within MAX_TEXT_CHARS. When the
-  # description alone fills the budget the transcript is left out rather than
-  # cut to nothing, and a transcript too long for the rest is cut head and
-  # tail: the opening carries the thesis and the end carries the conclusion,
-  # so the middle is the part worth dropping.
+  # The text to summarize: the transcript alone when one was obtained, the
+  # description only when it was not. The description is a promotional blurb
+  # (call-to-action, sponsor, links), not the video's content, so mixing it in
+  # would let the model summarize the ad rather than the talk; the description
+  # is the fallback for a video with no usable captions.
+  #
+  # Either way the result is trimmed into MAX_TEXT_CHARS. A long transcript is
+  # cut head and tail — the opening carries the thesis and the end carries the
+  # conclusion — rather than losing the end.
   def compose(description, transcript)
-    description = description.to_s.strip
-    return description[0, MAX_TEXT_CHARS] if description.length >= MAX_TEXT_CHARS
-    return description if transcript.blank?
+    source = transcript.presence || description.to_s
+    source = source.to_s.strip
+    return source if source.length <= MAX_TEXT_CHARS
 
-    "#{description}\n\n#{limit_transcript(description, transcript)}"
-  end
-
-  def limit_transcript(description, transcript)
-    budget = MAX_TEXT_CHARS - description.length - 2 - TRANSCRIPT_GAP.length
-    return transcript if transcript.length <= budget
-
-    head = (budget * 0.6).floor
-    tail = budget - head
-    "#{transcript[0, head]}#{TRANSCRIPT_GAP}#{transcript[-tail, tail]}"
+    head = (MAX_TEXT_CHARS * 0.6).floor
+    tail = MAX_TEXT_CHARS - head - TRANSCRIPT_GAP.length
+    "#{source[0, head]}#{TRANSCRIPT_GAP}#{source[-tail, tail]}"
   end
 end
