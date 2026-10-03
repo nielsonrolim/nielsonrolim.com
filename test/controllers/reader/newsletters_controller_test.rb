@@ -20,6 +20,17 @@ class Reader::NewslettersControllerTest < ActionDispatch::IntegrationTest
     assert_select "body", /segundas, 09:00/
   end
 
+  test "counts a deferred clipping as queued but not as ready to ship" do
+    clippings(:pending).defer!
+
+    get reader_newsletters_path
+
+    assert_response :success
+    assert_select "body", /na fila: 2/
+    # Only the one shippable clipping would go out, so the confirmation says 1.
+    assert_select "button[data-confirm*=?]", "com 1 recorte"
+  end
+
   test "triggering a send queues the weekly job" do
     assert_enqueued_with(job: SendNewsletterJob) do
       post reader_newsletters_path

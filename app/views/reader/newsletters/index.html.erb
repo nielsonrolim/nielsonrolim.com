@@ -10,7 +10,7 @@
     <span class="text-muted"><%= t("reader.newsletters.stats.schedule") %></span>
 
     <%= button_to t("reader.newsletters.send_now"), reader_newsletters_path, method: :post,
-          data: { confirm: t("reader.newsletters.confirm_send_now", count: @queued_count) },
+          data: { confirm: t("reader.newsletters.confirm_send_now", count: @shippable_count) },
           class: "ml-auto btn btn--sm btn--primary",
           form: { class: "m-0 inline" } %>
   </div>

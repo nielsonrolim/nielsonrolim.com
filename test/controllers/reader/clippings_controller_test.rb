@@ -434,6 +434,19 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_not clipping.reload.deferred?
   end
 
+  test "a deferred clipping with a failed summary stays reported as failed" do
+    clipping = clippings(:pending)
+    clipping.update!(summary_status: :failed, summary_error: "sem fonte")
+    clipping.defer!
+
+    get reader_clippings_path
+
+    assert_response :success
+    # It is out because the summary failed, not because it will ship next issue.
+    assert_select "body", /fica de fora/
+    assert_no_match(/adiados ficam para a edição seguinte/, response.body)
+  end
+
   test "the index puts deferred clippings after the active queue with their own numbering" do
     clippings(:queued).defer!
 

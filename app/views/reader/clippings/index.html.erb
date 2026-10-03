@@ -9,8 +9,8 @@
     <% if @failed_count.positive? %>
       <span class="text-err"><%= t("reader.clippings.failed_in_queue", count: @failed_count) %></span>
     <% end %>
-    <% if @deferred_clippings.any? %>
-      <span class="text-muted"><%= t("reader.clippings.deferred_in_queue", count: @deferred_clippings.size) %></span>
+    <% if @deferred_count.positive? %>
+      <span class="text-muted"><%= t("reader.clippings.deferred_in_queue", count: @deferred_count) %></span>
     <% end %>
     <%= link_to t("reader.clippings.view_issues"), reader_newsletters_path, class: "text-ruby" %>
   </p>

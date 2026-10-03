@@ -8,7 +8,11 @@ module Reader
       @deferred_clippings, @active_clippings = @clippings.partition(&:deferred?)
       @recent_newsletters = Newsletter.newest_first.limit(5)
       @shippable_count = Clipping.shippable.count
-      @failed_count = @active_clippings.count(&:failed?)
+      # A failed summary keeps a clipping out whether or not it is deferred, so
+      # the failed tally covers the whole queue. Only a deferred clipping whose
+      # summary did not fail is promised for the following issue.
+      @failed_count = @active_clippings.count(&:failed?) + @deferred_clippings.count(&:failed?)
+      @deferred_count = @deferred_clippings.count { |clipping| !clipping.failed? }
       @clipping = Clipping.new
     end
 
