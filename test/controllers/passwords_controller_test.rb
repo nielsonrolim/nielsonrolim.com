@@ -29,6 +29,12 @@ class PasswordsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "the reset page does not leak its token through Referer" do
+    get edit_password_path(@user.password_reset_token)
+
+    assert_equal "no-referrer", response.headers["Referrer-Policy"]
+  end
+
   test "edit with an invalid password reset token" do
     get edit_password_path("invalid token")
 

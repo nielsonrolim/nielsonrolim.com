@@ -101,4 +101,10 @@ class UnsubscribesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name=robots][content=?]", "noindex, nofollow"
     assert_select "title", "Cancelar inscrição — Nielson Rolim"
   end
+
+  test "does not leak its token through Referer" do
+    get unsubscribe_path(token: subscribers(:first).unsubscribe_token)
+
+    assert_equal "no-referrer", response.headers["Referrer-Policy"]
+  end
 end
