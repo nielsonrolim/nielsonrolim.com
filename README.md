@@ -509,8 +509,9 @@ docker compose up -d --build
   once — the volume keeps it.
 - The image also installs the **pinned static `yt-dlp`** binary for the YouTube
   transcript fallback: the `yt-dlp_linux` asset (x86-64, no Python) from a fixed
-  release tag, verified against that release's `SHA2-256SUMS` at build time — a
-  checksum mismatch fails the build. The version is pinned in the `Dockerfile`
+  release tag, verified at build time against a SHA-256 pinned in the
+  `Dockerfile` (`ARG YTDLP_SHA256`) — a checksum mismatch fails the build. The
+  version is pinned in the `Dockerfile`
   (`ARG YTDLP_VERSION`), never `latest`. `ffmpeg` is deliberately not installed:
   the fallback only downloads subtitle files. Without the binary the fallback is
   inert — the app still boots and logs one warning, but a PoToken-blocked video

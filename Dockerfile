@@ -36,11 +36,14 @@ RUN groupadd --system --gid 1000 rails \
 # fallback only downloads subtitles (`--skip-download --write-subs`), which needs
 # no muxing, so adding ffmpeg would only balloon the image.
 #
-# Version and asset URL are pinned (never `latest`), and the download is verified
-# against the release's own SHA2-256SUMS before it is made executable: a
-# tampered or truncated binary must fail the build, not land in /usr/local/bin.
-# The checksum file and binary live in one layer and the temp artifacts are
-# removed there, so only the binary survives into the image.
+# Version and asset URL are pinned (never `latest`), and the binary is verified
+# against a SHA-256 fixed HERE in the Dockerfile rather than against the release's
+# co-downloaded SHA2-256SUMS: whoever can serve the binary could also serve a
+# matching sums file, so checking the sums only proves the download was not
+# truncated. Pinning the expected digest means a substituted or tampered binary
+# fails the build, not just a corrupt one. When bumping YTDLP_VERSION, update
+# YTDLP_SHA256 from that release's SHA2-256SUMS (`grep ' yt-dlp_linux$'`).
+# The binary lives alone in /usr/local/bin; the temp artifact is removed here.
 #
 # `yt-dlp_linux` is an x86-64 asset; the production host is amd64. The image is
 # built from any arch though (an Apple Silicon laptop is arm64), so the binary is
@@ -49,17 +52,15 @@ RUN groupadd --system --gid 1000 rails \
 # Running `--version` only happens where the host can execute it, so an arm64
 # build does not fail on a valid amd64 binary it simply cannot run.
 ARG YTDLP_VERSION=2026.08.19
+ARG YTDLP_SHA256=58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a
 RUN set -eux; \
     base="https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}"; \
     curl -fsSL -o /tmp/yt-dlp_linux "${base}/yt-dlp_linux"; \
-    curl -fsSL -o /tmp/SHA2-256SUMS "${base}/SHA2-256SUMS"; \
-    grep ' yt-dlp_linux$' /tmp/SHA2-256SUMS > /tmp/yt-dlp_linux.sha256; \
-    cd /tmp && sha256sum -c yt-dlp_linux.sha256; \
+    echo "${YTDLP_SHA256}  /tmp/yt-dlp_linux" | sha256sum -c -; \
     [ "$(od -An -tx1 -j18 -N2 /tmp/yt-dlp_linux | tr -d ' ')" = "3e00" ] \
       || { echo "yt-dlp_linux is not an x86-64 ELF" >&2; exit 1; }; \
     chmod +x /tmp/yt-dlp_linux; \
     mv /tmp/yt-dlp_linux /usr/local/bin/yt-dlp; \
-    rm -f /tmp/SHA2-256SUMS /tmp/yt-dlp_linux.sha256; \
     if [ "$(uname -m)" = "x86_64" ]; then /usr/local/bin/yt-dlp --version; fi
 
 # Pre-create opencode's XDG directories — including the exact path the compose
