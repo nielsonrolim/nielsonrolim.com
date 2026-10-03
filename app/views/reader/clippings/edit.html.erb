@@ -12,6 +12,10 @@
     <% if @clipping.summary_error.present? %>
       <span class="text-err"><%= @clipping.summary_error %></span>
     <% end %>
+    <% if @clipping.deferred? %>
+      <span class="chip chip--warn"><%= t("reader.clippings.deferred_chip") %></span>
+      <span class="text-muted"><%= t("reader.clippings.edit.deferred_note") %></span>
+    <% end %>
 
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <%# Re-fetches the page to refresh the stored text, useful after an
@@ -29,6 +33,17 @@
             class: "btn btn--sm btn--primary",
             form: { class: "m-0 inline" },
             data: (@clipping.variants.any?(&:manual?) ? { confirm: t("reader.clippings.actions.confirm_overwrite_summary") } : {}) %>
+
+      <%# Defer or resume without leaving the page. %>
+      <% if @clipping.deferred? %>
+        <%= button_to t("reader.clippings.actions.resume"), resume_reader_clipping_path(@clipping), method: :patch,
+              class: "btn btn--sm btn--neutral",
+              form: { class: "m-0 inline" } %>
+      <% else %>
+        <%= button_to t("reader.clippings.actions.defer"), defer_reader_clipping_path(@clipping), method: :patch,
+              class: "btn btn--sm btn--neutral",
+              form: { class: "m-0 inline" } %>
+      <% end %>
     </div>
   </div>
 

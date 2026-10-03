@@ -242,6 +242,17 @@
     @apply border-err text-err;
   }
 
+  .chip--warn {
+    @apply border-line-stronger bg-amber text-ink;
+  }
+
+  /* The amber stay light in both themes, so the label must stay dark too:
+     `text-ink` turns near-white under `[data-theme="dark"]` (on the light
+     `--color-amber` that would be unreadable), so pin it to the dark paper. */
+  [data-theme="dark"] .chip--warn {
+    color: var(--color-paper);
+  }
+
   /* Language switch, in the header and on an archived issue. */
   .locale-switch__link {
     @apply rounded-frame border border-transparent px-2 py-1.5 text-muted no-underline hover:text-ink aria-[current=true]:border-line-strong aria-[current=true]:bg-surface aria-[current=true]:text-ink;
