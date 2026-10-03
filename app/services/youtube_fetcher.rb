@@ -235,7 +235,8 @@ class YoutubeFetcher
   # The list is built from languages, not from the raw track tags: the page may
   # omit the video's language entirely (an English video whose list holds only
   # translations), and iterating the tracks would then never ask for English.
-  # `YtdlpCli` sanitizes and caps the list again.
+  # `YtdlpCli.sanitize_languages` filters and caps the list, so the rule lives
+  # in one place.
   def fallback_languages(tracks, video_language)
     page_languages = tracks.map { |track| track.language_code.to_s }
     ordered = [ video_language, *PREFERRED_LANGUAGES, *page_languages ]
@@ -245,13 +246,7 @@ class YoutubeFetcher
       [ "#{base}-orig", language, base ]
     end
 
-    codes.filter_map do |code|
-      tag = code.to_s[/\A[\w-]+\z/]
-      next if tag.nil? || tag.start_with?("-")
-      next if tag.length > YtdlpCli::MAX_LANGUAGE_LENGTH
-
-      tag
-    end.uniq
+    YtdlpCli.sanitize_languages(codes)
   end
 
   # One track: a transport error, an empty body or a shape change all just mean
@@ -262,7 +257,7 @@ class YoutubeFetcher
   # the header (or raise out of the fetch).
   def transcript_for(track)
     headers = {}
-    language = track.language_code.to_s[/\A[\w-]+\z/]
+    language = track.language_code.to_s[YtdlpCli::LANGUAGE_CODE]
     headers["Accept-Language"] = language if language
 
     body = transport.get(unescape(track.url) + "&fmt=json3", accept: JSON_ACCEPT,

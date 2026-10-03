@@ -25,9 +25,10 @@ class YtdlpCli
   # the command line.
   VIDEO_ID = /\A[A-Za-z0-9_-]{11}\z/
 
-  # The language code sanitizer must match YoutubeFetcher's own (see the
-  # `Accept-Language` guard in transcript_for): a malformed value from the page
-  # must never reach the argument array or become a yt-dlp option.
+  # The safe-shape pattern for a language tag, shared with `YoutubeFetcher` (its
+  # `Accept-Language` guard in `transcript_for` and the list it builds in
+  # `fallback_languages`): a malformed value from the page must never reach the
+  # argument array, the header, or become a yt-dlp option.
   LANGUAGE_CODE = /\A[\w-]+\z/
 
   # yt-dlp accepts `-` in a `--sub-langs` pattern as "exclude this", so a value
@@ -132,6 +133,23 @@ class YtdlpCli
     def player_client
       ENV.fetch("YTDLP_PLAYER_CLIENT", DEFAULT_PLAYER_CLIENT)
     end
+
+    # Each tag is sanitized with LANGUAGE_CODE; anything starting with `-`
+    # (yt-dlp's exclusion syntax), malformed, absurdly long or duplicated is
+    # dropped. The order is preserved because it is the caller's preference
+    # order, and the list is capped so a huge page cannot build an unbounded
+    # `--sub-langs` argument. Shared with `YoutubeFetcher#fallback_languages`,
+    # which builds exactly this list, so both obey one rule.
+    def sanitize_languages(languages)
+      Array(languages).filter_map do |code|
+        tag = code.to_s
+        next unless tag.match?(LANGUAGE_CODE)
+        next if tag.start_with?("-")
+        next if tag.length > MAX_LANGUAGE_LENGTH
+
+        tag
+      end.uniq.first(MAX_LANGUAGES)
+    end
   end
 
   # `runner` defaults to nil, meaning the real `Open3` runner above. Tests inject
@@ -151,7 +169,7 @@ class YtdlpCli
     id = video_id.to_s
     return nil unless id.match?(VIDEO_ID)
 
-    langs = sanitize_languages(languages)
+    langs = self.class.sanitize_languages(languages)
 
     fetch_transcript(id, langs)
   rescue TimeoutError
@@ -242,21 +260,6 @@ class YtdlpCli
     # --sub-langs would request nothing.
     args += [ "--sub-langs", langs.join(",") ] if langs.any?
     args + [ "-o", "sub", "--", "https://www.youtube.com/watch?v=#{id}" ]
-  end
-
-  # Each tag is sanitized with the fetcher's own pattern; anything starting with
-  # `-` (yt-dlp's exclusion syntax), duplicated, malformed or absurdly long is
-  # dropped. The order is preserved because it is the caller's preference order,
-  # and the list is capped so a huge page cannot build an unbounded argument.
-  def sanitize_languages(languages)
-    Array(languages).filter_map do |code|
-      tag = code.to_s
-      next unless tag.match?(LANGUAGE_CODE)
-      next if tag.start_with?("-")
-      next if tag.length > MAX_LANGUAGE_LENGTH
-
-      tag
-    end.uniq.first(MAX_LANGUAGES)
   end
 
   # The `-o sub` template writes every track it downloads, so several
