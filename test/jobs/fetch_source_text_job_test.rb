@@ -39,6 +39,32 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
     assert_equal [ "https://example.com/solid-queue" ], fetcher.calls
   end
 
+  test "replaces the host placeholder title with the fetched one" do
+    clipping = manual_clipping(title: "example.com")
+    fetcher = FakeArticleFetcher.new(title: "Uma manchete de verdade", text: "Corpo.")
+
+    job_with(fetcher, clipping: clipping).perform_now
+
+    assert_equal "Uma manchete de verdade", clipping.reload.primary_variant.title
+  end
+
+  test "keeps a title the reader typed" do
+    clipping = manual_clipping(title: "Meu título")
+    fetcher = FakeArticleFetcher.new(title: "Uma manchete de verdade")
+
+    job_with(fetcher, clipping: clipping).perform_now
+
+    assert_equal "Meu título", clipping.reload.primary_variant.title
+  end
+
+  test "keeps a feed clipping's entry title" do
+    fetcher = FakeArticleFetcher.new(title: "Título buscado")
+
+    job_with(fetcher).perform_now
+
+    assert_equal "Understanding Solid Queue internals", @clipping.reload.primary_variant.title
+  end
+
   test "marks the clipping as fetching while the fetch runs" do
     observer = StatusObserver.new(@clipping)
 
@@ -102,6 +128,16 @@ class FetchSourceTextJobTest < ActiveJob::TestCase
   end
 
   private
+
+  # A hand-added clipping, as the create form leaves it: no entry, its source
+  # edition carrying the URL and (when nothing was typed) the host as a stand-in
+  # title.
+  def manual_clipping(title:, url: "https://example.com/story")
+    clipping = Clipping.new(source_name: "example.com", summary_status: :pending)
+    clipping.variants.build(url: url, title: title, origin: :generated)
+    clipping.save!
+    clipping
+  end
 
   def job_with(fetcher, clipping: @clipping, clipping_id: nil, force: false, chain_summary: true, overwrite: false)
     job = FetchSourceTextJob.new(clipping_id || clipping.id, force: force,

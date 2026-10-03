@@ -22,13 +22,17 @@ module Reader
         return
       end
 
-      # The source (site domain or YouTube channel) is resolved before the
-      # fetch so it is stored even when the page itself cannot be fetched.
-      @clipping = Clipping.new(source_name: SourceNameResolver.new.call(url))
+      # The source (site domain or YouTube channel) is resolved before the fetch
+      # so it is stored even when the page itself cannot be fetched. For a
+      # YouTube video the same oEmbed response carries the video's own title, so
+      # the clipping starts with the real title instead of the host — even if the
+      # transcript fetch later fails.
+      source = SourceNameResolver.new.resolve(url)
+      @clipping = Clipping.new(source_name: source&.name)
       # The language is not known yet, so the source edition starts without one.
-      # Its title is what the reader typed, or the host until the fetch finds
-      # the real one.
-      title = create_params[:title].to_s.strip.presence
+      # Its title is what the reader typed, then the video's own title from
+      # oEmbed, then the host until the fetch finds the real one.
+      title = create_params[:title].to_s.strip.presence || source&.title.presence
       variant = @clipping.variants.build(url: url, origin: :generated, title: title || host_of(url))
 
       if @clipping.save

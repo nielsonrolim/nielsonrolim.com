@@ -44,18 +44,35 @@ class FetchSourceTextJob < ApplicationJob
   private
 
   # Skips the fetch when text is already stored (a re-run, or the button firing
-  # beside an automatic run), unless `force` says to replace it.
+  # beside an automatic run), unless `force` says to replace it. The fetched
+  # title replaces the host placeholder a hand-added clipping was created with,
+  # so the summary runs on the real title; a title the reader typed, and a feed
+  # clipping's entry title, are left alone.
   def fetch_text(clipping, force:)
     return if clipping.source_text.present? && !force
 
     url = clipping.primary_variant&.url
     return if url.blank?
 
-    clipping.update!(source_text: article_fetcher.call(url).text)
+    article = article_fetcher.call(url)
+    clipping.source_text = article.text
+    apply_fetched_title(clipping, article.title)
+    clipping.save!
   rescue ArticleFetcher::Error => e
     Rails.logger.info(
       "[FetchSourceTextJob] clipping=#{clipping.id} could not fetch #{url}: #{e.message}"
     )
+  end
+
+  # Only a hand-added clipping is created with a stand-in title (its URL's host),
+  # so only that placeholder is replaced. Everything else — the reader's typed
+  # title, or a feed entry's own — is kept.
+  def apply_fetched_title(clipping, title)
+    return if title.blank? || !clipping.manual?
+
+    clipping.variants.each do |variant|
+      variant.title = title if variant.placeholder_title?
+    end
   end
 
   def article_fetcher

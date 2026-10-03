@@ -65,4 +65,14 @@ class ClippingVariantTest < ActiveSupport::TestCase
 
     assert variant.generated?
   end
+
+  test "recognises a title that is only the URL's host" do
+    placeholder = ClippingVariant.new(title: "youtu.be", url: "https://youtu.be/LmUsdFWuaGg")
+    real = ClippingVariant.new(title: "Seven Phases of AI-Driven Development", url: "https://youtu.be/LmUsdFWuaGg")
+    translation = ClippingVariant.new(title: "youtu.be")
+
+    assert placeholder.placeholder_title?
+    assert_not real.placeholder_title?
+    assert_not translation.placeholder_title?
+  end
 end

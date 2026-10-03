@@ -208,7 +208,12 @@ that edition's URL, with the same fallback).
 ### Adding and editing a clipping by hand
 
 A clipping does not have to come from a feed: the form at the top of the page
-takes a URL and an optional title. The clipping joins the queue immediately and
+takes a URL and an optional title. A title typed there is kept; leave the field
+blank and the fetch finds the real one. A YouTube video starts with its own
+title straight away, read from the same oEmbed call that resolves the channel
+(name and title travel together, so a failed transcript still leaves the right
+title); anything else shows the URL's host as a placeholder until the fetch
+replaces it. The clipping joins the queue immediately and
 its page is fetched in the background (`FetchSourceTextJob`), so a slow fetch — a
 YouTube transcript can take minutes — never holds the request open; the queue
 shows it as `fetching` until the text is stored. The fetch goes through the

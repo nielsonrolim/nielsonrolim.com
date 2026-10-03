@@ -180,18 +180,32 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to reader_clippings_path
   end
 
-  test "a YouTube URL takes the channel name as the source" do
-    oembed = JSON.generate("author_name" => "Canal Exemplo")
-    HttpTransport.default = transport_returning(http_response(200, oembed), http_response(200, @html))
+  test "a YouTube URL takes the video title and the channel name as the source" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo", "title" => "Um vídeo legal")
+    HttpTransport.default = transport_always(http_response(200, oembed))
 
     post reader_clippings_path,
          params: { clipping: { url: "https://www.youtube.com/watch?v=abc123" } }
 
     clipping = Clipping.order(:id).last
     assert_equal "Canal Exemplo", clipping.source_name
+    # oEmbed already carries the video's own title, so the clipping starts with
+    # it instead of the host placeholder.
+    assert_equal "Um vídeo legal", clipping.display_title
 
     get reader_clippings_path
     assert_select "body", /Canal Exemplo/
+    assert_select "body", /Um vídeo legal/
+  end
+
+  test "a title typed by hand wins over the video's own title" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo", "title" => "Um vídeo legal")
+    HttpTransport.default = transport_always(http_response(200, oembed))
+
+    post reader_clippings_path,
+         params: { clipping: { url: "https://youtu.be/abc123", title: "Meu título" } }
+
+    assert_equal "Meu título", Clipping.order(:id).last.display_title
   end
 
   test "a title typed by hand wins over the host" do
