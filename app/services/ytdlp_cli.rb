@@ -82,19 +82,17 @@ class YtdlpCli
     # any object responding to `call(args, chdir:)` and returning a Status. The
     # fake uses it to inspect the built args and to write the scenario's
     # `.json3` files into `chdir`.
-    def self.exec(args, chdir:, timeout: DEFAULT_TIMEOUT)
+    def exec(args, chdir:, timeout: DEFAULT_TIMEOUT)
       # pgroup so a timeout can take down yt-dlp *and* anything it spawned.
       Open3.popen3("yt-dlp", *args, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, wait_thr|
         stdin.close
 
         # Read both pipes concurrently: reading them in sequence would deadlock
-        # once either filled its OS pipe buffer.
+        # once either filled its OS pipe buffer. Only stderr is kept (for the
+        # rate-limit retry); yt-dlp writes the subtitle file itself.
         readers = [ Thread.new { stdout.read }, Thread.new { stderr.read } ]
         begin
           ::Timeout.timeout(timeout) do
-            # Drain both pipes concurrently: reading them in sequence would
-            # deadlock once either filled its OS pipe buffer. Only stderr is
-            # kept (for the rate-limit retry); yt-dlp writes the subtitle file.
             _stdout, stderr_out = readers.map(&:value)
             process_status = wait_thr.value
             return Status.new(process_status.success?, process_status.exitstatus, stderr_out)
@@ -110,14 +108,14 @@ class YtdlpCli
     # Takes down yt-dlp and anything it spawned. The direct child is left for
     # popen3's own ensure to reap; killing the group handles grandchildren, which
     # are reparented once their parent dies.
-    def self.kill_process_group(pid)
+    def kill_process_group(pid)
       Process.kill("TERM", -pid)
       sleep 0.5
       Process.kill("KILL", -pid)
     rescue Errno::ESRCH, Errno::EPERM
       nil
     end
-    private_class_method :kill_process_group
+    private :kill_process_group
 
     def player_client
       ENV.fetch("YTDLP_PLAYER_CLIENT", DEFAULT_PLAYER_CLIENT)

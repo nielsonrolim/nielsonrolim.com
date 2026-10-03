@@ -220,7 +220,9 @@ a browser-like request than to the site's own UA. YouTube's caption endpoint now
 also demands a PoToken for many videos, answering with an empty body even though
 the page lists tracks; when every track comes back empty and the page did list
 tracks, `YtdlpCli` is tried as a fallback — it reaches the captions through
-yt-dlp's `android_vr` player client without a PoToken provider. A page whose
+yt-dlp's `android_vr` player client without a PoToken provider (the static
+`yt-dlp` binary ships in the runtime image; see
+[Deployment](#deployment-docker-compose)). A page whose
 static HTML is nothing but site chrome counts as a failed fetch, so the RSS excerpt
 is used rather than a body that would make the model summarize the absence of
 content. Both `ArticleFetcher` and `SummaryGenerator` cap the text at 40 000
@@ -308,7 +310,8 @@ local workers — the Docker `jobs` container writes to the production queue.
    ahead of human) and keeps the text within the same 40 000-character cap the
    article path uses. If every listed track comes back empty — YouTube now asks
    for a PoToken the page's own caption URL cannot satisfy — it falls back to
-   `yt-dlp` (via the `android_vr` player client) before giving up. A
+   `yt-dlp` (via the `android_vr` player client, from the static binary installed
+   in the runtime image) before giving up. A
    source that is empty or only page chrome is not summarized at all: the run is
    rejected and the clipping is marked `failed` for a manual pass. An excerpt-only
    summary is constrained to what that excerpt supports and labelled as partial
@@ -420,6 +423,7 @@ environment variables are read:
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
 | `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/nemotron-3-ultra-free`, temporarily free). A failed run retries on paid Terra (`SummaryGenerator::FALLBACK_MODEL`); both use Zen. Existing environment overrides must be changed and the app restarted to use the new default. |
 | `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
+| `YTDLP_PLAYER_CLIENT`     | Optional; the YouTube player client yt-dlp uses for the fallback transcript (default `android_vr`). Escape hatch for a future YouTube change without a deploy. |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |
 | `JOB_CONCURRENCY`         | Solid Queue worker processes per container (default `1`).               |
@@ -503,6 +507,14 @@ docker compose up -d --build
   `auth.json` from `OPENCODE_API_KEY` on boot. Prefer that over baking the key in.
   Without `OPENCODE_API_KEY`, run `docker compose exec web opencode auth login`
   once — the volume keeps it.
+- The image also installs the **pinned static `yt-dlp`** binary for the YouTube
+  transcript fallback: the `yt-dlp_linux` asset (x86-64, no Python) from a fixed
+  release tag, verified against that release's `SHA2-256SUMS` at build time — a
+  checksum mismatch fails the build. The version is pinned in the `Dockerfile`
+  (`ARG YTDLP_VERSION`), never `latest`. `ffmpeg` is deliberately not installed:
+  the fallback only downloads subtitle files. Without the binary the fallback is
+  inert — the app still boots and logs one warning, but a PoToken-blocked video
+  gets no transcript.
 - A `healthcheck` polls `/up`.
 - The image runs as a non-root user and contains no secrets.
 
@@ -589,6 +601,6 @@ db/
   migrate/                          App schema
   queue_schema.rb                   Solid Queue schema (separate database)
   seeds.rb                          The starter feeds
-Dockerfile                          Multi-stage image with the opencode CLI
+Dockerfile                          Multi-stage image with the opencode CLI and pinned yt-dlp
 docker-compose.yml                  web + jobs services, shared volumes
 ```

@@ -9,6 +9,16 @@ class YtdlpCliTest < ActiveSupport::TestCase
     YtdlpCli.new(runner: runner)
   end
 
+  # Regression: `exec` was once defined as `def self.exec` *inside* a
+  # `class << self` block, which lands it on a nested singleton instead of the
+  # class — `YtdlpCli.exec` then fell through to the private `Kernel#exec`, so
+  # the real (non-injected) runner raised and the fallback was silently inert.
+  # The injected-runner tests never touch this path, so it went unnoticed.
+  test "defines the real runner as a public class method" do
+    assert_respond_to YtdlpCli, :exec
+    assert_equal YtdlpCli.singleton_class, YtdlpCli.method(:exec).owner
+  end
+
   # --- video id validation ----------------------------------------------------
 
   test "returns nil for a malformed video id without running the runner" do

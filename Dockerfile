@@ -28,6 +28,40 @@ WORKDIR /app
 RUN groupadd --system --gid 1000 rails \
     && useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
 
+# yt-dlp is the fallback transcript source for YouTube videos whose captions the
+# page's own endpoint no longer serves without a PoToken (see YtdlpCli). Install
+# the *static* `yt-dlp_linux` binary, not pip: the runtime stage is ruby:slim and
+# installing via pip would drag Python in just to unzip a self-contained build
+# (glibc 2.17+, no interpreter needed). ffmpeg is deliberately absent — the
+# fallback only downloads subtitles (`--skip-download --write-subs`), which needs
+# no muxing, so adding ffmpeg would only balloon the image.
+#
+# Version and asset URL are pinned (never `latest`), and the download is verified
+# against the release's own SHA2-256SUMS before it is made executable: a
+# tampered or truncated binary must fail the build, not land in /usr/local/bin.
+# The checksum file and binary live in one layer and the temp artifacts are
+# removed there, so only the binary survives into the image.
+#
+# `yt-dlp_linux` is an x86-64 asset; the production host is amd64. The image is
+# built from any arch though (an Apple Silicon laptop is arm64), so the binary is
+# also inspected to confirm it really is an x86-64 ELF — bytes 18-19 of the ELF
+# header are the machine id, 0x3e for AMD64 — instead of trusting the filename.
+# Running `--version` only happens where the host can execute it, so an arm64
+# build does not fail on a valid amd64 binary it simply cannot run.
+ARG YTDLP_VERSION=2026.08.19
+RUN set -eux; \
+    base="https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}"; \
+    curl -fsSL -o /tmp/yt-dlp_linux "${base}/yt-dlp_linux"; \
+    curl -fsSL -o /tmp/SHA2-256SUMS "${base}/SHA2-256SUMS"; \
+    grep ' yt-dlp_linux$' /tmp/SHA2-256SUMS > /tmp/yt-dlp_linux.sha256; \
+    cd /tmp && sha256sum -c yt-dlp_linux.sha256; \
+    [ "$(od -An -tx1 -j18 -N2 /tmp/yt-dlp_linux | tr -d ' ')" = "3e00" ] \
+      || { echo "yt-dlp_linux is not an x86-64 ELF" >&2; exit 1; }; \
+    chmod +x /tmp/yt-dlp_linux; \
+    mv /tmp/yt-dlp_linux /usr/local/bin/yt-dlp; \
+    rm -f /tmp/SHA2-256SUMS /tmp/yt-dlp_linux.sha256; \
+    if [ "$(uname -m)" = "x86_64" ]; then /usr/local/bin/yt-dlp --version; fi
+
 # Pre-create opencode's XDG directories — including the exact path the compose
 # file mounts a named volume on — owned by `rails`. Docker only seeds a fresh
 # named volume from the image (preserving ownership) when that path already
@@ -35,6 +69,13 @@ RUN groupadd --system --gid 1000 rails \
 # user cannot write auth.json into it.
 RUN mkdir -p /home/rails/.local/share/opencode /home/rails/.local/state /home/rails/.config \
     && chown -R rails:rails /home/rails/.local /home/rails/.config
+
+# Pre-create yt-dlp's cache dir for the same reason: YtdlpCli runs as `rails`, and
+# a root-owned `~/.cache` (or a Docker-created one) would make yt-dlp warn and
+# fail to cache. Not a named volume today, but the ownership is set here so the
+# cache is writable from the first run.
+RUN mkdir -p /home/rails/.cache/yt-dlp \
+    && chown -R rails:rails /home/rails/.cache
 
 COPY --chown=rails:rails --from=build /usr/local/bundle /usr/local/bundle
 COPY --chown=rails:rails --from=build /app /app
