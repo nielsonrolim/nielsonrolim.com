@@ -16,11 +16,14 @@ class SendNewsletterJob < ApplicationJob
   attr_writer :mailer
 
   def perform(deferrals = 0)
-    # Shippable only: a clipping whose summary failed has nothing to show and
-    # waits for the next issue.
+    # Shippable only: a clipping whose summary failed has nothing to show, and a
+    # deferred one is held out of this issue; both wait for a later one.
     clippings = Clipping.shippable.includes(entry: :feed).to_a
 
     if clippings.empty?
+      # No issue this week, but the week still passes for a held clipping: it
+      # comes back in line for the next run.
+      release_deferrals
       Rails.logger.info("[SendNewsletterJob] nothing clipped this week; skipping")
       return
     end
@@ -36,16 +39,27 @@ class SendNewsletterJob < ApplicationJob
     # therefore the clipping) is not ready — shipping now would drop it.
     waiting = clippings.count(&:in_flight?)
     if waiting.positive? && deferrals < MAX_DEFERRALS
+      # Same issue being postponed: do NOT release deferrals here, or a held
+      # clipping would slip into this issue on the retry.
       Rails.logger.info("[SendNewsletterJob] #{waiting} summaries in flight; deferring")
       self.class.set(wait: DEFERRAL_WAIT).perform_later(deferrals + 1)
       return
     end
 
     issue = build_issue(clippings, locales_for(subscribers))
+    release_deferrals
     deliver(issue, subscribers)
   end
 
   private
+
+  # A deferred clipping skips exactly one issue: once that issue is built — or
+  # there was nothing to ship this week — the hold is lifted so it can go out in
+  # the following one. Never called on the in-flight reschedule, so a held
+  # clipping cannot slip into the retry of the same issue.
+  def release_deferrals
+    Clipping.unsent.deferred.update_all(deferred_at: nil) # rubocop:disable Rails/SkipsModelValidations
+  end
 
   # One rendered version per language the issue has to go out in, so a body is
   # only composed for languages that are actually subscribed.
