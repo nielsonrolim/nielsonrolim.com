@@ -51,10 +51,14 @@ module Authentication
     def start_new_session_for(user)
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|
         Current.session = session
-        # This cookie is the whole session, so it is flagged Secure in production
-        # (where force_ssl terminates TLS). Development still runs over http.
+        # This cookie is the whole session. It is flagged Secure whenever the app
+        # forces TLS (config.force_ssl, true in production behind the reverse
+        # proxy, false for a production image run locally over http), so it is
+        # not tied to Rails.env: a production image reached over plain http would
+        # otherwise set Secure, and the browser would drop the cookie — logging
+        # the user out immediately.
         cookies.signed.permanent[:session_id] = {
-          value: session.id, httponly: true, same_site: :lax, secure: Rails.env.production?
+          value: session.id, httponly: true, same_site: :lax, secure: Rails.application.config.force_ssl
         }
       end
     end

@@ -21,11 +21,16 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  config.assume_ssl = true
-
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # Assume all access to the app is happening through a SSL-terminating reverse
+  # proxy, and force all traffic over SSL (Strict-Transport-Security, secure
+  # cookies). Both default to true — production must stay secure by default.
+  #
+  # FORCE_SSL exists so a container run locally (RAILS_ENV=production, but with
+  # no TLS terminator in front) can be reached over plain http on localhost;
+  # set FORCE_SSL=false in a local .env. Anything other than the literal string
+  # "false" leaves it on, so a typo fails closed.
+  config.force_ssl = ENV.fetch("FORCE_SSL", "true") != "false"
+  config.assume_ssl = config.force_ssl
 
   # Skip http-to-https redirect for the default health check endpoint.
   config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
