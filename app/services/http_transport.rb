@@ -16,6 +16,8 @@ class HttpTransport
   Error = Class.new(StandardError)
 
   USER_AGENT = "nielsonrolim.com (+https://nielsonrolim.com)"
+  BROWSER_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " \
+                       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
   OPEN_TIMEOUT = 10
   READ_TIMEOUT = 20
   MAX_REDIRECTS = 5
@@ -46,19 +48,24 @@ class HttpTransport
     end
   end
 
-  def initialize(session: nil, resolver: nil)
+  def initialize(session: nil, resolver: nil, sender: nil)
     @session = session
     @resolver = resolver
+    @sender = sender
   end
 
-  def get(url, accept: FEED_ACCEPT, redirects_left: MAX_REDIRECTS)
+  # `user_agent:` and `headers:` default to the site's own UA and no extra
+  # headers. A caller that needs a browser-like request (YouTube's caption
+  # endpoint is picky) can override them; the redirect hop carries them along so
+  # the target sees the same request.
+  def get(url, accept: FEED_ACCEPT, user_agent: USER_AGENT, headers: {}, redirects_left: MAX_REDIRECTS)
     raise Error, "too many redirects" if redirects_left.negative?
 
     uri = URI.parse(url.to_s)
     raise Error, "unsupported URL: #{url}" unless uri.is_a?(URI::HTTP) && uri.host.present?
 
     assert_public_host!(uri)
-    response = perform(uri, accept)
+    response = perform(uri, accept, user_agent, headers)
 
     case response
     when Net::HTTPSuccess
@@ -69,7 +76,8 @@ class HttpTransport
 
       # Recurse instead of looping so the target host goes through the same
       # guard: a public URL must not be allowed to redirect to an internal one.
-      get(URI.join(uri, location).to_s, accept: accept, redirects_left: redirects_left - 1)
+      get(URI.join(uri, location).to_s, accept: accept, user_agent: user_agent,
+          headers: headers, redirects_left: redirects_left - 1)
     else
       raise Error, "HTTP #{response.code} for #{uri}"
     end
@@ -80,7 +88,7 @@ class HttpTransport
 
   private
 
-  attr_reader :session
+  attr_reader :session, :sender
 
   # Refuses to connect to loopback, private, link-local (cloud metadata) or
   # otherwise unroutable addresses. Fails closed: a host that does not resolve
@@ -112,7 +120,7 @@ class HttpTransport
     @resolver
   end
 
-  def perform(uri, accept)
+  def perform(uri, accept, user_agent, headers)
     return session.call(uri) if session
 
     http = Net::HTTP.new(uri.hostname, uri.port)
@@ -121,17 +129,25 @@ class HttpTransport
     http.read_timeout = READ_TIMEOUT
 
     request = Net::HTTP::Get.new(uri)
-    request["User-Agent"] = USER_AGENT
+    request["User-Agent"] = user_agent
     request["Accept"] = accept
     request["Accept-Encoding"] = "gzip, deflate"
+    headers.each { |name, value| request[name] = value }
 
     # The block form lets the body be read in chunks and abandoned as soon as it
-    # passes the cap, instead of buffering an unbounded response first.
-    http.request(request) do |response|
-      body = read_capped_body(response)
-      response.instance_variable_set(:@body, body)
-      response.instance_variable_set(:@read, true)
+    # passes the cap, instead of buffering an unbounded response first. `sender`
+    # is a test seam: it receives the built request and a block to call with the
+    # response, exactly like Net::HTTP#request.
+    send_request = ->(&block) { sender ? sender.call(request, &block) : http.request(request, &block) }
+    response = nil
+    send_request.call do |received|
+      body = read_capped_body(received)
+      received.instance_variable_set(:@body, body)
+      received.instance_variable_set(:@read, true)
+      response = received
     end
+
+    response
   end
 
   def read_capped_body(response)

@@ -29,6 +29,18 @@ module HttpResponseHelpers
     response
   end
 
+  # Like `http_response`, but readable through `#read_body` the way the real
+  # transport streams a body, so the request-building path can be exercised
+  # without a socket.
+  def streaming_response(code, body = "", headers = {})
+    response = http_response(code, body, headers)
+    response.instance_variable_set(:@read, false)
+    response.define_singleton_method(:read_body) do |&block|
+      block ? block.call(body) : body
+    end
+    response
+  end
+
   # A transport that replays canned responses in order, one per request.
   def transport_returning(*responses)
     queue = responses.dup

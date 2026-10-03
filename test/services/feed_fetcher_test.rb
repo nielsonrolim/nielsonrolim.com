@@ -367,4 +367,56 @@ class HttpTransportTest < ActiveSupport::TestCase
     error = assert_raises(HttpTransport::Error) { transport.get("https://example.com/feed") }
     assert_match(/after decompression/, error.message)
   end
+
+  test "sends the site user agent by default" do
+    request = captured_request { |transport| transport.get("https://example.com/feed") }
+
+    assert_equal HttpTransport::USER_AGENT, request["User-Agent"]
+  end
+
+  test "overrides the user agent and adds headers when asked" do
+    request = captured_request do |transport|
+      transport.get("https://example.com/feed", accept: "application/json",
+                    user_agent: HttpTransport::BROWSER_USER_AGENT,
+                    headers: { "Accept-Language" => "pt-BR" })
+    end
+
+    assert_equal HttpTransport::BROWSER_USER_AGENT, request["User-Agent"]
+    assert_equal "application/json", request["Accept"]
+    assert_equal "pt-BR", request["Accept-Language"]
+  end
+
+  test "carries the user agent and headers across a redirect" do
+    requests = []
+    transport = HttpTransport.new(
+      sender: lambda do |request, &block|
+        requests << request
+        block.call(streaming_response(requests.size == 1 ? 301 : 200,
+                                      requests.size == 1 ? "" : "ok",
+                                      "location" => "https://example.com/moved"))
+      end
+    )
+
+    transport.get("https://example.com/old", headers: { "Accept-Language" => "pt-BR" })
+
+    assert_equal 2, requests.size
+    assert_equal [ "pt-BR", "pt-BR" ], requests.map { |request| request["Accept-Language"] }
+  end
+
+  private
+
+  # Drives `get` through the real request-building path (no socket) and returns
+  # the Net::HTTP request the transport produced.
+  def captured_request
+    request = nil
+    transport = HttpTransport.new(
+      sender: lambda do |built, &block|
+        request = built
+        block.call(streaming_response(200, "ok"))
+      end
+    )
+
+    yield transport
+    request
+  end
 end

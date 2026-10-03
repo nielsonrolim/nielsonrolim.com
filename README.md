@@ -214,7 +214,9 @@ watch pages are the exception: their content is rendered by JavaScript, so
 full description and, when YouTube serves it, the caption transcript. Every
 caption track the page lists is tried best-first (original language, then
 auto-generated ahead of human captions) until one yields text, so a broken track
-does not cost the video its transcript. A page whose
+does not cost the video its transcript; the caption request goes out with a
+browser user agent and the track's language, since that endpoint is friendlier to
+a browser-like request than to the site's own UA. A page whose
 static HTML is nothing but site chrome counts as a failed fetch, so the RSS excerpt
 is used rather than a body that would make the model summarize the absence of
 content. Both `ArticleFetcher` and `SummaryGenerator` cap the text at 40 000

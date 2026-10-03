@@ -163,9 +163,18 @@ class YoutubeFetcher
   end
 
   # One track: a transport error, an empty body or a shape change all just mean
-  # "no text from this track", never an exception that escapes.
+  # "no text from this track", never an exception that escapes. YouTube's
+  # caption endpoint is friendlier to a browser-like request, so a browser UA
+  # and the track's own language are sent. The language is reduced to a safe
+  # token first: it comes from the page, and a malformed value must not reach
+  # the header (or raise out of the fetch).
   def transcript_for(track)
-    body = transport.get(unescape(track.url) + "&fmt=json3", accept: JSON_ACCEPT)
+    headers = {}
+    language = track.language_code.to_s[/\A[\w-]+\z/]
+    headers["Accept-Language"] = language if language
+
+    body = transport.get(unescape(track.url) + "&fmt=json3", accept: JSON_ACCEPT,
+                         user_agent: HttpTransport::BROWSER_USER_AGENT, headers: headers)
     events = JSON.parse(body)["events"]
     return if events.blank?
 

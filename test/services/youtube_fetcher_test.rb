@@ -48,6 +48,50 @@ class YoutubeFetcherTest < ActiveSupport::TestCase
     assert_equal "https://www.youtube.com/watch?v=xG-xACzIJQU", @requested.first
   end
 
+  test "asks for the caption track with a browser user agent and its language" do
+    requests = []
+    transport = HttpTransport.new(
+      sender: lambda do |request, &block|
+        requests << request
+        body = request.path.include?("/api/timedtext") ? @captions : @html
+        block.call(streaming_response(200, body))
+      end
+    )
+
+    YoutubeFetcher.new(transport: transport).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
+
+    caption = requests.find { |request| request.path.include?("/api/timedtext") }
+    assert_equal HttpTransport::BROWSER_USER_AGENT, caption["User-Agent"]
+    assert_equal "pt", caption["Accept-Language"]
+    # The watch page itself keeps the site's own user agent.
+    watch = requests.find { |request| !request.path.include?("/api/timedtext") }
+    assert_equal HttpTransport::USER_AGENT, watch["User-Agent"]
+  end
+
+  test "drops a malformed track language instead of sending it" do
+    page = <<~HTML
+      <html><head><meta property="og:title" content="t"></head><body>
+      <script>var ytInitialPlayerResponse = {"shortDescription":"d","captions":{"playerCaptionsTracklistRenderer":{"captionTracks":[
+        {"baseUrl":"https://www.youtube.com/api/timedtext?v=a\\u0026lang=pt","languageCode":"pt\\r\\nInjected: 1"}
+      ]}}};</script></body></html>
+    HTML
+
+    requests = []
+    transport = HttpTransport.new(
+      sender: lambda do |request, &block|
+        requests << request
+        body = request.path.include?("/api/timedtext") ? @captions : page
+        block.call(streaming_response(200, body))
+      end
+    )
+
+    result = YoutubeFetcher.new(transport: transport).call("https://www.youtube.com/watch?v=a")
+
+    caption = requests.find { |request| request.path.include?("/api/timedtext") }
+    assert_nil caption["Accept-Language"]
+    assert_includes result.text, "hoje vamos falar sobre o Jev"
+  end
+
   test "appends the transcript when captions are available" do
     result = fetcher(captions: @captions).call("https://www.youtube.com/watch?v=xG-xACzIJQU")
 
