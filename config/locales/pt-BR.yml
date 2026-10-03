@@ -392,6 +392,7 @@ pt-BR:
         other: "(%{count} com resumo falharam e ficam de fora)"
       summary_status:
         pending: "resumo pendente"
+        fetching: "buscando transcrição"
         summarizing: "gerando resumo"
         summarized: "resumo pronto"
         failed: "resumo falhou"
@@ -401,7 +402,7 @@ pt-BR:
         title: "título"
         title_placeholder: "opcional"
         submit: "adicionar"
-        hint: "Buscamos a página para pegar título e texto e gerar o resumo. Se a busca falhar, o recorte é criado mesmo assim para você completar na edição."
+        hint: "Buscamos a página em segundo plano para pegar título e texto e gerar o resumo. O recorte entra na fila na hora; se a busca falhar, ele continua na fila para você completar na edição."
       edit:
         prompt: "edit clipping.conf"
         title: "Editar recorte"
@@ -417,19 +418,16 @@ pt-BR:
         save: "salvar"
         cancel: "cancelar"
       create:
-        success: "Recorte adicionado: %{title}"
+        success: "Recorte adicionado: %{title}. Buscando o texto para resumir."
         duplicate: "Essa URL já está na fila."
         invalid: "Não foi possível adicionar: %{error}"
-        fetch_failed: "Não foi possível buscar a página: %{error}"
-        added_without_source: "Recorte criado, mas não conseguimos buscar a página. Cole o texto e use \"gerar sumário e tradução\"."
       update:
         success: "Recorte atualizado: %{title}"
         invalid: "Não foi possível salvar: %{error}"
       generate_summary:
         queued: "Sumário e tradução enfileirados: %{title}"
       refetch_source:
-        success: "Texto atualizado: %{title}"
-        failure: "Não foi possível buscar a página: %{error}"
+        queued: "Buscando o texto novamente: %{title}"
         no_url: "Este recorte não tem URL para buscar."
       actions:
         edit: "editar"

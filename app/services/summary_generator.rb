@@ -148,7 +148,7 @@ class SummaryGenerator
 
       Return exactly these keys:
       - "language": the language the article is written in, either "pt-BR" or "en-US".
-      - "title_translated": the article title translated into the OTHER language (article in pt-BR -> en-US, and vice versa). Faithful and concise.
+      - "title_translated": a faithful, concise translation of the exact title given in the "Title" field below, into the OTHER language (article in pt-BR -> en-US, and vice versa). Translate that title itself — never invent a different title, borrow one from the body, or describe the article.
       - "summary_pt_br": a #{source_partial ? "concise summary of the available excerpt" : "complete summary of the article"} in Brazilian Portuguese#{source_partial ? "" : ", about 100 to 150 words (4 to 6 sentences)"}.
       - "summary_en_us": a #{source_partial ? "concise summary of the available excerpt" : "complete summary of the article"} in English#{source_partial ? "" : ", about 100 to 150 words (4 to 6 sentences)"}.
 

@@ -93,11 +93,11 @@ class Reader::EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav", /\[recortes\]/
   end
 
-  test "clipping an entry queues it and asks for a summary" do
+  test "clipping an entry queues it and starts fetching its source" do
     entry = entries(:front_page)
 
     assert_difference -> { Clipping.count }, 1 do
-      assert_enqueued_with(job: GenerateSummaryJob) do
+      assert_enqueued_with(job: FetchSourceTextJob) do
         post clip_reader_entry_path(entry)
       end
     end

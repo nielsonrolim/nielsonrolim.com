@@ -193,6 +193,18 @@ class SummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes prompt, "The text argues"
   end
 
+  test "asks for a faithful translation of the given title, not an invented one" do
+    cli = cli_returning(payload)
+
+    SummaryGenerator.new(cli: cli).call(title: "t", url: "https://example.com/a", source: "Body.")
+
+    # The translated title must be the original title rendered in the other
+    # language — the failure that shipped a body-derived title when the fetch
+    # had never stored the real one.
+    assert_match(/translation of the exact title/i, cli.prompt)
+    assert_match(/never invent a different title/i, cli.prompt)
+  end
+
   test "asks the model to preserve opinions, forecasts and uncertainty" do
     cli = cli_returning(payload)
 

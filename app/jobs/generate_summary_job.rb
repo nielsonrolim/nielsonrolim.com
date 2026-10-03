@@ -1,11 +1,10 @@
-# Generates the AI summary for a single clipping right after it is marked.
+# Generates the AI summary for a single clipping.
 #
-# Enqueued by Clipping#enqueue_summary_generation. Before summarizing, a clipping
-# that has no stored article text (the feed ones) has its page fetched, so the
-# summary can cover the whole article instead of just the RSS excerpt. The
-# opencode run is slow and can fail transiently, so it is retried a few times;
-# once the attempts run out the clipping is marked failed and still ships in the
-# newsletter, just without a summary.
+# Enqueued by FetchSourceTextJob once the clipping's source text has been
+# fetched (the fetch itself is a separate job, because for a YouTube video it
+# can take minutes). The opencode run is slow and can fail transiently, so it is
+# retried a few times; once the attempts run out the clipping is marked failed
+# and still ships in the newsletter, just without a summary.
 #
 # `overwrite` is set by the explicit "generate" button: it refreshes summaries
 # that a person edited by hand, which an automatic run leaves alone.
@@ -15,9 +14,9 @@ class GenerateSummaryJob < ApplicationJob
   MAX_ATTEMPTS = 3
   RETRY_WAIT = 30.seconds
 
-  # Injectable so tests can supply fakes without spawning opencode or hitting the
-  # network. Real runs (perform_later) always build the defaults.
-  attr_writer :summary_generator, :article_fetcher
+  # Injectable so tests can supply a fake without spawning opencode. Real runs
+  # (perform_later) always build the default.
+  attr_writer :summary_generator
 
   def perform(clipping_id, attempt = 1, overwrite = false)
     @model = model_for_attempt(attempt)
@@ -25,11 +24,10 @@ class GenerateSummaryJob < ApplicationJob
     return if clipping.nil?
 
     clipping.update!(summary_status: :summarizing)
-    fetch_full_text(clipping)
 
     result = summary_generator.call(
       title: clipping.display_title,
-      url: clipping.primary_variant.url,
+      url: clipping.source_url,
       source: clipping.summary_source,
       source_partial: clipping.partial_summary_source?
     )
@@ -64,26 +62,7 @@ class GenerateSummaryJob < ApplicationJob
     ladder[[ attempt - 1, ladder.length - 1 ].min]
   end
 
-  # A feed clipping arrives with only the RSS excerpt as its source. Fetch the
-  # page once and keep the text, so the summary covers the whole article and a
-  # retry does not fetch again. A failed fetch is not fatal: the excerpt is used
-  # instead, rather than failing the clipping.
-  def fetch_full_text(clipping)
-    return if clipping.source_text.present?
-
-    url = clipping.primary_variant&.url
-    return if url.blank?
-
-    clipping.update!(source_text: article_fetcher.call(url).text)
-  rescue ArticleFetcher::Error => e
-    Rails.logger.info("[GenerateSummaryJob] clipping=#{clipping.id} could not fetch #{url}: #{e.message}")
-  end
-
   def summary_generator
     @summary_generator ||= SummaryGenerator.new(model: @model)
-  end
-
-  def article_fetcher
-    @article_fetcher ||= ArticleFetcher.new
   end
 end

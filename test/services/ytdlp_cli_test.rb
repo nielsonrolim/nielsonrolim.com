@@ -48,6 +48,11 @@ class YtdlpCliTest < ActiveSupport::TestCase
     assert_equal "pt,en", langs
   end
 
+  test "sanitizes a language list as a public class method" do
+    # Shared with YoutubeFetcher#fallback_languages, which builds the list.
+    assert_equal %w[pt-orig pt en], YtdlpCli.sanitize_languages([ "pt-orig", "pt", "en", "pt", "a*", "-x" ])
+  end
+
   test "deduplicates languages preserving the preference order" do
     runner = FakeYtdlpRunner.new(subtitles: { "sub.en.json3" => @captions })
 

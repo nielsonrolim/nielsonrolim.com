@@ -32,7 +32,9 @@ class SendNewsletterJob < ApplicationJob
       return
     end
 
-    waiting = clippings.count { |clipping| clipping.pending? || clipping.summarizing? }
+    # `fetching` counts too: the text is still being fetched, so the summary (and
+    # therefore the clipping) is not ready — shipping now would drop it.
+    waiting = clippings.count(&:in_flight?)
     if waiting.positive? && deferrals < MAX_DEFERRALS
       Rails.logger.info("[SendNewsletterJob] #{waiting} summaries in flight; deferring")
       self.class.set(wait: DEFERRAL_WAIT).perform_later(deferrals + 1)

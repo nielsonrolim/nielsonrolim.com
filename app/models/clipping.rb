@@ -14,6 +14,7 @@ class Clipping < ApplicationRecord
 
   enum :summary_status, {
     pending: "pending",
+    fetching: "fetching",
     summarizing: "summarizing",
     summarized: "summarized",
     failed: "failed"
@@ -31,9 +32,19 @@ class Clipping < ApplicationRecord
   # nothing to show, so it waits in the queue until it is fixed or removed.
   scope :shippable, -> { unsent.where.not(summary_status: :failed) }
 
+  # The summary is on its way: marked, fetching the text, or running the model.
+  # Done (`summarized`) and stuck (`failed`) are the other two ends.
+  IN_FLIGHT_STATUSES = %w[pending fetching summarizing].freeze
+  scope :in_flight, -> { where(summary_status: IN_FLIGHT_STATUSES) }
+
+  def in_flight?
+    IN_FLIGHT_STATUSES.include?(summary_status)
+  end
+
   # A clipping created as already failed (no source to summarize) must not kick
-  # off a generation run.
-  after_create_commit :enqueue_summary_generation, if: :pending?
+  # off a generation run. The first step is fetching the text off the request
+  # cycle (a YouTube transcript can take minutes); that job chains the summary.
+  after_create_commit :enqueue_source_fetch, if: :pending?
 
   # The text the summary is generated from: the article text stored when the
   # clipping was added or fetched (the whole page), falling back to the feed
@@ -76,6 +87,12 @@ class Clipping < ApplicationRecord
     variants.detect { |variant| variant.url.present? } || variants.first
   end
 
+  # The URL the clipping's text is fetched from, and the edition a reader with no
+  # URL of their own falls back to. Blank until an edition has a URL.
+  def source_url
+    primary_variant&.url
+  end
+
   # The languages the story is actually published in — only pt-BR, only en-US,
   # or both. A translation with no URL of its own does not count: the story has
   # no edition in that language, only a translated rendering of another one.
@@ -104,7 +121,7 @@ class Clipping < ApplicationRecord
   # The URL to send a reader of `locale` to: their edition's own URL when the
   # story has one, otherwise the primary edition's.
   def url_for(locale)
-    variant_for(locale)&.url.presence || primary_variant&.url
+    variant_for(locale)&.url.presence || source_url
   end
 
   def display_title
@@ -188,7 +205,7 @@ class Clipping < ApplicationRecord
     errors.add(:base, :duplicate_url) if scope.exists?
   end
 
-  def enqueue_summary_generation
-    GenerateSummaryJob.perform_later(id)
+  def enqueue_source_fetch
+    FetchSourceTextJob.perform_later(id)
   end
 end

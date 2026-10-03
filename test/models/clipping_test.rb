@@ -15,8 +15,8 @@ class ClippingTest < ActiveSupport::TestCase
     assert_includes clipping.errors.attribute_names, :variants
   end
 
-  test "enqueues summary generation as soon as it is marked" do
-    assert_enqueued_with(job: GenerateSummaryJob) do
+  test "enqueues the source fetch as soon as it is marked" do
+    assert_enqueued_with(job: FetchSourceTextJob) do
       build_clipping(entry: entries(:front_page)).save!
     end
   end
@@ -121,6 +121,12 @@ class ClippingTest < ActiveSupport::TestCase
     pending = clippings(:pending)
     assert_nil pending.primary_variant.locale
     assert_equal "Understanding Solid Queue internals", pending.primary_variant.title
+  end
+
+  test "source_url is the primary edition's URL" do
+    assert_equal "https://example.com/rails-8-1", clippings(:queued).source_url
+    assert_equal "https://example.com/single", clippings(:single).source_url
+    assert_nil Clipping.new.source_url
   end
 
   test "source_variant is the edition before the language is detected" do
@@ -351,6 +357,20 @@ class ClippingTest < ActiveSupport::TestCase
     assert_includes Clipping.shippable, clippings(:queued)
     assert_not_includes Clipping.shippable, clippings(:pending)
     assert_not_includes Clipping.shippable, clippings(:sent)
+  end
+
+  test "in_flight covers the states on the way to a summary and nothing else" do
+    assert clippings(:pending).in_flight?
+    assert_not clippings(:queued).in_flight? # summarized
+
+    clippings(:pending).update!(summary_status: :fetching)
+    assert_includes Clipping.in_flight, clippings(:pending)
+
+    clippings(:pending).update!(summary_status: :summarizing)
+    assert clippings(:pending).in_flight?
+
+    clippings(:pending).update!(summary_status: :failed)
+    assert_not_includes Clipping.in_flight, clippings(:pending)
   end
 
   test "a clipping created as failed does not kick off a generation run" do

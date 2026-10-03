@@ -5,6 +5,10 @@ class SourceNameResolverTest < ActiveSupport::TestCase
     SourceNameResolver.new(transport: transport).call(url)
   end
 
+  def resolve_source(url, transport: transport_always(http_response(200, "unused")))
+    SourceNameResolver.new(transport: transport).resolve(url)
+  end
+
   test "a news site resolves to its domain" do
     assert_equal "example.com", resolve("https://example.com/path/to/news")
   end
@@ -19,6 +23,32 @@ class SourceNameResolverTest < ActiveSupport::TestCase
 
     assert_equal "Canal Exemplo", resolve("https://www.youtube.com/watch?v=abc123", transport: transport)
     assert_equal "Canal Exemplo", resolve("https://youtu.be/abc123", transport: transport)
+  end
+
+  test "a YouTube video also resolves to its own title" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo", "title" => "Um vídeo")
+    transport = transport_always(http_response(200, oembed))
+
+    result = resolve_source("https://youtu.be/abc123", transport: transport)
+
+    assert_equal "Canal Exemplo", result.name
+    assert_equal "Um vídeo", result.title
+  end
+
+  test "a non-YouTube URL has no title of its own" do
+    result = resolve_source("https://example.com/news")
+
+    assert_equal "example.com", result.name
+    assert_nil result.title
+  end
+
+  test "a failed oEmbed leaves the YouTube title unset" do
+    transport = transport_always(http_response(404, "not found"))
+
+    result = resolve_source("https://youtu.be/abc123", transport: transport)
+
+    assert_equal "youtu.be", result.name
+    assert_nil result.title
   end
 
   test "falls back to the host when the oEmbed call fails" do

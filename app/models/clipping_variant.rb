@@ -29,6 +29,15 @@ class ClippingVariant < ApplicationRecord
 
   scope :ordered, -> { order(Arel.sql("locale IS NULL DESC"), :locale) }
 
+  # True while the title is only the stand-in the create form put there: a
+  # hand-added clipping starts with its URL's host as the title so the queue
+  # shows something before the page is fetched. Recognising it lets the fetch
+  # replace that placeholder with the real title, and never a title the reader
+  # typed (or a feed entry's own title, which is not a host in the first place).
+  def placeholder_title?
+    url.present? && title.present? && title == SafeUrl.host(url)
+  end
+
   private
 
   # The source edition is created before the language is known, so there is at

@@ -114,9 +114,25 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "generating the summary requeues it" do
+  test "generating the summary fetches the text first when it is missing" do
     clipping = clippings(:pending)
-    clipping.update!(summary_status: :failed, summary_error: "boom")
+    clipping.update!(summary_status: :failed, summary_error: "boom", source_text: nil)
+
+    # The explicit button must still overwrite a hand-edited summary, so the
+    # overwrite flag rides along to the chained summary job.
+    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true, overwrite: true } ]) do
+      post generate_summary_reader_clipping_path(clipping)
+    end
+
+    clipping.reload
+    assert clipping.pending?
+    assert_nil clipping.summary_error
+    assert_redirected_to reader_clippings_path
+  end
+
+  test "generating the summary runs it directly when the text is stored" do
+    clipping = clippings(:pending)
+    clipping.update!(summary_status: :failed, summary_error: "boom", source_text: "texto")
 
     assert_enqueued_with(job: GenerateSummaryJob, args: [ clipping.id, 1, true ]) do
       post generate_summary_reader_clipping_path(clipping)
@@ -143,9 +159,9 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", reader_newsletters_path
   end
 
-  test "adds a clipping by URL, fetching its title and text" do
+  test "adds a clipping by URL and enqueues the source fetch" do
     assert_difference -> { Clipping.count }, 1 do
-      assert_enqueued_with(job: GenerateSummaryJob) do
+      assert_enqueued_with(job: FetchSourceTextJob) do
         post reader_clippings_path,
              params: { clipping: { url: "https://example.com/post" } }
       end
@@ -154,29 +170,45 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     clipping = Clipping.order(:id).last
     assert clipping.manual?
     assert_nil clipping.entry_id
-    assert_equal "Rails ships a new queue UI", clipping.display_title
+    # The fetch is asynchronous, so the text is not stored yet and the title is
+    # the host until the job runs.
+    assert_equal "example.com", clipping.display_title
+    assert_nil clipping.source_text
     assert_equal "example.com", clipping.source_name
-    assert_includes clipping.source_text, "Solid Queue replaces Redis"
     assert_nil clipping.primary_variant.locale
     assert clipping.pending?
     assert_redirected_to reader_clippings_path
   end
 
-  test "a YouTube URL takes the channel name as the source" do
-    oembed = JSON.generate("author_name" => "Canal Exemplo")
-    HttpTransport.default = transport_returning(http_response(200, oembed), http_response(200, @html))
+  test "a YouTube URL takes the video title and the channel name as the source" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo", "title" => "Um vídeo legal")
+    HttpTransport.default = transport_always(http_response(200, oembed))
 
     post reader_clippings_path,
          params: { clipping: { url: "https://www.youtube.com/watch?v=abc123" } }
 
     clipping = Clipping.order(:id).last
     assert_equal "Canal Exemplo", clipping.source_name
+    # oEmbed already carries the video's own title, so the clipping starts with
+    # it instead of the host placeholder.
+    assert_equal "Um vídeo legal", clipping.display_title
 
     get reader_clippings_path
     assert_select "body", /Canal Exemplo/
+    assert_select "body", /Um vídeo legal/
   end
 
-  test "a title typed by hand wins over the fetched one" do
+  test "a title typed by hand wins over the video's own title" do
+    oembed = JSON.generate("author_name" => "Canal Exemplo", "title" => "Um vídeo legal")
+    HttpTransport.default = transport_always(http_response(200, oembed))
+
+    post reader_clippings_path,
+         params: { clipping: { url: "https://youtu.be/abc123", title: "Meu título" } }
+
+    assert_equal "Meu título", Clipping.order(:id).last.display_title
+  end
+
+  test "a title typed by hand wins over the host" do
     post reader_clippings_path,
          params: { clipping: { url: "https://example.com/post", title: "Meu título" } }
 
@@ -184,23 +216,23 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "still creates the clipping when the page cannot be fetched" do
+    # The fetch now happens in the job, so the request always succeeds and the
+    # clipping starts pending with the host as its title.
     HttpTransport.default = transport_always(http_response(404, "gone"))
 
     assert_difference -> { Clipping.count }, 1 do
-      assert_no_enqueued_jobs(only: GenerateSummaryJob) do
+      assert_enqueued_with(job: FetchSourceTextJob) do
         post reader_clippings_path,
              params: { clipping: { url: "https://example.com/post" } }
       end
     end
 
     clipping = Clipping.order(:id).last
-    assert clipping.failed?
-    assert_match(/404/, clipping.summary_error)
+    assert clipping.pending?
     assert_equal "example.com", clipping.display_title
     # The source does not depend on the fetch, so it is stored anyway.
     assert_equal "example.com", clipping.source_name
-    # Sent to the edit page so the text can be pasted in.
-    assert_redirected_to edit_reader_clipping_path(clipping)
+    assert_redirected_to reader_clippings_path
   end
 
   test "does not queue the same URL twice" do
@@ -341,26 +373,18 @@ class Reader::ClippingsControllerTest < ActionDispatch::IntegrationTest
     assert clipping.reload.pending?
   end
 
-  test "refetching the source updates the stored text" do
-    clipping = clippings(:queued)
-
-    post refetch_source_reader_clipping_path(clipping)
-
-    assert_redirected_to edit_reader_clipping_path(clipping)
-    assert_includes clipping.reload.source_text, "Solid Queue replaces Redis"
-  end
-
-  test "refetching keeps the old text and reports a failed fetch" do
+  test "refetching the source enqueues the fetch with force and no summary" do
     clipping = clippings(:queued)
     clipping.update!(source_text: "texto antigo")
-    HttpTransport.default = transport_always(http_response(404, "gone"))
 
-    post refetch_source_reader_clipping_path(clipping)
+    assert_enqueued_with(job: FetchSourceTextJob, args: [ clipping.id, { force: true, chain_summary: false } ]) do
+      post refetch_source_reader_clipping_path(clipping)
+    end
 
     assert_redirected_to edit_reader_clipping_path(clipping)
+    # The refetch hands off to the job, so the text is unchanged here.
     assert_equal "texto antigo", clipping.reload.source_text
-    follow_redirect!
-    assert_select ".toast--alert"
+    assert clipping.fetching?
   end
 
   test "refetching without a URL reports it" do
