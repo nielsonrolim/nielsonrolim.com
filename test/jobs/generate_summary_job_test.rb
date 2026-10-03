@@ -58,6 +58,16 @@ class GenerateSummaryJobTest < ActiveJob::TestCase
     assert_equal original, @clipping.reload.title_for("en-US")
   end
 
+  test "hands the model the clipping's original title to translate" do
+    generator = FakeSummaryGenerator.new
+
+    perform_with(generator)
+
+    # The model is asked to translate exactly this title; a placeholder (the
+    # URL's host) here is what let it invent a body-derived title instead.
+    assert_equal @clipping.display_title, generator.calls.first[:title]
+  end
+
   test "maps the summaries the right way round for a Portuguese article" do
     perform_with(FakeSummaryGenerator.new(result: result(language: "pt-BR", pt: "Resumo em pt.", en: "English summary.")))
 

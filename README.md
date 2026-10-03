@@ -341,7 +341,8 @@ local workers — the Docker `jobs` container writes to the production queue.
    to
    `opencode run <prompt> --format json --model opencode/nemotron-3-ultra-free --standalone`
    and asks for a single JSON object: the article's language, its title
-   translated into the other language, and a ~100–150 word summary in
+   translated into the other language (a faithful rendering of the title the
+   fetch stored, never one invented from the body), and a ~100–150 word summary in
    *both* languages (shorter when only an RSS excerpt is available). The detected language moves the source variant to that
    language; the title and the summary in the article's own language stay on it,
    and the other language's title and summary land on the generated variant
