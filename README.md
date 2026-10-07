@@ -12,6 +12,9 @@ articles into a weekly clipping newsletter with AI-written summaries.
 - Bilingual: **pt-BR** (default) and **en-US**, with content in locale files only.
 - Light/dark theme that follows the operating system by default and remembers the
   visitor's choice (`localStorage`).
+- Branded Open Graph / Twitter share cards in each language — a home card and a
+  dedicated one for the public newsletter page — so a shared link unfurls with the
+  right title and image.
 - Small newsletter capture with honeypot spam protection and one-click unsubscribe.
 - **Private admin area** (`/admin`) behind a session login. Underneath it:
   - **RSS reader** (`/admin/reader`): subscribe to feeds, browse entries by feed
@@ -115,6 +118,7 @@ dashboard live underneath it.
 | `/admin/reader`        | Entry stream: filter by feed, category and window; paginate; clip |
 | `/admin/reader/feeds`  | Add/remove feeds, refresh one or all, see per-feed poll errors   |
 | `/admin/reader/feeds/:id/edit` | Edit a feed: display title and categories                |
+| `/admin/reader/categories` | Manage categories: create, rename, delete (unlinks its feeds) |
 | `/admin/reader/clippings` | The queue for the next issue, with each summary's status      |
 | `/admin/reader/newsletters` | Issue archive, live stats, and a manual "send now"          |
 | `/admin/subscribers`   | Newsletter list: search, add, remove (single or bulk), export CSV, copy an unsubscribe link, resend an issue |
@@ -122,7 +126,7 @@ dashboard live underneath it.
 
 The layout has two navigation levels: the admin sections (`[painel] [leitor]
 [inscritos] [jobs]`) and, inside the reader, its own sub-navigation (`[entradas]
-[recortes] [fontes] [arquivo]`).
+[recortes] [fontes] [categorias] [arquivo]`).
 
 ### Subscribers and languages
 
@@ -260,8 +264,12 @@ the same button regenerates the machine-made editions. Leaving a language blank
 drops its edition.
 
 A clipping marked `failed` is **left out of the next issue** (see
-`Clipping.shippable`); it stays in the queue until it is fixed or removed, which
-is why the page counts what will actually go out and how many are stuck.
+`Clipping.shippable`); it stays in the queue until it is fixed or removed. The
+page separates the two ideas: the dashboard and the archive tally the whole queue
+(`Clipping.unsent`), so a failed or deferred clipping still counts as queued,
+while the send-now confirmation counts `shippable` — what would actually go out.
+A deferred clipping whose summary failed is tallied as failed, not promised for
+the following issue.
 
 ### Feeds, categories and titles
 
@@ -389,10 +397,29 @@ subscriber list means no issue is created at all.
   intend to use accepts it.
 - `opencode` is invoked through `Open3.popen3` with an argument array (never a
   shell string), in its own process group, and killed on timeout.
+- Every stored third-party URL (feeds, entries, clipping editions) must be a
+  plain `http`/`https` address (`SafeUrl`), matched by an anchored pattern so a
+  payload such as `javascript:… https://…` cannot slip through and become a link.
 - Outbound fetches are limited to `http`/`https`, follow at most 5 redirects, and
-  are capped at 5 MB.
+  are capped at 5 MB. Every hop is checked against an SSRF guard before it is
+  dialled: loopback, private, link-local (including the `169.254.169.254` cloud
+  metadata endpoint) and unroutable addresses are refused, and a host that does
+  not resolve fails closed. Redirects are re-checked the same way, so a public
+  URL cannot bounce the fetch to an internal one. Compressed bodies are inflated
+  in chunks and bounded at the same 5 MB after decompression, so a decompression
+  bomb never materialises.
 - Unsubscribe uses a per-subscriber random token (`List-Unsubscribe` +
   `List-Unsubscribe-Post` for RFC 8058 one-click), never the bare email address.
+- Admin sessions expire after 30 days (`Session::DURATION`) even without an
+  explicit logout, and the session cookie is flagged `Secure` whenever the app
+  forces TLS.
+- Pages that carry a capability in the URL — the unsubscribe and preferences
+  links, the password reset — send `Referrer-Policy: no-referrer`, so the token
+  cannot leak through the Referer header. The archived issue is rendered in a
+  sandboxed `<iframe>` that cannot run scripts.
+- The subscriber CSV export prefixes a cell that starts with `=`, `+`, `-`, `@`
+  or a control character with an apostrophe, so a crafted email address is read
+  as text and not as a spreadsheet formula.
 
 ### Email delivery
 
@@ -441,6 +468,7 @@ environment variables are read:
 | `RAILS_HOSTS`             | Comma-separated allowed hosts (default `nielsonrolim.com,www.nielsonrolim.com`). |
 | `WEB_PORT`                | Host port published by Docker Compose (default `3000`).                 |
 | `RAILS_LOG_LEVEL`         | Optional; defaults to `info`.                                           |
+| `FORCE_SSL`               | Force HTTPS redirects and a `Secure` session cookie (default `true`; set `false` only to reach a production image over plain http locally). |
 | `APP_HOST`, `APP_PROTOCOL`| Base URL used to build links inside emails.                             |
 | `NEWSLETTER_FROM`         | `From:` header of the weekly clipping.                                  |
 | `NEWSLETTER_REPLY_TO`     | `Reply-To:` header; replies go to this monitored inbox instead of the send-only From. |
@@ -454,6 +482,7 @@ environment variables are read:
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |
 | `JOB_CONCURRENCY`         | Solid Queue worker processes per container (default `1`).               |
+| `SOURCE_FETCH_CONCURRENCY`| Threads for the dedicated `sources` worker (default `1`). Kept separate from `JOB_CONCURRENCY` so a slow source fetch does not crowd feeds or the newsletter. |
 
 ## Internationalization
 
@@ -594,22 +623,34 @@ docker compose up --build
 ```
 app/
   assets/tailwind/application.css   Tailwind entrypoint and theme tokens
-  assets/images/                    Photo and Jampa Ruby logo
+  assets/images/                    Photo, Jampa Ruby logo, OG share cards
   assets/fonts/                     FiraCode Nerd Font
-  controllers/                      PagesController, SubscribersController,
-                                    UnsubscribesController,
+  controllers/                      PagesController (home + the public newsletter
+                                    page), SubscribersController,
+                                    PreferencesController, UnsubscribesController,
                                     SessionsController (login/logout) +
                                     PasswordsController (reset), Auth::BaseController,
                                     Admin::BaseController (auth) + Admin::Dashboard,
-                                    Admin::Subscribers, Reader::* (nested under /admin)
+                                    Admin::Subscribers, Reader::* (entries, clippings,
+                                    feeds, categories, newsletters — nested under
+                                    /admin)
+  controllers/concerns/             Authentication (session login), NoReferrer
+                                    (no-referrer on token-bearing pages)
   jobs/                             RefreshFeedsJob, FetchSourceTextJob,
                                     GenerateSummaryJob, SendNewsletterJob
   mailers/                          NewsletterMailer (issue), PasswordsMailer (reset)
   models/                           User, Session, Subscriber, Feed, Category,
                                     FeedCategory, Entry, Clipping, ClippingVariant,
                                     Newsletter, NewsletterBody
+  models/concerns/                  SafeUrl (http(s)-only URL validation),
+                                    SupportedLanguages
   services/
     feed_fetcher.rb                 HTTP transport + Feedjira parsing + ingest
+    http_transport.rb               Redirects, gzip/deflate, 5 MB cap, SSRF guard
+    article_fetcher.rb              Pulls title and body text out of a page
+    youtube_fetcher.rb              YouTube oEmbed data + caption transcript
+    ytdlp_cli.rb                    yt-dlp fallback when captions need a PoToken
+    source_name_resolver.rb         Site/channel name (and video title) for a URL
     opencode_cli.rb                 Locked-down `opencode` process wrapper
     summary_generator.rb            Prompt building and response extraction
     newsletter_composer.rb          Issue HTML/text rendering
@@ -627,8 +668,11 @@ config/
   initializers/action_mailer.rb     SMTP / file / test delivery selection
 db/
   migrate/                          App schema
+  data/                             Versioned data migrations (data_migrate)
   queue_schema.rb                   Solid Queue schema (separate database)
   seeds.rb                          The starter feeds
+docs/
+  summary-quality-review.md         Manual rubric for judging summary fidelity
 Dockerfile                          Multi-stage image with the opencode CLI and pinned yt-dlp
 docker-compose.yml                  web + jobs services, shared volumes
 ```
