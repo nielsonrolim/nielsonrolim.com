@@ -1,0 +1,16 @@
+# wt: a git worktree with its own services and web port.
+# Every option and its default: see the wt README.
+
+[app]
+# copy = ["storage"]   # untracked paths copied from the main checkout
+
+[services.sqlite]
+files = ["storage/development.sqlite3", "storage/development_queue.sqlite3"]
+
+[hooks]
+setup = [
+  ["bundle", "install"],
+]
+after_services = [
+  ["bin/rails", "db:prepare"],
+]

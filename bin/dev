@@ -4,6 +4,9 @@
 # together through Foreman (see Procfile.dev). Tailwind is watched by the
 # :tailwindcss Puma plugin in config/puma.rb, so it needs no separate process.
 #
-# Port 3000 is pinned so the dev URL keeps matching the APP_HOST default
-# (localhost:3000). Without -p, Foreman would hand `web` PORT=5000.
-exec "bundle", "exec", "foreman", "start", "-f", "Procfile.dev", "-p", "3000", *ARGV
+# The port is passed explicitly: Foreman falls back to 5000 when neither -p nor
+# PORT is set, and it never reads .env (dotenv only runs inside the app). PORT
+# wins when present, so a `wt` worktree can serve its own port through .envrc;
+# otherwise 3000 keeps the dev URL matching the APP_HOST default
+# (localhost:3000, see config/initializers/action_mailer.rb).
+exec "bundle", "exec", "foreman", "start", "-f", "Procfile.dev", "-p", ENV.fetch("PORT", "3000"), *ARGV
