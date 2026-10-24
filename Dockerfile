@@ -77,7 +77,7 @@ RUN set -eux; \
 # file mounts a named volume on — owned by `rails`. Docker only seeds a fresh
 # named volume from the image (preserving ownership) when that path already
 # exists there; a missing mount point gets created as root, and then the `rails`
-# user cannot write auth.json into it.
+# user cannot write opencode's credential database into it.
 RUN mkdir -p /home/rails/.local/share/opencode /home/rails/.local/state /home/rails/.config \
     && chown -R rails:rails /home/rails/.local /home/rails/.config
 

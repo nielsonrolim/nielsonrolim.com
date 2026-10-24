@@ -477,7 +477,7 @@ environment variables are read:
 | `MAIL_DELIVERY`           | `smtp` \| `file` \| `letter_opener`. Overrides the per-environment default. |
 | `SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION` | SMTP details.                                     |
 | `OPENCODE_SUMMARY_MODEL`  | Model used for summaries (default `opencode/nemotron-3-ultra-free`, temporarily free). A failed run retries on paid Terra (`SummaryGenerator::FALLBACK_MODEL`); both use Zen. Existing environment overrides must be changed and the app restarted to use the new default. |
-| `OPENCODE_API_KEY`        | Container only: written to `auth.json` on boot by the entrypoint.       |
+| `OPENCODE_API_KEY`        | Read natively by the opencode CLI as its credential; no `auth.json`.    |
 | `YTDLP_PLAYER_CLIENT`     | Optional; the YouTube player client yt-dlp uses for the fallback transcript (default `android_vr`). Escape hatch for a future YouTube change without a deploy. |
 | `FEED_REFRESH_MINUTES`    | Minimum minutes between polls of the same feed (default `30`).          |
 | `APP_TIME_ZONE`, `TZ`     | Time zone for the recurring schedule (default `Brasilia`).              |
@@ -558,11 +558,12 @@ docker compose up -d --build
   `db:prepare`).
 - The image installs the **v2** `opencode` CLI as the non-root `rails` user (via
   the `/v2/install` endpoint — the default `/install` serves v1, which lacks
-  `--standalone`). Its data
-  directory is the `opencode_data` volume, and `bin/docker-entrypoint` writes
-  `auth.json` from `OPENCODE_API_KEY` on boot. Prefer that over baking the key in.
-  Without `OPENCODE_API_KEY`, run `docker compose exec web opencode auth login`
-  once — the volume keeps it.
+  `--standalone`). Its data directory is the `opencode_data` volume. The CLI reads
+  `OPENCODE_API_KEY` natively as an environment credential, so that variable is
+  the entire credential setup. Without it, run
+  `docker compose exec web opencode auth login` once — the volume keeps it. See
+  [Rotating `OPENCODE_API_KEY`](#rotating-opencode_api_key) for the one way a
+  rotation can silently fail.
 - The image also installs the **pinned static `yt-dlp`** binary for the YouTube
   transcript fallback: the `yt-dlp_linux` asset (x86-64, no Python) from a fixed
   release tag, verified at build time against a SHA-256 pinned in the
@@ -599,15 +600,50 @@ Note that `.env` is parsed by dotenv and docker compose, not by a shell: values
 with `<`, `>` or spaces (e.g. `NEWSLETTER_FROM`) are fine there but will break
 `source .env`. Read single keys with `grep ... | cut -d= -f2-`.
 
-### If `auth.json` cannot be written
+### Rotating `OPENCODE_API_KEY`
 
-The `opencode_data` volume is mounted exactly on `/home/rails/.local/share/opencode`.
-Docker only seeds a fresh named volume from the image — ownership included — when
-that path already exists there, which is why the Dockerfile pre-creates it as
-`rails`. A volume created by an older image is root-owned, and the entrypoint logs:
+The v2 CLI keeps credentials in its own SQLite database
+(`~/.local/share/opencode/opencode.db`) and imports the legacy `auth.json` only
+once, during the initial migration — so writing that file is not how a key is
+installed or replaced. `OPENCODE_API_KEY` is read on every run instead, which
+makes rotation just:
+
+```sh
+# edit .env, then recreate; `restart` keeps the old env_file
+docker compose up -d --force-recreate web jobs
+```
+
+One trap: a credential **saved** in the database (a `stored` account) takes
+precedence over the environment connection and silently shadows the variable, so
+a new key appears to be installed while runs keep using the old one. Symptoms:
+
+- `opencode run` fails with HTTP `401` and "Reconnect OpenCode Console to continue".
+- The new key stays `Last used: Never` in the Console.
+- `bin/docker-entrypoint` logs a `WARNING` naming this state at boot.
+
+Check what the CLI actually sees:
+
+```sh
+docker compose exec jobs opencode auth list
+```
+
+Remove the saved account (environment rows are not accounts and stay):
+
+```sh
+docker compose exec -it jobs opencode auth logout
+# pick the provider and the "API key" / stored entry, not OPENCODE_API_KEY
+```
+
+### If `opencode auth list` fails in the container
+
+The `opencode_data` volume is mounted exactly on
+`/home/rails/.local/share/opencode`. Docker only seeds a fresh named volume from
+the image — ownership included — when that path already exists there, which is why
+the Dockerfile pre-creates it as `rails`. A volume created by an older image is
+root-owned, the CLI cannot write its database, and the entrypoint logs:
 
 ```
-[docker-entrypoint] WARNING: cannot write /home/rails/.local/share/opencode/auth.json
+[docker-entrypoint] WARNING: 'opencode auth list' failed; the CLI cannot read
 ```
 
 It warns and keeps booting (the site works without summaries), so fix it with:

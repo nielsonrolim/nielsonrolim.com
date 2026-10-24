@@ -40,15 +40,17 @@ site up when a non-essential piece fails.
 - **`bin/docker-entrypoint`** runs `db:prepare` and `data:migrate` only when the
   command is `bin/rails server` (i.e. the `web` container). `data:migrate` is
   **non-fatal on purpose**: a failure logs loudly and is retried on the next boot
-  rather than taking the site down. It also writes
-  `~/.local/share/opencode/auth.json` from `OPENCODE_API_KEY` (mode 600) and, on
-  a permission failure (a root-owned volume from an older image), warns and keeps
-  booting — the site works without summaries. Recover by
-  `docker compose down && docker volume rm <project>_opencode_data && docker compose up --build`
-  (keeps `sqlite_data`).
-- **`OPENCODE_API_KEY` is preferred over baking the key in.** Without it, run
-  `docker compose exec web opencode auth login` once; the named volume persists
-  it.
+  rather than taking the site down. It also reads opencode's credential store
+  (`opencode auth list`) and warns — never fails — in two cases: the CLI cannot
+  read its data directory (root-owned `opencode_data` volume from an older image),
+  or a credential **saved** in opencode's database would shadow `OPENCODE_API_KEY`.
+- **`OPENCODE_API_KEY` is the whole credential.** The v2 CLI reads it natively as
+  an environment connection (`OpencodeCli.exec` inherits the container env). Do not
+  write `auth.json`: v2 stores credentials in
+  `~/.local/share/opencode/opencode.db` and imports that legacy file only once, at
+  the initial migration. A saved account takes precedence over the environment, so
+  rotating a key is: edit `.env` → `docker compose up -d --force-recreate web jobs`
+  (not `restart`) → confirm `opencode auth list` shows no `stored` rows.
 - **Healthcheck** polls `http://127.0.0.1:3000/up` (`start_period: 20s`), and
   `/up` is excluded from both the host-authorization filter and the SSL
   redirect.
@@ -88,9 +90,9 @@ site up when a non-essential piece fails.
    and `.env.example` before proposing a change; check what the running system
    actually does rather than what a default suggests.
 2. Preserve the failure philosophy: **non-essential failures degrade, they do not
-   crash**. A missing SMTP address, an unwritable `auth.json`, or a failed data
-   migration must warn and keep booting; a missing master key or an unprepared DB
-   must stop the boot.
+   crash**. A missing SMTP address, an unreadable opencode credential store, or a
+   failed data migration must warn and keep booting; a missing master key or an
+   unprepared DB must stop the boot.
 3. Keep secrets in `.env`/`env_file`, never in the image, the compose file, or a
    log. Keep the container non-root.
 4. Treat the SQLite volume as the single point of failure: any change touching
