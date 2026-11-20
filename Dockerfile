@@ -51,10 +51,10 @@ RUN groupadd --system --gid 1000 rails \
 # production stays x86-64 instead of embedding a foreign-arch binary that only
 # fails at runtime under emulation. `--version` runs only where the host can
 # execute the binary.
-ARG YTDLP_VERSION=2026.08.19
+ARG YTDLP_VERSION=2026.10.26
 ARG TARGETARCH
-ARG YTDLP_SHA256_AMD64=58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a
-ARG YTDLP_SHA256_ARM64=b16e4dab368a816cd05d477d698a605a6ae87ccee1c8ffd38fa21d7254141fcc
+ARG YTDLP_SHA256_AMD64=767ba9dce7052aa196f8b12652f433d76de128ba168966fa84b6394d5e6c6795
+ARG YTDLP_SHA256_ARM64=e87e9533e89fe5889abaa21f5114dfe7756d6aa6219b83551add04d48b18e483
 RUN set -eux; \
     base="https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}"; \
     case "${TARGETARCH}" in \
