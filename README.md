@@ -34,7 +34,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 
 | Layer      | Choice                                              |
 | ---------- | --------------------------------------------------- |
-| Language   | Ruby 4.0.7                                          |
+| Language   | Ruby 4.0.10                                          |
 | Framework  | Rails 8.1.4                                         |
 | Database   | SQLite (file-based), separate DB for the queue       |
 | Server     | Puma                                                |
@@ -49,7 +49,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 
 ## Requirements
 
-- Ruby 4.0.7 (see `.ruby-version` / `mise.toml`)
+- Ruby 4.0.10 (see `.ruby-version` / `mise.toml`)
 - SQLite 3
 - `opencode` CLI, authenticated (`opencode auth login`) — only needed to generate
   summaries. Installed automatically inside the Docker image.
@@ -58,7 +58,7 @@ articles into a weekly clipping newsletter with AI-written summaries.
 ## Getting started
 
 ```sh
-mise install          # or install Ruby 4.0.7 another way
+mise install          # or install Ruby 4.0.10 another way
 bundle install
 cp .env.example .env  # fill in the SMTP / newsletter settings you need
 bin/rails db:prepare
